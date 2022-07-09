@@ -2,6 +2,8 @@
 
 -   Combined the Shield and Software into one repository
 
+-   Completely re-wrote shield to make it more modular
+
 -   Added support for any GPS module that outputs NMEA strings (e.g. SiRF, UBLOX, etc.)
 
 -   Added OpenLog for storing data to SD card

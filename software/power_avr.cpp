@@ -1,19 +1,20 @@
 /* trackuino copyright (C) 2010  EA5HAV Javi
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+* trackduino-v2 copyright (C) 2022 EricAndrechek
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 #ifdef AVR
 
 #include <avr/power.h>
@@ -28,8 +29,7 @@
 #include "pin.h"
 #include "power.h"
 
-void disable_bod_and_sleep()
-{
+void disable_bod_and_sleep() {
   /* This will turn off brown-out detection while
    * sleeping. Unfortunately this won't work in IDLE mode.
    * Relevant info about BOD disabling: datasheet p.44
@@ -45,16 +45,15 @@ void disable_bod_and_sleep()
    */
   unsigned char mcucr;
 
-  cli();
+  noInterrupts();
   mcucr = MCUCR | (_BV(BODS) | _BV(BODSE));
   MCUCR = mcucr;
   MCUCR = mcucr & (~_BV(BODSE));
-  sei();
+  interrupts();
   sleep_mode();    // Go to sleep
 }
 
-void power_save()
-{
+void power_save() {
   /* Enter power saving mode. SLEEP_MODE_IDLE is the least saving
    * mode, but it's the only one that will keep the UART running.
    * In addition, we need timer0 to keep track of time, timer 1
@@ -71,7 +70,7 @@ void power_save()
   pin_write(LED_PIN, LOW);
   sleep_mode();    // Go to sleep
   pin_write(LED_PIN, HIGH);
-  
+
   sleep_disable();  // Resume after wake up
   power_all_enable();
 }

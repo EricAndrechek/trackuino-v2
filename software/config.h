@@ -1,19 +1,20 @@
 /* trackuino copyright (C) 2010  EA5HAV Javi
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+* trackduino-v2 copyright (C) 2022 EricAndrechek
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
@@ -24,23 +25,39 @@
 // OTHER SETTINGS GO HERE.
 //
 // NOTE: all pins are Arduino based, not the Atmega chip. Mapping:
-// http://www.arduino.cc/en/Hacking/PinMapping
+// https://www.arduino.cc/en/Hacking/PinMapping
 // --------------------------------------------------------------------------
 
 
 // --------------------------------------------------------------------------
-// APRS config (aprs.c)
+// APRS config (aprs.cpp)
 // --------------------------------------------------------------------------
 
 // Set your callsign and SSID here. Common values for the SSID are
-// (from http://zlhams.wikidot.com/aprs-ssidguide):
-//
-// - Balloons:  11
-// - Cars:       9
-// - Home:       0
-// - IGate:      5
+// (from http://www.aprs.org/aprs11/SSIDs.txt):
+// 0  Your primary station usually fixed and message capable
+// 1  generic additional station, digi, mobile, wx, etc
+// 2  generic additional station, digi, mobile, wx, etc
+// 3  generic additional station, digi, mobile, wx, etc
+// 4  generic additional station, digi, mobile, wx, etc
+// 5  Other networks(Dstar, Iphones, Androids, Blackberry's etc)
+// 6  Special activity, Satellite ops, camping or 6 meters, etc
+// 7  walkie talkies, HT's or other human portable
+// 8  boats, sailboats, RV's or second main mobile
+// 9  Primary Mobile(usually message capable)
+// 10 internet, Igates, echolink, winlink, AVRS, APRN, etc
+// 11 balloons, aircraft, spacecraft, etc
+// 12 APRStt, DTMF, RFID, devices, one - way trackers*, etc
+// 13 Weather stations
+// 14 Truckers or generally full time drivers
+// 15 generic additional station, digi, mobile, wx, etc
+
 #define S_CALLSIGN      "MYCALL"
-#define S_CALLSIGN_ID   11
+#define S_CALLSIGN_ID   11   // default is 11 for balloon
+
+// set the symbol you want the aprs.fi map to represent you as:
+// http://www.aprs.net/vm/DOS/SYMBOLS.HTM#:~:text=PRIMARY%20SYMBOL%20TABLE%20(/)
+#define APRS_SYMBOL     'O'  // default is 'O' for balloon
 
 // Destination callsign: APRS (with SSID=0) is usually okay.
 #define D_CALLSIGN      "APRS"
@@ -48,8 +65,7 @@
 
 // Digipeating paths:
 // (read more about digipeating paths here: http://wa8lmf.net/DigiPaths/ )
-// The recommended digi path for a balloon is WIDE2-1 or pathless. The default
-// is pathless. Uncomment the following two lines for WIDE2-1 path:
+// The recommended digi path for a balloon is WIDE2-1
 #define DIGI_PATH1      "WIDE2"
 #define DIGI_PATH1_TTL  1
 
@@ -65,9 +81,10 @@
 
 // TX delay in milliseconds
 #define TX_DELAY      300
+// TODO figure out why 300ms default and what this setting changes
 
 // --------------------------------------------------------------------------
-// Tracker config (trackuino.pde)
+// Tracker config (trackuino.ino)
 // --------------------------------------------------------------------------
 
 // APRS packets are slotted so that multiple trackers can be used without

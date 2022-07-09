@@ -1,19 +1,20 @@
 /* trackuino copyright (C) 2010  EA5HAV Javi
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+* trackduino-v2 copyright (C) 2022 EricAndrechek
+*
+* This program is free software; you can redistribute it and/or
+* modify it under the terms of the GNU General Public License
+* as published by the Free Software Foundation; either version 2
+* of the License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU General Public License for more details.
+*
+* You should have received a copy of the GNU General Public License
+* along with this program; if not, write to the Free Software
+* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+*/
 
 #ifdef PIC32MX
 
@@ -37,29 +38,24 @@ extern const uint32_t PLAYBACK_RATE;
 extern const uint8_t afsk_sine_table[];
 
 // Inline functions (this saves precious cycles in the ISR)
-inline uint8_t afsk_read_sample(int phase)
-{
+inline uint8_t afsk_read_sample(int phase) {
   return afsk_sine_table[phase];
 }
 
-inline void afsk_output_sample(uint8_t s)
-{
+inline void afsk_output_sample(uint8_t s) {
   SetDCOC1PWM(s);
 }
 
-inline void afsk_clear_interrupt_flag()
-{
+inline void afsk_clear_interrupt_flag() {
   mT2ClearIntFlag();
 }
 
 #ifdef DEBUG_MODEM
-inline uint16_t afsk_timer_counter()
-{
-  return (uint16_t) TMR2;
+inline uint16_t afsk_timer_counter() {
+  return (uint16_t)TMR2;
 }
 
-inline int afsk_isr_overrun()
-{
+inline int afsk_isr_overrun() {
   return (IFS0bits.T2IF);
 }
 #endif
@@ -67,7 +63,7 @@ inline int afsk_isr_overrun()
 
 // Exported functions
 void afsk_setup();
-void afsk_send(const uint8_t *buffer, int len);
+void afsk_send(const uint8_t* buffer, int len);
 void afsk_start();
 bool afsk_flush();
 void afsk_isr();
