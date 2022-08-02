@@ -22,7 +22,7 @@ ready(function () {
         });
 });
 
-const debug = true;
+const debug = false;
 
 let parsedConfigBuffer;
 let verifiedSchema;
@@ -66,7 +66,6 @@ const saveConfig = () => {
         const field = fields[i];
         const input = field.getElementsByTagName('input')[0];
         const comment = field.getElementsByTagName('p')[0].innerHTML;
-        console.log(input.id);
         const configKey = input.id.split('{')[1].split('}')[0];
         const configSubKey = input.id.split('{')[2].split('}')[0];
         const configSubKeyOption = input.id.split('{')[3].split('}')[0];
@@ -204,7 +203,6 @@ const toggleSiblings = (elem) => {
 
 const configSetup = () => {
     document.getElementById('upload').classList.add('hidden');
-    console.log(JSON.stringify(parsedConfigBuffer));
     const hr = document.createElement('hr');
     document.getElementById('config-options').appendChild(hr);
     // make input boxes or checkboxes for each config option

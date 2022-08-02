@@ -191,10 +191,15 @@ function setMinHeight() {
         ).height.replace('px', '')
     );
 
-    let minHeight = screenHeight - (footerHeight);
+    let minHeight = screenHeight - footerHeight;
 
-    document.getElementsByClassName("content-container")[0].style.minHeight =
+    document.getElementsByClassName('content-container')[0].style.minHeight =
         '' + minHeight + 'px';
 
     return minHeight;
+}
+
+// if page host is github redirect
+if (window.location.host === 'ericandrechek.github.io') {
+    window.location.href = 'https://trackuino-v2.andrechek.com';
 }
