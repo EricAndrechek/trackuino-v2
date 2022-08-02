@@ -1,6 +1,6 @@
 # Software Walkthrough
 
-**Important:** Please read the general README file for general information about how to setup your Trackduino.
+**Important:** Please read the general README file for general information about how to setup your Trackuino.
 
 This file exists as a technical walk-through and documentation of the software.
 

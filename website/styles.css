@@ -1,0 +1,86 @@
+html {
+    overflow-y: auto !important;
+}
+
+body {
+    width: 100%;
+    font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    overflow-x: -moz-hidden-unscrollable;
+    overflow-x: hidden;
+    overflow-x: -webkit-marquee;
+    min-height: 100vh;
+}
+
+.content-container {
+    min-height: 100vh; /* will cover the 100% of viewport */
+    overflow: hidden;
+    display: block;
+    position: relative;
+    padding-bottom: 0;
+}
+
+.darkmode--activated .hero {
+    mix-blend-mode: difference;
+}
+
+.darkmode-layer,
+.darkmode-toggle {
+    z-index: 500;
+}
+
+.hidden {
+    display: none;
+}
+
+.margin-left {
+    margin-left: 20px;
+}
+
+a {
+    isolation: isolate;
+    mix-blend-mode: normal;
+}
+
+.darkmode--activated a {
+    mix-blend-mode: difference;
+}
+
+.gh-btn {
+    mix-blend-mode: normal;
+}
+
+.darkmode--activated .gh-btn {
+    mix-blend-mode: difference;
+}
+
+.button {
+    mix-blend-mode: normal;
+}
+
+.darkmode--activated .button {
+    mix-blend-mode: difference;
+}
+
+.darkmode--activated .has-text-success {
+    mix-blend-mode: difference;
+}
+
+.darkmode--activated .has-text-warning {
+    mix-blend-mode: difference;
+}
+
+.darkmode--activated .has-text-danger {
+    mix-blend-mode: difference;
+}
+
+#angle-down {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    fill: #485fc7;
+}
+
+
+footer.footer {
+    padding-bottom: 3rem;
+}

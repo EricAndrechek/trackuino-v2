@@ -42,6 +42,11 @@ Choose whatever modules you want to use and add them onto your motherboard.
 -   Raw data dumping option
 -   Custom pre-save formatting option (can convert raw analog input to temperature with given formula, etc.)
 
+### Buzzer Module
+
+-  Active buzzer for acoustic payload location
+-  Supports GPS readings for variable buzzing based on altitude or satellite lock
+
 # Setup
 
 Use the `Download ZIP` button or [click here](https://github.com/EricAndrechek/trackuino-v2/archive/refs/heads/main.zip) to get the source code and board schematics.
@@ -78,7 +83,7 @@ Some modules, like GSM, allow you to make additional configuration changes in th
 
 Within the Arduino IDE, be sure to select the correct board type for your Arduino.
 
-While trackduino.ino is opened in the Arduino IDE, select the `Program` tab and click the `Upload` button.
+While trackuino.ino is opened in the Arduino IDE, select the `Program` tab and click the `Upload` button.
 
 ## Debugging
 
