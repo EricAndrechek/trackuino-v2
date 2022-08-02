@@ -84,3 +84,27 @@ a {
 footer.footer {
     padding-bottom: 3rem;
 }
+
+#use-config {
+    margin-top: 25px;
+}
+
+.field:last-child {
+    margin-bottom: 1rem;
+}
+
+#config-options > .config-option {
+    padding-top: 25px;
+}
+
+#config-options > hr {
+    margin-bottom: 0;
+}
+
+.sub-config-label {
+    text-decoration: underline;
+}
+
+#config-textarea {
+    min-height: 200px;
+}
