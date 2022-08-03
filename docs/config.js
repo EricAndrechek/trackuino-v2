@@ -1,3 +1,8 @@
+// TODO handle comments as anything immediately before the #define without any newlines
+// TODO anything comments after #define on the same line get parsed as:
+// 
+
+
 // run code after page has loaded
 function ready(fn) {
     if (document.readyState != 'loading') {
