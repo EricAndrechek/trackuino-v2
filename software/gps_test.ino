@@ -12,32 +12,13 @@
 #include "config.h"
 #include "power.h"
 #include "pin.h"
-#include "sensors_avr.h"
 
 #include <Arduino.h>
 #include <SoftwareSerial.h>
 
-// Module libs
-#ifdef APRS_MODULE
-#include "aprs.h"
-#endif
-
-#ifdef BUZZER_MODULE
-#include "buzzer.h"
-#endif
-
 #ifdef GPS_MODULE
 #include "gps.h"
 SoftwareSerial GPS_Serial(GPS_RX, GPS_TX);
-#endif
-
-#ifdef GSM_MODULE
-#include "gsm.h"
-#endif
-
-#ifdef SD_MODULE
-#include "sd.h"
-SoftwareSerial SD_Serial(SD_RX, SD_TX);
 #endif
 
 static int32_t next_data = 0;
@@ -47,32 +28,14 @@ void setup() {
     pin_write(LED_PIN, LOW);
 
     Serial.begin(SERIAL_BAUDRATE);
+
 #ifdef GPS_MODULE
     gps_setup();
     GPS_Serial.begin(GPS_BAUDRATE);
 #endif
-#ifdef SD_MODULE
-    sd_setup();
-    SD_Serial.begin(SD_BAUDRATE);
-#endif
-#ifdef GSM_MODULE
-    gsm_setup();
-#endif
-#ifdef BUZZER_MODULE
-    buzzer_setup();
-#endif
-#ifdef APRS_MODULE
-    aprs_setup();
-#endif
 #ifdef RESET_DEBUG
     Serial.listen();
     Serial.println("RESET");
-#endif
-    sensors_setup();
-
-#ifdef SENSOR_DEBUG
-    // do some Serial.prints for each sensor value
-    Serial.listen();
 #endif
 
 #ifndef GPS_MODULE
@@ -119,39 +82,19 @@ void get_pos() {
         if (GPS_Serial.available()) {
             valid_pos = gps_decode(GPS_Serial.read());
         }
-    } while ((millis() - timeout < VALID_POS_TIMEOUT) && !valid_pos);
-
-    if (valid_pos) {
-        if (gps_altitude > BUZZER_ALTITUDE) {
-            buzzer_off();  // In space, no one can hear you buzz
-        }
-        else {
-            buzzer_on();
-        }
-    }
+    } while ((millis() - timeout < 2000) && !valid_pos);
 }
 
 void loop() {
     // Time for another APRS frame
-    if ((int32_t)(millis() - next_aprs) >= 0) {
+    if ((int32_t)(millis() - next_data) >= 0) {
         get_pos();
-        aprs_send();
-        next_aprs += APRS_PERIOD * 1000L;
-        while (afsk_flush()) {
-            // TODO: strangely seems to call afsk_flush() twice
-            power_save();
-        }
-
-#ifdef DEBUG_MODEM
-        // Show modem ISR stats from the previous transmission
-        afsk_debug();
-#endif
-
+        next_data += DATA_TIMEOUT * 1000L;
     }
     else {
         // Discard GPS data received during sleep window
-        while (Serial.available()) {
-            Serial.read();
+        while (GPS_Serial.available()) {
+            GPS_Serial.read();
         }
     }
 

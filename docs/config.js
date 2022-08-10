@@ -1,7 +1,10 @@
 // TODO handle comments as anything immediately before the #define without any newlines
-// TODO anything comments after #define on the same line get parsed as:
-// 
-
+// TODO anything commented after #define on the same line get parsed as:
+// if inside parentheses, treat as dropdown with those options
+// if not, treat as datatype and parse it for whether it should be integer or string
+// TODO: set the input to only accept integer if integer
+// TODO: put datatype label after the input field
+// TODO: put checkboxes before the label
 
 // run code after page has loaded
 function ready(fn) {

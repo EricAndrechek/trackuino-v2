@@ -224,7 +224,7 @@
 // Turn on this module's debugging mode by uncommenting the following line
 // or by selecting it as true/checked in the GUI
 // GPS sentence dump and checksum validation
-// #define GPS_DEBUG
+#define GPS_DEBUG
 
 
 // --------------------------------------------------------------------------
@@ -284,7 +284,7 @@
 // Tracker Config (software.ino)
 
 #define SERIAL_BAUDRATE 9600
-// #define RESET_DEBUG          // AVR reset
+#define RESET_DEBUG          // AVR reset
 // #define SENSOR_DEBUG         // Sensors
 
 
