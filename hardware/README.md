@@ -26,7 +26,3 @@ You will need the following components if you choose to solder it onto the PCB. 
 | U8 | 1 | 3-Wide Terminal Blocks | $0.66 | [Mouser](https://www.mouser.com/ProductDetail/CUI-Devices/TBL004V-508-02BE-2GY?qs=UXgszm6BlbFJXFFgC%2FsssQ%3D%3D) | Same as previous terminal block note. |
 | D1-D3 | 3 | LEDs | $4 | [Amazon](https://www.amazon.com/JABINCO-Circuit-Assorted-Science-Experiment/dp/B0827KYRFH/ref=sr_1_8?crid=QILAHDHBQAH3&keywords=through-hole+leds&qid=1660157838&sprefix=through-ho%2Caps%2C866&sr=8-8) | Just any 3 LEDs. Different colors for each makes it easier to differentiate which status LED is which. |
 | R1-R3 | 3 | 330 Ohm Resistors | $1.05 | [SparkFun](https://www.sparkfun.com/products/14490) | Other resistances would work too, 330 is not an exact requirement. |
-
-
-## Wiring
-
