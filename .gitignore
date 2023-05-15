@@ -7,3 +7,4 @@
 **/__pycache__
 **/rtl-sdr.rules
 **/cloudflared.deb
+**/.next
