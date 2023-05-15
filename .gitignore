@@ -1,4 +1,9 @@
 .DS_Store
 .vscode
+.venv
+**/*.pyc
+**/.venv
 **/venv
 **/__pycache__
+**/rtl-sdr.rules
+**/cloudflared.deb
