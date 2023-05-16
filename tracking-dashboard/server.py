@@ -44,7 +44,15 @@ def api_tunnel():
 @app.route('/', defaults={'path': 'index'})
 @app.route('/<path:path>')
 def show(path):
-    return render_template(path + '.html', title=config['Title'])
+    try:
+        return render_template(path + '.html', title=config['Title'])
+    except:
+        return render_template('404.html', title=config['Title'])
+    
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html', title=config['Title']), 404
+
 
 if __name__ == '__main__':
     print(config)
