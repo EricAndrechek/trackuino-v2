@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from config_helper import load_config as conf
 import requests
+import subprocess
 
 app = Flask(__name__)
 
@@ -29,6 +30,12 @@ def get_tunnel_status():
 def api():
     data = request.get_json()
     return jsonify(data)
+
+@app.route('/api/pull', methods=['GET'])
+def api_pull():
+    # pull the latest version of the repo and return the result
+    result = subprocess.run(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    return jsonify({'result': result.stdout.decode('utf-8')})
 
 @app.route('/api/tunnel', methods=['GET'])
 def api_tunnel():

@@ -23,3 +23,12 @@ You will also need to create a database to use with this VM. You could run a dat
 For security reasons, it is suggested to set the database to only allow connections on the same VCN as your VM, although you can set it to public for debugging purposes. 
 
 
+# Clone Repo
+
+```
+git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/EricAndrechek/trackuino-v2.git
+cd trackuino-v2
+git sparse-checkout set --no-cone tracking-dashboard
+git checkout
+cd tracking-dashboard
+```

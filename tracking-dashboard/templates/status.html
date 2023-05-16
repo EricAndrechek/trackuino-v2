@@ -8,14 +8,14 @@
 {% endblock %}
 {% block content %}
     <div class="mt-20 container mx-auto px-4 py-8">
-        <div id="container" class="flex flex-col items-center space-y-4">
+        <div id="container" class="flex flex-row flex-wrap gap-4">
             <!-- Boxes will be dynamically added here -->
         </div>
     </div>
 
     <div class="hidden">
         <!-- Template for box -->
-        <div class="rounded-lg shadow-lg p-8 min-w-250 max-w-full" id="box-template">
+        <div class="rounded-lg shadow-lg p-8 grow" id="box-template">
         </div>
         <!-- Template for box title -->
         <h2 class="text-2xl font-semibold text-gray-800 pb-4" id="box-title-template"></h2>
