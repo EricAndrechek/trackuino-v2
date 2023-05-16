@@ -1,0 +1,7 @@
+html,
+body {
+  height: 100%;
+}
+.site-content {
+  min-height: calc(100% - 6rem);
+}
