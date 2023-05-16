@@ -1,4 +1,5 @@
 const getStatus = async () => {
+  // TODO: add error handling
   const response = await fetch("/api/tunnel");
   const data = await response.json();
   return data;
