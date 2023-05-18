@@ -1,7 +1,27 @@
 const getStatus = async () => {
   // TODO: add error handling
   const response = await fetch("/api/tunnel");
-  const data = await response.json();
+  // get status code
+  const status = await response.status;
+  let data = {};
+  // get response body
+  try {
+    data = await response.json();
+    data["status"] = status;
+  } catch (e) {
+    if (status == 200 && e instanceof SyntaxError) {
+      data = {
+        error: "Server Offline",
+        status: status,
+      };
+    } else {
+      data = {
+        error: e,
+        status: status,
+      };
+    }
+    console.log(e);
+  }
   return data;
 };
 
@@ -52,6 +72,30 @@ const getStatusHTML = (status) => {
 const createBoxes = (data) => {
   const container = document.getElementById("container");
   const existingBoxes = Array.from(container.getElementsByClassName("box"));
+
+  // if status is not 200, show error message
+  if (data.status != 200 || data.error) {
+    // edit box if it already exists
+    const existingBox = container.querySelector(`[id="error-box"]`);
+    if (existingBox) {
+      const status = existingBox.querySelector("div");
+      status.innerHTML = `
+        <i class="fas fa-exclamation-triangle icon"></i>
+        &nbsp;${data.error}
+      `;
+      return;
+    }
+    const errorBox = document.cloneNode(true).getElementById("box-template");
+    errorBox.id = "error-box";
+    errorBox.innerHTML = `
+      <div class="text-md font-semibold status-error">
+        <i class="fas fa-exclamation-triangle icon"></i>
+        ${data.error}
+      </div>
+    `;
+    container.appendChild(errorBox);
+    return;
+  }
 
   // Remove boxes that no longer exist
   existingBoxes.forEach((box) => {

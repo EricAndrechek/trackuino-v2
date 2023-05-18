@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from config_helper import load_config as conf
 import requests
 import subprocess
+import logging
 
 app = Flask(__name__)
 
@@ -31,6 +32,10 @@ def api():
     data = request.get_json()
     return jsonify(data)
 
+@app.route('/api/status', methods=['POST'])
+def server_status():
+    return "OK"
+
 @app.route('/api/pull', methods=['GET'])
 def api_pull():
     # pull the latest version of the repo and return the result
@@ -56,4 +61,5 @@ def page_not_found(e):
 
 if __name__ == '__main__':
     print(config)
+    logging.basicConfig(filename='error.log',level=logging.DEBUG)
     app.run(debug=True)

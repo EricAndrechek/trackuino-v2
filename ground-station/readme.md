@@ -137,9 +137,41 @@ Your file structure should now look something like `~/trackuino-v2/ground-statio
 pip3 install -r requirements.txt
 ```
 
-7. Edit the config.yml file to suit your needs. See [this section](#31-configyml-settings) for more information.
+1. Update the hostname and DNS by modifying `/boot/efi/user-data` and `/boot/efi/network-config`.
 
-8. Reboot!
+Hostname:
+
+```bash
+sudo nano /boot/efi/user-data
+```
+
+And it should include this line:
+
+```yaml
+hostname: gs-1
+```
+
+DNS Servers:
+
+```bash
+sudo nano /boot/efi/network-config
+```
+
+Which should look something like:
+
+```yaml
+version: 2
+ethernets:
+  eth0:
+    dhcp4: true
+    optional: true
+    nameservers: 
+      addresses: [1.1.1.1, 8.8.8.8]
+```
+
+8. Edit the config.yml file to suit your needs. See [this section](#31-configyml-settings) for more information.
+
+9. Reboot! (`sudo reboot`)
 
 ## 2.3. (Optional) Setup Cloudflare Tunnel
 
@@ -183,6 +215,14 @@ sudo cloudflared service install <long_id>
 5. Visit the application's URL in a browser and login with your access policy. 
 
 6. (Optional) Create a new public hostname for the same tunnel for the web interface and repeat steps 2-5.
+
+7. (Optional) Setup [netdata](https://www.netdata.cloud/) so that you can monitor the resource usage of your ground station remotely. It is suggested you do that with a parent netdata server running elsewhere, like on your tracking-dashboard server, in which case you would run:
+
+```bash
+wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh --no-updates --stable-channel --disable-telemetry
+```
+
+For accessing this netdata server, see the documentation in tracking-dashboard.
 
 You should now be able to access your device via SSH with the cloudeflared proxy or SSH in the browser. If you are using the web interface, you should also be able to access it via the browser.
 
