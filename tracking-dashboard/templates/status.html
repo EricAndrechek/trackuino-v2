@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block imports %}
+    <link href="{{ url_for('static', filename='css/status.css') }}" rel="stylesheet">
+    <script src="{{ url_for('static', filename='js/status.js') }}"></script>
+{% endblock %}
+{% block title %}
+<i class="fas fa-gauge-high"></i> &nbsp;Ground Station Statuses
+{% endblock %}
+{% block content %}
+    <div class="mt-20 container mx-auto px-4 py-8">
+        <div id="container" class="flex flex-row flex-wrap gap-4">
+            <!-- Boxes will be dynamically added here -->
+        </div>
+    </div>
+
+    <div class="hidden">
+        <!-- Template for box -->
+        <div class="rounded-lg shadow-lg p-8 grow" id="box-template">
+        </div>
+        <!-- Template for box title -->
+        <h2 class="text-2xl font-semibold text-gray-800 pb-4" id="box-title-template"></h2>
+        <!-- Template for box url -->
+        <p class="text-blue-600 hover:underline pb-2" id="box-url-template"></p>
+        <!-- Template for box status -->
+        <div class="pt-4" id="box-status-template"></div>
+    </div>
+{% endblock %}

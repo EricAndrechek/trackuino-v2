@@ -19,17 +19,19 @@ For tracking the balloon once it has landed and triggering the cut-down burn wir
   - [1.5. GPS](#15-gps)
 - [2. Setup](#2-setup)
   - [2.1. Install Ubuntu Server](#21-install-ubuntu-server)
-  - [2.2. Setup Linux](#22-setup-linux)
-  - [2.3. Setup Tunnels](#23-setup-tunnels)
-  - [2.4. Setup the Ground Station](#24-setup-the-ground-station)
+  - [2.2. Download \& Install Dependencies](#22-download--install-dependencies)
+    - [2.2.1. Automatic Setup](#221-automatic-setup)
+    - [2.2.2. Manual Setup](#222-manual-setup)
+  - [2.3. (Optional) Setup Cloudflare Tunnel](#23-optional-setup-cloudflare-tunnel)
+    - [2.3.1. After installing `cloudflared`](#231-after-installing-cloudflared)
 - [3. Additional Walk-Throughs](#3-additional-walk-throughs)
   - [3.1. Config.yml Settings](#31-configyml-settings)
   - [3.2. Web-Interface Setup \& Forwarding](#32-web-interface-setup--forwarding)
 - [4. Appendix](#4-appendix)
-  - [Libraries](#libraries)
-  - [References](#references)
-  - [SDR Software](#sdr-software)
-  - [Related Works](#related-works)
+  - [4.1. Libraries](#41-libraries)
+  - [4.2. References](#42-references)
+  - [4.3. SDR Software](#43-sdr-software)
+  - [4.4. Related Works](#44-related-works)
 
 # 1. Hardware
 
@@ -69,103 +71,55 @@ Download an Ubuntu Server iso from the internet. [Here's the download for the Li
 
 Put the iso into a tool like [Raspberry Pi Imager](https://www.raspberrypi.com/software/) and install it onto a microSD card (for installing on SBCs) or a USB (for desktop/laptop style computers). Note that for single board computers, the faster the microSD the better.
 
-## 2.2. Setup Linux
+## 2.2. Download & Install Dependencies
 
-1. Connect your device to the internet!
+1. Connect your device to the internet! For fellow people at the University of Michigan, you can connect following [this article](https://teamdynamix.umich.edu/TDClient/76/Portal/KB/ArticleDet?ID=5268) to register at [netreg.engin.umich.edu](https://netreg.engin.umich.edu/). If using ethernet you may need to contact ITS.
 
-2. Update the OS and kernel to the newest version. This may take a while.
+2. Install the necessary libraries and begin the setup process. You can either clone this repository and run the setup script, or follow the manual steps below.
+
+### 2.2.1. Automatic Setup
+
+```bash
+git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/EricAndrechek/trackuino-v2.git
+cd trackuino-v2
+git sparse-checkout set --no-cone ground-station
+git checkout
+cd ground-station
+chmod +x setup.sh
+./setup.sh
+```
+
+### 2.2.2. Manual Setup
+
+1. Update the OS and kernel to the newest version. This may take a while.
 
 ```bash
 sudo apt update
 sudo apt upgrade -y
+sudo apt autoremove -y
 ```
 
-3. Install the necessary tools and libraries.
+2. Install the necessary tools and libraries.
 
 ```bash
-sudo apt install openssh-server git nano curl wget rtl-sdr multimon-ng sox -y
+sudo apt install rtl-sdr multimon-ng sox -y
 ```
 
-1. Setup rtl udev rules to give proper access to the USB device.
+3. Setup rtl udev rules to give proper access to the USB device.
 
 ```bash
 wget https://github.com/osmocom/rtl-sdr/raw/master/rtl-sdr.rules
 sudo mv rtl-sdr.rules /etc/udev/rules.d/
 ```
 
-5. Restart udev for the rule policy changes to take effect
+4. Restart udev for the rule policy changes to take effect
 
 ```bash
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
 
-## 2.3. Setup Tunnels
-
-*Note*: While not strictly necessary, this is **strongly** recommended as it enables troubleshooting and fixing devices while in the field remotely. It also makes managing a larger fleet of devices significantly easier.
-
-For the purposes of this tutorial, we will be using Cloudflare, although none of the functionality baked into the code is Cloudflare-specific, so building your own tunnelling system with NGinx on a self-hosted server, or using a service like Tailscale is also an option.
-
-1. Create a new cloudflare tunnel and copy the install and run connectors commands
-
-```bash
-curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb && 
-
-sudo dpkg -i cloudflared.deb && 
-
-sudo cloudflared service install <super long string of characters>
-```
-
-<!-- Haven't tested this part yet:
-
-2. Login to cloudflare
-
-```bash
-cloudflared tunnel login
-```
-
-3. Create tunnel (replace GS-1 with your tunnel name)
-
-```bash
-cloudflare tunnel create GS-1
-```
-
-4. Go to cloudflare and create a self-hosted zero-trust application.
-
-5. Edit the config file
-
-```bash
-cd .cloudflared
-nano config.yml
-```
-
-and add the following
-
-```yml
-tunnel: <tunnel-uuid>
-credentials-file: /root/.cloudflared/<tunnel-uuid>.json
-warp-routing:
-    enabled: true
-ingress:
-  - hostname: <application-url>
-    service: ssh://localhost:22
-  - service: http_status:404
-```
-
-6. Next, set the dns tunnel routes, and enable the tunnel config as a systemd service so it runs automatically.
-
-```bash
-cloudflared tunnel route dns GS-1 <application-url>
-sudo cloudflared --config .cloudflared/config.yml service install
-sudo systemctl start cloudflared
-sudo systemctl enable cloudflared
-
-You should now be able to access your device via SSH or SSH in the browser.
-``` -->
-
-## 2.4. Setup the Ground Station
-
-Now, we need to clone this repository (specifically the ground station functionality), and begin the setup.
+5. Now, we need to clone this repository (specifically the ground station functionality), and begin the setup.
 
 ```bash
 git clone --no-checkout --depth=1 --filter=tree:0 https://github.com/EricAndrechek/trackuino-v2.git
@@ -177,11 +131,106 @@ cd ground-station
 
 Your file structure should now look something like `~/trackuino-v2/ground-station/`.
 
-All that's left is to edit the config.yml file to suit your needs. The below (hidden) section documents in more detail what each section of the config outlines should the config file's comments not be sufficient.
+6. Install the python dependencies
+
+```bash
+pip3 install -r requirements.txt
+```
+
+1. Update the hostname and DNS by modifying `/boot/efi/user-data` and `/boot/efi/network-config`.
+
+Hostname:
+
+```bash
+sudo nano /boot/efi/user-data
+```
+
+And it should include this line:
+
+```yaml
+hostname: gs-1
+```
+
+DNS Servers:
+
+```bash
+sudo nano /boot/efi/network-config
+```
+
+Which should look something like:
+
+```yaml
+version: 2
+ethernets:
+  eth0:
+    dhcp4: true
+    optional: true
+    nameservers: 
+      addresses: [1.1.1.1, 8.8.8.8]
+```
+
+8. Edit the config.yml file to suit your needs. See [this section](#31-configyml-settings) for more information.
+
+9. Reboot! (`sudo reboot`)
+
+## 2.3. (Optional) Setup Cloudflare Tunnel
+
+*Note*: While not strictly necessary, this is **strongly** recommended as it enables troubleshooting and fixing devices while in the field remotely. It also makes managing a larger fleet of devices significantly easier.
+
+For the purposes of this tutorial, we will be using Cloudflare, although none of the functionality baked into the code is Cloudflare-specific, so building your own tunnelling system with NGinx on a self-hosted server, or using a service like Tailscale is also an option.
+
+Instead of following my steps, feel free to follow along with [Cloudflare's official guide](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/use-cases/ssh/#connect-to-ssh-server-with-cloudflared-access)
+
+The setup script will automatically prompt you and offer to install cloudflared for you, but if you want to do it manually, follow the instructions below.
+
+
+<details>
+<summary>
+  Manual Cloudflare Tunnel Setup
+</summary>
+  Create a new cloudflare tunnel and copy the install and run connectors commands
+
+  ```bash
+  curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64.deb
+
+  sudo dpkg -i cloudflared.deb
+  ```
+</details>
+<br>
+
+### 2.3.1. After installing `cloudflared`
+
+1. Create a new cloudflare tunnel and copy the install and run connectors commands, which should look something like this:
+
+```bash
+sudo cloudflared service install <long_id>
+```
+
+2. Create a cloudflare zero-trust access policy for the tunnel
+
+3. Create a cloudflare zero-trust application for the tunnel (select self-hosted) and add the policy to it.
+
+4. (SSH only, not Web Interface) Go to the application's settings and turn on browser-rendering.
+
+5. Visit the application's URL in a browser and login with your access policy. 
+
+6. (Optional) Create a new public hostname for the same tunnel for the web interface and repeat steps 2-5.
+
+7. (Optional) Setup [netdata](https://www.netdata.cloud/) so that you can monitor the resource usage of your ground station remotely. It is suggested you do that with a parent netdata server running elsewhere, like on your tracking-dashboard server, in which case you would run:
+
+```bash
+wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh --no-updates --stable-channel --disable-telemetry
+```
+
+For accessing this netdata server, see the documentation in tracking-dashboard.
+
+You should now be able to access your device via SSH with the cloudeflared proxy or SSH in the browser. If you are using the web interface, you should also be able to access it via the browser.
 
 # 3. Additional Walk-Throughs
 
 ## 3.1. Config.yml Settings
+
+Edit the config.yml file to suit your needs. The below (hidden) section documents in more detail what each section of the config outlines should the config file's comments not be sufficient.
 
 <details>
     <summary>
@@ -189,6 +238,7 @@ All that's left is to edit the config.yml file to suit your needs. The below (hi
     </summary>
     TODO: config stuff here
 </details>
+<br>
 
 ## 3.2. Web-Interface Setup & Forwarding
 
@@ -196,20 +246,24 @@ All that's left is to edit the config.yml file to suit your needs. The below (hi
 
 Check out the resources below for additional information and readings:
 
-## Libraries
+## 4.1. Libraries
 
 - [librtlsdr](https://github.com/steve-m/librtlsdr)
 - [multimon-ng](https://github.com/EliasOenal/multimon-ng)
 - [SoX](https://github.com/chirlu/sox)
+- [aprslib](https://github.com/rossengeorgiev/aprs-python)
+- [aprs-symbols](https://github.com/hessu/aprs-symbols)
+- [aprs-symbol-index](https://github.com/hessu/aprs-symbol-index)
+- [aprs-deviceid](https://github.com/aprsorg/aprs-deviceid)
 
-## References
+## 4.2. References
 
 - [RTL-SDR Blog](https://www.rtl-sdr.com/about-rtl-sdr/)
 - [osmosom.org rtl-sdr](https://osmocom.org/projects/rtl-sdr/wiki/Rtl-sdr)
 - [Rtl_fm Guide](http://kmkeen.com/rtl-demod-guide/index.html)
 - [Radio Reference](https://www.radioreference.com/db/) (useful for seeing nearby frequency allocations)
 
-## SDR Software
+## 4.3. SDR Software
 
 Ultimately, just follow this website list and use what works best for you: [rtl-sdr.com/big-list-rtl-sdr-supported-software/](https://www.rtl-sdr.com/big-list-rtl-sdr-supported-software/)
 
@@ -219,7 +273,7 @@ The applications I found the easiest and most useful were:
 - [GQRX](http://gqrx.dk/) (Linux/Mac/WSL)
 - [SDR++](https://github.com/AlexandreRouma/SDRPlusPlus) (Linux/Mac/Windows)
 
-## Related Works
+## 4.4. Related Works
 
 - [Raspberry Pi + RTL SDR dongle = APRS Rx only gate](https://e.pavlin.si/2014/12/10/raspberry-pi-rtl-sdr-dongle-aprs-rx-only-gate-part-two/) (this exact project minus the packaging, easy setup/config, and web interface)
 - [APRS CLI Decoding](https://gist.github.com/jj1bdx/8ab103e774c81d2c068d455ab862b72e) (effectively what this project is doing without a few extra features unqiue to this project)
@@ -227,3 +281,4 @@ The applications I found the easiest and most useful were:
 - [pymultimonaprs](https://github.com/asdil12/pymultimonaprs) (very similar, but was python 2, outdated, and didn't have the features we wanted)
 - [pymma](https://github.com/ampledata/pymma) (fork of pymultimonapr)
 - [aprs-receiver](https://github.com/EricAndrechek/aprs-receiver) (a previous iteration of this project, but for hardware TNCs and built in a rush :sweat_smile:)
+- [pypacket](https://github.com/cceremuga/pypacket) (now defunct, but was a similar project to this one)

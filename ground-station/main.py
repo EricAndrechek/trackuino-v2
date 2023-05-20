@@ -1,13 +1,12 @@
-from rtlsdr import RtlSdr
-import utilities
-from config_reader import config
+from utilities import config, passcode
+import sys
 
-sdr = RtlSdr()
 
-# configure device
-sdr.sample_rate = config['sample_rate']
-sdr.center_freq = config['freq']
-sdr.freq_correction = config['ppm']
-sdr.gain = config['gain']
+if __name__ == '__main__':
+    config_file = sys.argv[1] if len(sys.argv) > 1 else 'config.yaml'
+    conf = config.Config(config_file)
+    passcode.add_passcode(conf)
 
-print(sdr.read_samples(512))
+    
+
+    print(conf)
