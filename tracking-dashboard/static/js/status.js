@@ -22,6 +22,12 @@ const getStatus = async () => {
     }
     console.log(e);
   }
+
+  // sort tunnels by name
+  data.result.sort((a, b) => {
+    return a.name.localeCompare(b.name);
+  });
+
   return data;
 };
 
@@ -118,7 +124,9 @@ const createBoxes = (data) => {
       box.removeAttribute("id");
       box.dataset.name = tunnel.name;
 
-      const title = document.cloneNode(true).getElementById("box-title-template");
+      const title = document
+        .cloneNode(true)
+        .getElementById("box-title-template");
       title.removeAttribute("id");
       title.innerText = tunnel.name;
 
@@ -127,7 +135,9 @@ const createBoxes = (data) => {
       const details = tunnel.details.ingress || [];
       details.forEach((detail) => {
         if (detail.hostname) {
-          const url = document.cloneNode(true).getElementById("box-url-template");
+          const url = document
+            .cloneNode(true)
+            .getElementById("box-url-template");
           url.removeAttribute("id");
           let url_value = detail.hostname;
           if (detail.path) {
@@ -138,7 +148,9 @@ const createBoxes = (data) => {
         }
       });
 
-      const status = document.cloneNode(true).getElementById("box-status-template");
+      const status = document
+        .cloneNode(true)
+        .getElementById("box-status-template");
       status.removeAttribute("id");
       status.innerHTML = getStatusHTML(tunnel.status, tunnel.config);
 

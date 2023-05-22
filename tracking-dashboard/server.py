@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from config_helper import load_config as conf
 import requests
 import subprocess
@@ -45,6 +45,10 @@ def api_pull():
 @app.route('/api/tunnel', methods=['GET'])
 def api_tunnel():
     return jsonify(get_tunnel_status())
+
+@app.route('/netdata/<path:filename>', methods=['GET'])
+def netdata(filename):
+    return redirect("https://{}/{}".format(config['Netdata-Host'], filename), code=302)
 
 @app.route('/', defaults={'path': 'index'})
 @app.route('/<path:path>')
