@@ -8,24 +8,8 @@ app = Flask(__name__)
 
 config = conf('config.yaml')
 
-def get_tunnel_status():
-    # TODO: caching, error handling, and status logging for graphing
-
-    url = 'https://api.cloudflare.com/client/v4/accounts/{}/cfd_tunnel?is_deleted=false'.format(config['CF-Tunnel-User-ID'])
-    headers = {
-        'Authorization': 'Bearer {}'.format(config['CF-Tunnel-API-Key'])
-    }
-    r = requests.get(url, headers=headers)
-
-    data = r.json()
-
-    # for each tunnel, get the tunnel details
-    for tunnel in data['result']:
-        url = 'https://api.cloudflare.com/client/v4/accounts/{}/cfd_tunnel/{}/configurations'.format(config['CF-Tunnel-User-ID'], tunnel['id'])
-        r = requests.get(url, headers=headers)
-        tunnel['details'] = r.json()['result']['config']
-    
-    return data
+cf_config = config['Cloudflare']
+nd_config = config['Netdata']
 
 @app.route('/api', methods=['POST'])
 def api():
@@ -38,17 +22,14 @@ def server_status():
 
 @app.route('/api/pull', methods=['GET'])
 def api_pull():
+    # TODO: set to work only from specific IP addresses or with a token
+    # so that it can't be abused (ie only allow GH actions to trigger it)
+
+    # TODO: figure out how to make it work when run under production WSGI and systemd
+
     # pull the latest version of the repo and return the result
     result = subprocess.run(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return jsonify({'result': result.stdout.decode('utf-8')})
-
-@app.route('/api/tunnel', methods=['GET'])
-def api_tunnel():
-    return jsonify(get_tunnel_status())
-
-@app.route('/netdata/<path:filename>', methods=['GET'])
-def netdata(filename):
-    return redirect("https://{}/{}".format(config['Netdata-Host'], filename), code=302)
 
 @app.route('/', defaults={'path': 'index'})
 @app.route('/<path:path>')
@@ -65,5 +46,5 @@ def page_not_found(e):
 
 if __name__ == '__main__':
     print(config)
-    logging.basicConfig(filename='error.log',level=logging.DEBUG)
-    app.run(debug=True)
+    logging.basicConfig(filename='error.log', level=logging.DEBUG if config['Debug'] else logging.INFO)
+    app.run(debug=True if config['Debug'] else False, host=config['Host'], port=config['Port'])
