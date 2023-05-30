@@ -11,13 +11,21 @@ app = Flask(__name__)
 def inject_user():
     return dict(title=config.title, map_enabled=config.map.enabled, status_enabled=config.status.enabled)
 
-# custom endpoints
+# CUSTOM ENDPOINTS
+
+# status page api endpoint
 
 if config.status.enabled:
     from blueprints.status import status_app
     app.register_blueprint(status_app)
 
-# default endpoint disable logic
+# map page api endpoint
+
+if config.map.enabled:
+    from blueprints.map import map_app
+    app.register_blueprint(map_app)
+
+# DEFAULT ENDPOINT DISABLE LOGIC
 
 # should flow as follows:
 # if map is enabled, show map
@@ -50,23 +58,20 @@ else:
         return render_template('404.html'), 404
 
 
-# api endpoints
+# API ENDPOINTS
+
+# TODO: set to work only from specific IP addresses or with a token
+# so that they can't be abused (ie only allow GH actions to trigger it)
 
 # force all cached http requests to refresh (also happens on restart)
 @app.route('/api/refresh', methods=['POST'])
 def cache_refresh():
-    # TODO: set to work only from specific IP addresses or with a token
-    # so that it can't be abused (ie only allow GH actions to trigger it)
-
     # should run the .refresh() method of status (likely will want to make it async)
     return "OK"
 
 # pull the latest version of the repo from github
 @app.route('/api/pull', methods=['GET'])
 def api_pull():
-    # TODO: set to work only from specific IP addresses or with a token
-    # so that it can't be abused (ie only allow GH actions to trigger it)
-
     # TODO: figure out how to make it work when run under production WSGI and systemd
 
     # TODO: needs to install any new dependencies from requirements.txt
@@ -75,7 +80,25 @@ def api_pull():
     result = subprocess.run(['git', 'pull'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     return jsonify({'result': result.stdout.decode('utf-8')})
 
-# catch all for html pages that aren't explicitly defined
+
+@app.route('/api/health', methods=['GET'])
+def api_health():
+    return jsonify({'result': 'OK'})
+
+@app.route('/api/db', methods=['DELETE'])
+def api_db_delete():
+    # TODO: some sort of safe cleanup of running processes
+    # either delete with sqlite3 or just delete the file
+    return "not implemented", 501
+
+@app.route('/api/db', methods=['GET'])
+def api_db_get():
+    # TODO: get the current db file and return it
+    return "not implemented", 501
+
+# TODO: allow getting specific tables from the db and render them in the browser
+
+# CATCH ALL FOR HTML PAGES THAT AREN'T EXPLICITLY DEFINED
 
 @app.route('/', defaults={'path': 'index'})
 @app.route('/<path:path>')
@@ -85,7 +108,7 @@ def show(path):
     except Exception as e:
         return render_template('404.html'), 404
 
-# error handlers
+# ERROR HANDLERS
     
 @app.errorhandler(404)
 def page_not_found(e):
@@ -95,7 +118,7 @@ def page_not_found(e):
 def internal_server_error(e):
     return render_template('500.html', msg=e)
 
-# main
+# MAIN
 
 if __name__ == '__main__':
     if config.debug:

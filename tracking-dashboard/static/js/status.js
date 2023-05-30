@@ -117,6 +117,7 @@ const createBoxes = (data) => {
         if (existingBox) {
             const status = existingBox.querySelector("div");
             status.innerHTML = getStatusHTML(node.status);
+            // TODO: update other box details
         } else {
             const box = document.cloneNode(true).getElementById("box-template");
             box.removeAttribute("id");
@@ -142,6 +143,8 @@ const createBoxes = (data) => {
                     box.appendChild(url);
                 }
             });
+
+            // TODO: add status monitor UI
 
             const status = document
                 .cloneNode(true)

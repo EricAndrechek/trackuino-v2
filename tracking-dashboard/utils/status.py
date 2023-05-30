@@ -8,6 +8,8 @@ if config.status.cloudflare.enabled:
 if config.status.netdata.enabled:
     from utils.netdata import ND_Stats
 
+from utils.pydb import PyDB
+
 class Status:
     def __init__(self):
         if config.status.cloudflare.enabled:
@@ -19,6 +21,8 @@ class Status:
         self.status = []
 
         self._get_status()
+
+        # TODO: integrate with database to store status history and make sure references are up to date
     
     def _package_host_data(self, cf=None, nd=None):
         # verify that at least one is not None
