@@ -1,6 +1,3 @@
-from yaml import load, Loader
+from box import Box, ConfigBox
 
-def load_config(config_path):
-    with open(config_path, 'r') as f:
-        config = load(f, Loader=Loader)
-    return config
+config = ConfigBox(Box.from_yaml(filename='config.yaml', camel_killer_box=True))

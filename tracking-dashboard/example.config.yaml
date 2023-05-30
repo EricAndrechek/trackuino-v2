@@ -47,9 +47,8 @@ Status:
         # this can be used to un-hide deleted tunnels from the status page
         show-deleted: false
 
-        # these can safely be made public as they are only used for the tunnel read
-        API Key: mzQIKWbkzJ3gcZ5mFercBN1Ds42x0RJ-BgWj35uN
-        User ID: a83636122a9deb90dc326f3f97dc891e
+        API Key: api-key
+        User ID: user-id
 
         # disable to prevent end-users from seeing the exposed tunnel URLs
         # can be overridden on a per-tunnel basis by setting the "expose" field under Hosts
@@ -59,7 +58,7 @@ Status:
         enabled: true
 
         # the URL of the netdata server (this assumes you have netdata in a setup with one parent server and one or more child servers)
-        host: https://status.umich-balloons.com
+        host: https://example.com
 
         # the default metrics to show for each netdata host, if they are available
         metrics:
