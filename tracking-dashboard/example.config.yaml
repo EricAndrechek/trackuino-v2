@@ -18,17 +18,6 @@ Map:
     # fully disables the map page and removes it from the navbar (this changes the default page to the status page)
     enabled: true
 
-# database for host status updates to be tracked and tracker data to be stored
-Database:
-    # disabling the database means the map can only show new data as it arrives on APRS-IS
-    # this makes it possible to run the dashboard without a server as a pure frontend application
-    enabled: true
-
-    user: user
-    password: password
-    host: localhost
-    port: 5432
-    database: database
 
 # status page that shows each host (ground stations and servers)
 Status:
@@ -47,12 +36,16 @@ Status:
         # this can be used to un-hide deleted tunnels from the status page
         show-deleted: false
 
-        API Key: api-key
-        User ID: user-id
+        # these can safely be made public as they are only used for the tunnel read
+        API Key: mzQIKWbkzJ3gcZ5mFercBN1Ds42x0RJ-BgWj35uN
+        User ID: a83636122a9deb90dc326f3f97dc891e
 
         # disable to prevent end-users from seeing the exposed tunnel URLs
         # can be overridden on a per-tunnel basis by setting the "expose" field under Hosts
         show hostnames: true
+
+        # hide any hostnames that use the ssh service
+        hide ssh hostnames: true
 
     Netdata:
         enabled: true
@@ -60,45 +53,46 @@ Status:
         # the URL of the netdata server (this assumes you have netdata in a setup with one parent server and one or more child servers)
         host: https://example.com
 
-        # the default metrics to show for each netdata host, if they are available
         metrics:
-            - cpu
-            - memory
-            - disk
-            - network
+        # comment out or remove any metrics you don't want to show
+        - cpu # % of cpu used
+
+        - perc ram # % of ram used
+        - used ram # amount of ram used (autoscales to KB, MB, etc.)
+
+        - uptime # uptime in human-readable time (autoscales)
+
+        - traffic up # data uploaded per second (autoscales to KB/s, MB/s, etc.)
+        - traffic down # data downloaded per second (autoscales to KB/s, MB/s, etc.)
+        - traffic total # total data transferred (autoscales to KB, MB, etc.)
+
+        - io # data written and read to disk per second (autoscales to KB/s, MB/s, etc.)
+
+        - perc disk # % of disk used
+        - used disk # total disk space used (autoscales to KB, MB, etc.)
+        - free disk # total disk space free (autoscales to KB, MB, etc.)
     
     Hosts:
-        # if not set, the server will attempt to intelligently map each cloudflare tunnel to a netdata host
-        # if set, the server will only show the hosts specified here in the order listed
+        # match each cloudflare tunnel to a netdata node to combine the data
+        # or leave the netdata node blank to only show the cloudflare tunnel
+        # or leave the cloudflare tunnel blank to only show the netdata node
 
-        # if a cloudflare tunnel does not have a corresponding netdata host, or a netdata host does not 
-        # have a corresponding cloudflare tunnel, set the value to null or omit it entirely
+        # if you have multiple tunnels on the same host, you can use the same netdata node for each tunnel
 
-        # if no cloudflare tunnel or netdata host is specified, the server will attempt to intelligently
-        # set them based on the host's name. This is useful when setting a custom display order without
-        # having to specify every host's details
+        # you can specify either tunnel names (cf name) or tunnel ids (cf id) for cloudflare tunnels
 
-        # additionally, for each host specified, you can set custom Cloudflare and Netdata options to override
-        # the values set above. This is useful for hosts that may be under a different cloudflare account or
-        # netdata server than the rest of the hosts, or if you want some hosts to display different metrics
+        # you can specify either netdata node names (nm) or netdata node ids (ni) for netdata nodes
 
-        # # example:
-        # -
-        # name: Ground Station 1
-        # cloudflare-tunnel: gs-1
-        # - 
-        # name: Ground Station 2
-        # cloudflare-tunnel: gs-2
-        # netdata-host: GS-2
-        # expose: false
-        # -
-        # name: Server 1
-        # cloudflare-tunnel: null
-        # netdata-host: server-1
-        # expose: true
-        # Netdata:
-        #     metrics:
-        #         - cpu
+        # the order the hosts are listed in here is the order they will be displayed in on the status page
 
-    # if a host is found not defined in the config above, it will be shown with auto-generated values when true
-    show-other-hosts: true
+        -
+            # the cloudflare tunnel name or id
+            cf id: a83636122a9deb90dc326f3f97dc891e
+            # cf name: gs1
+
+            # the netdata node name or id
+            nd id: 0
+            # nd name: 
+        -
+            cf name: GS-1
+            nd name: gs-1

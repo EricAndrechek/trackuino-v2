@@ -1,6 +1,6 @@
 const getStatus = async () => {
     // TODO: add error handling
-    const response = await fetch("/api/tunnel");
+    const response = await fetch("/api/status");
 
     // get status code
     const status = await response.status;
@@ -24,11 +24,6 @@ const getStatus = async () => {
         }
         console.log(e);
     }
-
-    // sort tunnels by name
-    data.result.sort((a, b) => {
-        return a.name.localeCompare(b.name);
-    });
 
     return data;
 };
@@ -69,8 +64,8 @@ const getStatusHTML = (status) => {
 
     let html = `
     <span class="text-md font-semibold ${colorClass}" title="${message}">
-    <i class="fas ${icon} icon"></i>
-    ${status.toUpperCase()}
+        <i class="fas ${icon} icon"></i>
+        ${status.toUpperCase()}
     </span>
     `;
 
@@ -109,7 +104,7 @@ const createBoxes = (data) => {
     // Remove boxes that no longer exist
     existingBoxes.forEach((box) => {
         const shouldRemove = !data.result.find(
-            (tunnel) => tunnel.name === box.dataset.name
+            (node) => node.name === box.dataset.name
         );
         if (shouldRemove) {
             container.removeChild(box);
@@ -117,36 +112,33 @@ const createBoxes = (data) => {
     });
 
     // Add or update existing boxes
-    data.result.forEach((tunnel) => {
-        const existingBox = container.querySelector(`[data-name="${tunnel.name}"]`);
+    data.forEach((node) => {
+        const existingBox = container.querySelector(`[data-name="${node.name}"]`);
         if (existingBox) {
             const status = existingBox.querySelector("div");
-            status.innerHTML = getStatusHTML(tunnel.status);
+            status.innerHTML = getStatusHTML(node.status);
         } else {
             const box = document.cloneNode(true).getElementById("box-template");
             box.removeAttribute("id");
-            box.dataset.name = tunnel.name;
+            box.dataset.name = node.name;
 
             const title = document
                 .cloneNode(true)
                 .getElementById("box-title-template");
             title.removeAttribute("id");
-            title.innerText = tunnel.name;
+            title.innerText = node.name;
 
             box.appendChild(title);
 
-            const details = tunnel.details.ingress || [];
+            const details = node.hosts || [];
             details.forEach((detail) => {
                 if (detail.hostname) {
                     const url = document
                         .cloneNode(true)
                         .getElementById("box-url-template");
                     url.removeAttribute("id");
-                    let url_value = detail.hostname;
-                    if (detail.path) {
-                        url_value += "/" + detail.path;
-                    }
-                    url.innerHTML = `<a href="https://${url_value}" target="_blank">${url_value}</a>`;
+                    // potentially the ability to do something with the detail.service value
+                    url.innerHTML = `<a href="https://${detail.hostname}" target="_blank">${detail.hostname}</a>`;
                     box.appendChild(url);
                 }
             });
@@ -155,7 +147,7 @@ const createBoxes = (data) => {
                 .cloneNode(true)
                 .getElementById("box-status-template");
             status.removeAttribute("id");
-            status.innerHTML = getStatusHTML(tunnel.status, tunnel.config);
+            status.innerHTML = getStatusHTML(node.status, node.config);
 
             box.appendChild(status);
             container.appendChild(box);

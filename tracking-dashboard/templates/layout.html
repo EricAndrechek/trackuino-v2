@@ -26,8 +26,15 @@
 
         <!-- Menu -->
         <nav class="hidden md:flex items-center space-x-4">
-          <a href="/" class="text-white hover:text-gray-300">Map</a>
-          <a href="/status" class="text-white hover:text-gray-300">Status</a>
+          {% if map_enabled %}
+            <a href="/" class="text-white hover:text-gray-300">Map</a>
+          {% endif %}
+          {% if not map_enabled and status_enabled %}
+            <a href="/" class="text-white hover:text-gray-300">Status</a>
+          {% endif %}
+          {% if map_enabled and status_enabled %}
+            <a href="/status" class="text-white hover:text-gray-300">Status</a>
+          {% endif %}
           <a href="/settings" class="text-white hover:text-gray-300"
             >Settings</a
           >
@@ -62,6 +69,7 @@
 
     <footer class="bg-blue-600 py-4 px-6 mt-8">
       <div class="grid grid-cols-3 justify-items-center">
+        <!--TODO: this may need to be changed when things get disabled-->
         <a href="/" class="text-white text-sm">Live Tracking Map</a>
         <a href="/status" class="text-white text-sm">Ground Station Statuses</a>
         <a
