@@ -159,6 +159,7 @@ const createBoxes = (data) => {
 };
 
 const updateBoxes = async () => {
+    console.log("updating boxes");
     const data = await getStatus();
     createBoxes(data);
 };
@@ -166,15 +167,17 @@ const updateBoxes = async () => {
 let updater;
 
 window.addEventListener("load", async () => {
-    await updateBoxes(); // Initial box update on page load
     updater = setInterval(updateBoxes, 5000); // Update boxes every 5 seconds (adjust the interval as needed)
+    updateBoxes(); // Initial box update on page load
 });
 
 window.addEventListener("focus", async () => {
-    await updateBoxes(); // Update boxes when window is focused
+    console.log("focused");
     updater = setInterval(updateBoxes, 5000); // Update boxes every 5 seconds (adjust the interval as needed)
+    updateBoxes(); // Update boxes when window is focused
 });
 
 window.addEventListener("blur", () => {
+    console.log("blurred");
     clearInterval(updater); // Stop updating boxes when window is not focused
 });
