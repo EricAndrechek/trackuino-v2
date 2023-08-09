@@ -1,0 +1,6 @@
+[submodule "balloon-tracker/software/libraries/Arduino-Log"]
+	path = balloon-tracker/software/libraries/Arduino-Log
+	url = git@github.com:thijse/Arduino-Log.git
+[submodule "balloon-tracker/software/libraries/TinyGPSMinus"]
+	path = balloon-tracker/software/libraries/TinyGPSMinus
+	url = git@github.com:EricAndrechek/TinyGPSMinus.git

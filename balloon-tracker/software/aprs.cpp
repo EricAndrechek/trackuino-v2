@@ -1,82 +1,93 @@
-/* trackuino copyright (C) 2010  EA5HAV Javi
-* trackduino-v2 copyright (C) 2022 EricAndrechek
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-*/
+// Path: software/aprs.cpp
+// Description: This file builds the APRS packets that can be used to transmit data via radio or satellite.
 
+// include libraries
+#include <SoftwareSerial.h>
+
+// include configuration
 #include "config.h"
-#include "ax25.h"
-#include "gps.h"
-#include "aprs.h"
-#include "sensors_avr.h"
-#include "sensors_pic32.h"
-#include <stdio.h>
-#include <stdlib.h>
-#if (ARDUINO + 1) >= 100
-#  include <Arduino.h>
-#else
-#  include <WProgram.h>
-#endif
+#include "variables.h"
 
-// Module functions
-float meters_to_feet(float m)
-{
-  // 10000 ft = 3048 m
-  return m / 0.3048;
+// define helper functions
+
+
+// take the destination, source, and digipeating information and build the header
+// this header is only for display purposes and is not the one transmitted
+char build_header() {
+    // S_CALLSIGN   -   6 chars
+    // "-"          -   1 char
+    // S_SSID       -   1 char
+
+    // ">"          -   1 char
+
+    // D_CALLSIGN   -   6 chars
+    // "-"          -   1 char
+    // D_SSID       -   1 char
+
+    // ":"          -   1 char
+
+    // total: 18 chars
+    // 19th char is null terminator
+
+    char header[19];
+
+    // build header
+    sprintf(header, "%s-%d>%s-%d:", S_CALLSIGN, S_SSID, D_CALLSIGN, D_SSID);
+
+    return header;
 }
 
-// Exported functions
-void aprs_send() {
-  char temp[12];                   // Temperature (int/ext)
-  const struct s_address addresses[] = {
-    {D_CALLSIGN, D_CALLSIGN_ID},  // Destination callsign
-    {S_CALLSIGN, S_CALLSIGN_ID},  // Source callsign (-11 = balloon, -9 = car)
-    {DIGI_PATH1, DIGI_PATH1_TTL}, // Digi1 (first digi in the chain)
-  };
 
-  ax25_send_header(addresses, sizeof(addresses) / sizeof(s_address));
-  // TODO should be able to remove second param with 3
+char build_uncompressed_body(char *HMS, char *LAT, char *LON, char *CSE, char *SPD, char *ALT) {
+    
 
-  ax25_send_byte('/');                // Report w/ timestamp, no APRS messaging. $ = NMEA raw data
-  // ax25_send_string("021709z");     // 021709z = 2nd day of the month, 17:09 zulu (UTC/GMT)
-  ax25_send_string(gps_time);         // 170915 = 17h:09m:15s zulu (not allowed in Status Reports)
-  ax25_send_byte('h');
-  ax25_send_string(gps_aprs_lat);     // Lat: 38deg and 22.20 min (.20 are NOT seconds, but 1/100th of minutes)
-  ax25_send_byte('/');                // Symbol table
-  ax25_send_string(gps_aprs_lon);     // Lon: 000deg and 25.80 min
-  ax25_send_byte(APRS_SYMBOL);        // Symbol: O=balloon, -=QTH
-  snprintf(temp, 4, "%03d", (int)(gps_course + 0.5));
-  ax25_send_string(temp);             // Course (degrees)
-  ax25_send_byte('/');                // and
-  snprintf(temp, 4, "%03d", (int)(gps_speed + 0.5));
-  ax25_send_string(temp);             // speed (knots)
-  ax25_send_string("/A=");            // Altitude (feet). Goes anywhere in the comment area
-  snprintf(temp, 7, "%06ld", (long)(meters_to_feet(gps_altitude) + 0.5));
-  ax25_send_string(temp);
-  ax25_send_string("/Ti=");
-  snprintf(temp, 6, "%d", sensors_int_lm60());
-  ax25_send_string(temp);
-  ax25_send_string("/Te=");
-  snprintf(temp, 6, "%d", sensors_ext_lm60());
-  ax25_send_string(temp);
-  ax25_send_string("/V=");
-  snprintf(temp, 6, "%d", sensors_vin());
-  ax25_send_string(temp);
-  ax25_send_byte(' ');
-  ax25_send_string(APRS_COMMENT);     // Comment
-  ax25_send_footer();
+    // "="          -   1 char (position without timestamp with APRS messaging)
+    // HMS          -   7 chars (HHMMSS"h")
+    // LAT          -   8 chars (ddmm.hhN) degrees, decimal minutes (to 2 decimal places), and N/S
+    // APRS_TABLE   -   1 char (symbol table)
+    // LON          -   9 chars (dddmm.hhW) degrees, decimal minutes (to 2 decimal places), and E/W
+    // APRS_SYMBOL  -   1 char (symbol)
+    // CSE          -   3 chars (001-360) course over ground, clockwise from due north
+    // "/"          -   1 char course/speed separator
+    // SPD          -   3 chars (000-999) speed over ground, knots
 
-  ax25_flush_frame();                 // Tell the modem to go
+    // Note: for ambiguity in lat/lon data, replace values with spaces starting from the right
+    // ie: 1 space = lat to 1/10 minute, 2 = nearest minute, 3 = nearest 10 minutes, 4 = nearest degree
+    // This ambiguity level will automatically apply to longitude as well
+
+    // For no GPS lock, transmit at 0˚0'0"N 0˚0'0"W and transmit \. symbol
+
+    // Note: for course and speed unknown, replace with .../...
+
+
+    // total: 34 chars
+
+    // 36 left for comment
+
+    // Altitude     -   9 chars - should be in comment text in format /A=aaaaaa (feet)
+
+    // 45 total chars (44 + null terminator)
+
+    char body[44];
+
+    sprintf(body, "=%s%s%c%s%c%s/%s%s", HMS, LAT, APRS_TABLE, LON, APRS_SYMBOL, CSE, SPD, ALT);
+
+    return body;
 }
+
+char build_compressed_body() {
+
+    // "/"          -   1 char (position without timestamp with APRS messaging)
+    // HMS          -   7 chars (HHMMSS"h")
+    // APRS_TABLE   -   1 char (symbol table)
+    // YYYY         -   4 chars (compressed latitude)
+    // XXXX         -   4 chars (compressed longitude)
+    // APRS_SYMBOL  -   1 char (symbol)
+    // CS           -   2 chars (course and speed)
+    // T            -   1 char (compression type indicator)
+
+    // all bytes except / and $ are base-91 printable ASCII characters
+    // they are converted to numeric values by subtracting 33 from their ASCII value
+    // ie # = 35 - 33 = 2
+
+

@@ -4,12 +4,12 @@
 // THIS IS THE TRACKUINO FIRMWARE CONFIGURATION FILE. YOUR CALLSIGN AND
 // OTHER SETTINGS GO HERE.
 //
-// TO MODIFY THIS CONFIGURATION FILE IN A GUI, VISIT: 
-// https://trackuino-v2.andrechek.com/config-builder
-//
 // NOTE: all pins are Arduino based, not the Atmega chip. Mapping:
 // https://www.arduino.cc/en/Hacking/PinMapping
 
+// Config file variables. Do not touch.
+#include "variables.h"
+// end do not touch
 
 // --------------------------------------------------------------------------
 // GENERAL CONFIGURATION
@@ -18,43 +18,22 @@
 // Trackuino Config
 
 // How frequently should data be collected, stored, and transmitted?
-#define DATA_TIMEOUT 60 // seconds
+#define DATA_TIMEOUT 15 // seconds
 
 // The offset in seconds from the top of the minute that messages are
-// transmitted/stored. This is primarily for APRS messages so that they
+// transmitted/stored. This is primarily for radio messages so that they
 // do not step on each other and cause interference.
 //
-// For multiple Trackuinos all using APRS, give them all different offsets
+// For multiple Trackuinos all using radios, give them all different offsets
 // of equal spacing.
 //
 // Set to -1 to disable. Not including GPS will also disable this feature.
 #define LOG_SLOT -1 // seconds
-// TODO: get time from GSM if GPS is not included
 
 // Sensors Config (sensors.cpp)
-
-// Most of the sensors.cpp functions use internal reference voltages (either
-// AVCC or 1.1V). If you want to use an external reference, you should
-// uncomment the following line (or select it as true/enabled in the GUI):
-// #define USE_AREF
-
-// BEWARE! If you hook up an external voltage to the AREF pin and
-// accidentally set the ADC to any of the internal references, YOU WILL
-// FRY YOUR AVR.
-//
-// Since there is already a 32K resistor at the ADC pin, the actual
-// voltage read will be VREF * 32 / (32 + AREF_PULLUP)
-//
-// It is always advised to connect the AREF pin through a pull-up resistor,
-// whose value is defined here in ohms (set to 0 if no pull-up):
-#define AREF_PULLUP 4700
-
-// Units for temperature sensors (Added by: Kyle Crockett)
-// 1 = Celsius, 2 = Kelvin, 3 = Fahrenheit
-#define TEMP_UNIT 1
-
-// Calibration value in the units selected. Use integer only.
-#define CALIBRATION_VAL 0
+// m and b values for the temperature sensor calibration
+#define TEMP_SLOPE 0
+#define TEMP_OFFSET 0
 
 
 // --------------------------------------------------------------------------
@@ -63,13 +42,13 @@
 
 // Module Config
 
-// Uncomment the lines for each module you would like to enable
+// Comment out a line to disable that module.
 
-// #define APRS_MODULE
-// #define BUZZER_MODULE
+#define BUZZER_MODULE
 #define GPS_MODULE
-// #define GSM_MODULE
-// #define SD_MODULE
+#define SD_MODULE
+// specify whether data will be transmitted via RADIO_MODULE or SATELLITE_MODULE
+#define TRANSMITTER RADIO_MODULE
 
 // Be sure to fill out the configuration for each module you are using.
 
@@ -80,91 +59,32 @@
 
 // APRS Config (aprs.cpp)
 
-// Repalce with your callsign
+// Replace with your callsign
 #define S_CALLSIGN "MYCALL"
+// Replace with your ssid - useful for tracking multiple balloons with the same
+// callsign. 11 is the standard for high altitude balloons, but any number 0-15
+// is valid.
+#define S_SSID 11
 
-// Common values for the SSID are
-// (from http://www.aprs.org/aprs11/SSIDs.txt):
-// 0  Your primary station usually fixed and message capable
-// 1  generic additional station, digi, mobile, wx, etc
-// 2  generic additional station, digi, mobile, wx, etc
-// 3  generic additional station, digi, mobile, wx, etc
-// 4  generic additional station, digi, mobile, wx, etc
-// 5  Other networks(Dstar, Iphones, Androids, Blackberry's etc)
-// 6  Special activity, Satellite ops, camping or 6 meters, etc
-// 7  walkie talkies, HT's or other human portable
-// 8  boats, sailboats, RV's or second main mobile
-// 9  Primary Mobile(usually message capable)
-// 10 internet, Igates, echolink, winlink, AVRS, APRN, etc
-// 11 balloons, aircraft, spacecraft, etc
-// 12 APRStt, DTMF, RFID, devices, one - way trackers*, etc
-// 13 Weather stations
-// 14 Truckers or generally full time drivers
-// 15 generic additional station, digi, mobile, wx, etc
-//
-// default is 11 for balloon
-#define S_CALLSIGN_ID 11
+// Destination callsign: controls symbol
+#define D_CALLSIGN "GPS"
+// GPS allows for symbol, table, and overlay
+
+// Destination callsign SSID: controls digipeating
+#define D_SSID 2
+// 2: Wide2-2 - good for most situations
 
 // set the symbol you want the aprs.fi map to represent you as:
-// http://www.aprs.net/vm/DOS/SYMBOLS.HTM#:~:text=PRIMARY%20SYMBOL%20TABLE%20(/)
+// http://www.aprs.org/symbols/symbolsX.txt
 // default is 'O' for balloon
 #define APRS_SYMBOL 'O'
-
-// Destination callsign: APRS is usually ok
-#define D_CALLSIGN "APRS"
-
-// Destination callsign SSID: 0 is usually ok
-#define D_CALLSIGN_ID 0
-
-// Digipeating paths:
-// (read more about digipeating paths here: http://wa8lmf.net/DigiPaths/ )
-// The recommended digi path for a balloon is WIDE2
-#define DIGI_PATH1 "WIDE2"
-
-// Digipeating path "New Paradigm" ending:
-// Recommended for balloon is 1
-#define DIGI_PATH1_TTL 1
+#define APRS_TABLE '/'
+#define APRS_OVERLAY ' ' // A-Z, 0-9
 
 // APRS comment: this goes in the comment portion of the APRS message. You
 // might want to keep this short. The longer the packet, the more vulnerable
 // it is to noise.
-#define APRS_COMMENT "Trackuino reminder: replace callsign with your own"
-
-// AX.25 Config (ax25.cpp)
-
-#define TX_DELAY 300 // milliseconds
-// TODO figure out why 300ms default and what this setting changes
-
-// Modem Config (afsk.cpp)
-
-// AUDIO_PIN is the audio-out pin. The audio is generated by timer 2 using
-// PWM, so the only two options are pins 3 and 11.
-// Pin 11 doubles as MOSI, so I suggest using pin 3 for PWM and leave 11 free
-// in case you ever want to interface with an SPI device.
-#define AUDIO_PIN 3
-
-// Pre-emphasize the 2200 tone by 6 dB. This is actually done by
-// de-emphasizing the 1200 tone by 6 dB and it might greatly improve
-// reception at the expense of poorer FM deviation, which translates
-// into an overall lower amplitude of the received signal.
-#define PRE_EMPHASIS 1 // (1=yes, 0=no)
-
-// Radio Config (radio_hx1.cpp)
-
-// This is the PTT pin
-#define PTT_PIN 4
-
-// Debug Config
-
-// Turn on this module's debugging mode by uncommenting the following line
-// or by selecting it as true/checked in the GUI
-// Each sub-module has its own debug mode.
-
-// #define APRS_DEBUG_AX25      // AX.25 frame dump
-// #define APRS_DEBUG_MODEM     // Modem ISR overrun and profiling
-// #define APRS_DEBUG_AFSK      // AFSK (modulation) output
-// #define APRS_DEBUG           // APRS packet dump
-
+#define APRS_COMMENT "Balloon Tracker v0.1"
 
 // --------------------------------------------------------------------------
 // BUZZER MODULE CONFIGURATION
@@ -172,9 +92,30 @@
 
 // Buzzer Config (buzzer.cpp)
 
+// The buzzer status pulsing follows a simplified pattern from the status LEDs.
+// It is outlined below:
+// 1 buzz   -   on
+// 2 buzzes -   GPS lock
+// 3 buzzes -   sending data (doesn't actually buzz during transmission
+//              as it would pull too much current, rather right before)
+// 4 buzzes -   error - check LED for more info
+
+// Buzz duration in milliseconds
+#define BUZZER_DURATION 200
+
+// Time between buzzes in milliseconds
+#define BUZZER_DELAY 100
+
+// Time between sets of buzzes in milliseconds
+#define BUZZER_INTERVAL 5000
+
+// For example, if you had GPS lock, your buzzer would:
+// buzz for BUZZER_DURATION, wait BUZZER_DELAY, buzz for BUZZER_DURATION, 
+// wait BUZZER_INTERVAL, and repeat.
+
 // Type of buzzer. An active buzzer is driven by a
 // DC voltage. A passive buzzer needs a PWM signal.
-#define BUZZER_TYPE 0 // (0=active, 1=passive)
+#define BUZZER_TYPE ACTIVE
 
 // When using a passive buzzer, specify the PWM frequency here. Choose one
 // that maximizes the volume according to the buzzer's datasheet. Not all
@@ -184,25 +125,10 @@
 // 245 Hz.
 #define BUZZER_FREQ 895  // Hz
 
-// These are the number of seconds the buzzer will stay on alternately
-#define BUZZER_ON_TIME 1   // seconds
-
-// These are the number of seconds the buzzer will stay off alternately
-#define BUZZER_OFF_TIME 2  // seconds
-
 // This option disables the buzzer above BUZZER_ALTITUDE meters. This is a
 // float value, so make it really high (eg. 1000000.0 = 1 million meters)
 // if you want it to never stop buzzing.
 #define BUZZER_ALTITUDE 3000.0  // meters (1 ft = 0.3048 m)
-
-// The options here are pin 9 or 10
-#define BUZZER_PIN 9
-
-// Turn on this module's debugging mode by uncommenting the following line
-// or by selecting it as true/checked in the GUI
-
-// #define BUZZER_DEBUG
-
 
 // --------------------------------------------------------------------------
 // GPS MODULE CONFIGURATION
@@ -213,28 +139,35 @@
 // GPS baud rate (in bits per second).
 #define GPS_BAUDRATE 9600 // bps
 
-// The pins on the Arduino your GPS module is attached to
-// If you are using the PCB you have printed, consult the numbers on that
-#define GPS_RX 5
-
-// The pins on the Arduino your GPS module is attached to
-// If you are using the PCB you have printed, consult the numbers on that
-#define GPS_TX 6
-
-// Turn on this module's debugging mode by uncommenting the following line
-// or by selecting it as true/checked in the GUI
-// GPS sentence dump and checksum validation
-// #define GPS_DEBUG
-
-
 // --------------------------------------------------------------------------
-// GSM MODULE CONFIGURATION
+// RADIO MODULE CONFIGURATION
 // --------------------------------------------------------------------------
 
-// GSM Config (gsm.cpp)
+// Radio Config (radio.cpp)
 
-// Turn on this module's debugging mode by uncommenting the following line.
-// #define GSM_DEBUG                // Signal strength and out/in-bound data dump
+// set power to HIGH (1W) or LOW (0.5W)
+#define POWER HIGH
+
+// Forward error correction (FEC) mode:
+// #define FEC_ENABLED // uncomment to enable FEC
+
+// FEC adds additional data to the packet to allow the receiver to correct
+// errors in the packet. This is useful for long range transmissions where
+// the signal is weak and/or there is a lot of noise. It is not ideal for
+// situations where there is significant traffic on the frequency, as it
+// will increase the packet length and thus the time the transmitter is
+// transmitting. This will increase the chance of stepping on other
+// transmissions and causing interference.
+// Additionally, it may increase battery draw as the math required is
+// computationally expensive.
+
+// --------------------------------------------------------------------------
+// SATELLITE MODULE CONFIGURATION
+// --------------------------------------------------------------------------
+
+// Satellite Config (satellite.cpp)
+
+// TODO: add Satellite module configuration
 
 
 // --------------------------------------------------------------------------
@@ -243,49 +176,80 @@
 
 // SD Config (sd.cpp)
 
-#define SD_BAUDRATE 9600
-
-#define SD_RX 7
-#define SD_TX 8
-
-// Turn on this module's debugging mode by uncommenting the following line.
-// #define SD_DEBUG                 // Raw SD card data dump
-
+#define SD_BAUDRATE 9600 // bps
 
 // --------------------------------------------------------------------------
-// DEVELOPMENT CONFIGURATION
+// LORA CONFIGURATION
 // --------------------------------------------------------------------------
 
-// Power Config (power_.cpp)
+// LoRa Config (lora.cpp)
 
-// This is the LED pin (13 on Arduinos). The LED will be on while the AVR is
-// running and off while it's sleeping, so its brightness gives an indication
-// of the CPU activity.
-#define LED_PIN 13
+// LoRa frequency in MHz
+#define LORA_FREQ 434.0 // MHz
 
-// Debug info includes printouts from different modules to aid in testing and
-// debugging.
-//
-// Some of the DEBUG modes will cause invalid modulation, so do NOT forget
-// to turn them off when you put this to real use.
-//
-// Particularly the APRS_DEBUG_AFSK will print every PWM sample out the
-// serial port, causing extreme delays in the actual AFSK transmission.
-//
-// 1. To properly receive debug information, only connect the Arduino RX pin
-//    to the GPS TX pin, and leave the Arduino TX pin disconnected.
-//
-// 2. On the serial monitor, set the baudrate to GPS_BAUDRATE (above),
-//    usually 9600.
-//
-// 3. When flashing the firmware, disconnect the GPS from the RX pin or you
-//    will get errors.
+// --------------------------------------------------------------------------
+// LOGGING CONFIGURATION
+// --------------------------------------------------------------------------
 
-// Tracker Config (software.ino)
+// Whether or not to enable logging
+// Disabling logging may significantly improve performance, but can make it
+// more difficult to debug issues.
+// #define DISABLE_LOGGING // uncomment to disable logging
 
-#define SERIAL_BAUDRATE 9600
-// #define RESET_DEBUG          // AVR reset
-// #define SENSOR_DEBUG         // Sensors
+// Specify the log level:
+// * 0 - LOG_LEVEL_SILENT     no output 
+// * 1 - LOG_LEVEL_FATAL      fatal errors 
+// * 2 - LOG_LEVEL_ERROR      all errors  
+// * 3 - LOG_LEVEL_WARNING    errors, and warnings 
+// * 4 - LOG_LEVEL_NOTICE     errors, warnings and notices 
+// * 5 - LOG_LEVEL_TRACE      errors, warnings, notices & traces 
+// * 6 - LOG_LEVEL_VERBOSE    all 
+#define LOG_LEVEL 0
 
+// specify whether to write logs to Serial (USB) or SD card
+// Note: Do not use Serial when the Molex connector is plugged in
+// (ie unplug the transmitter daughterboard)
+#define LOG_OUTPUT SD // SERIAL or SD
+
+// --------------------------------------------------------------------------
+// PIN CONFIGURATION OVERRIDES
+// --------------------------------------------------------------------------
+
+// change the default pin assignments for each module here
+// the defaults are what are used in the schematic and PCB
+
+// digital buzzer output pin
+// needs to be pwm for passive buzzer
+#define BUZZER_PIN 2
+
+// SPI pins
+// the below are the defaults for the Arduino Nano
+
+// SCK (clock) pin
+#define SCK_PIN 13
+// MISO/CIPO pin
+#define MISO_PIN 12
+// MOSI/COPI pin
+#define MOSI_PIN 11
+
+// SD chip select pin
+#define SD_CS_PIN 10
+
+// LoRa chip select pin
+#define LORA_CS_PIN 9
+
+#if TRANSMITTER == RADIO_MODULE
+  #define PTT_PIN 3
+  #define PD_PIN 4
+  #define MIC_PIN 6
+  #define RX_PIN 7
+  #define TX_PIN 8
+#elif TRANSMITTER == SATELLITE_MODULE
+  #define PTT_PIN 3
+  #define PD_PIN 4
+  #define MIC_PIN 6
+  #define RX_PIN 7
+  #define TX_PIN 8
+#endif
 
 #endif
