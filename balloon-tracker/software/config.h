@@ -7,34 +7,29 @@
 // NOTE: all pins are Arduino based, not the Atmega chip. Mapping:
 // https://www.arduino.cc/en/Hacking/PinMapping
 
-// Config file variables. Do not touch.
-#include "variables.h"
-// end do not touch
-
 // --------------------------------------------------------------------------
 // GENERAL CONFIGURATION
 // --------------------------------------------------------------------------
 
 // Trackuino Config
 
-// How frequently should data be collected, stored, and transmitted?
-#define DATA_TIMEOUT 15 // seconds
+// How frequently should data be transmitted via radio/satellite?
+// SD data logging and LoRa transmissions happen at their own intervals.
+#define DATA_TIMEOUT 60 // seconds
 
 // The offset in seconds from the top of the minute that messages are
 // transmitted/stored. This is primarily for radio messages so that they
 // do not step on each other and cause interference.
-//
 // For multiple Trackuinos all using radios, give them all different offsets
-// of equal spacing.
-//
+// of equal spacing. 
 // Set to -1 to disable. Not including GPS will also disable this feature.
-#define LOG_SLOT -1 // seconds
+#define LOG_SLOT -1 // seconds (0-59) offset from top of minute
 
-// Sensors Config (sensors.cpp)
-// m and b values for the temperature sensor calibration
-#define TEMP_SLOPE 0
-#define TEMP_OFFSET 0
-
+// Whether to broadcast/save data in compressed APRS format or uncompressed.
+// Compressed will use more CPU time and memory, but will save bandwidth.
+// Uncompressed will use less CPU time and memory, but will use more bandwidth.
+#define COMPRESSED true // true or false
+// a raw APRS message body is max 70 characters uncompressed and 57 compressed
 
 // --------------------------------------------------------------------------
 // MODULE CONFIGURATION
@@ -42,16 +37,26 @@
 
 // Module Config
 
-// Comment out a line to disable that module.
-
-#define BUZZER_MODULE
-#define GPS_MODULE
-#define SD_MODULE
-// specify whether data will be transmitted via RADIO_MODULE or SATELLITE_MODULE
-#define TRANSMITTER RADIO_MODULE
+// specify whether data will be transmitted via RADIO_MODULE (0) or SATELLITE_MODULE (1)
+#define TRANSMITTER 0
 
 // Be sure to fill out the configuration for each module you are using.
 
+// --------------------------------------------------------------------------
+// SENSORS CONFIGURATION
+// --------------------------------------------------------------------------
+
+// Sensor Config (sensors.cpp)
+// YOU NEED TO CALIBRATE THESE VALUES, this is the default for the TMP36
+#define TEMP_SLOPE 100
+#define TEMP_OFFSET -0.5
+// this does (temp - 0.5) * 100
+
+// resistor values for the voltage divider calibration
+#define VOLTAGE_R1 0
+#define VOLTAGE_R2 0
+// R1 and R2 labelled as shown in this calculator's diagram: 
+// https://ohmslawcalculator.com/voltage-divider-calculator
 
 // --------------------------------------------------------------------------
 // APRS MODULE CONFIGURATION
@@ -60,7 +65,7 @@
 // APRS Config (aprs.cpp)
 
 // Replace with your callsign
-#define S_CALLSIGN "MYCALL"
+#define S_CALLSIGN "KD8CJT"
 // Replace with your ssid - useful for tracking multiple balloons with the same
 // callsign. 11 is the standard for high altitude balloons, but any number 0-15
 // is valid.
@@ -81,10 +86,11 @@
 #define APRS_TABLE '/'
 #define APRS_OVERLAY ' ' // A-Z, 0-9
 
-// APRS comment: this goes in the comment portion of the APRS message. You
-// might want to keep this short. The longer the packet, the more vulnerable
-// it is to noise.
-#define APRS_COMMENT "Balloon Tracker v0.1"
+// APRS comment: this goes in the comment portion of the APRS message
+// this must be 19 characters or less due to APRS message length limits
+// this limit is NOT checked in code - you must check it yourself or
+// bad and unpredictable things will happen
+#define APRS_COMMENT "UM HAB Tracker v0.1" // 19 characters or less
 
 // --------------------------------------------------------------------------
 // BUZZER MODULE CONFIGURATION
@@ -115,7 +121,7 @@
 
 // Type of buzzer. An active buzzer is driven by a
 // DC voltage. A passive buzzer needs a PWM signal.
-#define BUZZER_TYPE ACTIVE
+#define BUZZER_TYPE 0 // ACTIVE_BUZZER (0) or PASSIVE_BUZZER (1)
 
 // When using a passive buzzer, specify the PWM frequency here. Choose one
 // that maximizes the volume according to the buzzer's datasheet. Not all
@@ -126,9 +132,9 @@
 #define BUZZER_FREQ 895  // Hz
 
 // This option disables the buzzer above BUZZER_ALTITUDE meters. This is a
-// float value, so make it really high (eg. 1000000.0 = 1 million meters)
+// float value, so make it really high (eg. 1000000 = 1 million meters)
 // if you want it to never stop buzzing.
-#define BUZZER_ALTITUDE 3000.0  // meters (1 ft = 0.3048 m)
+#define BUZZER_ALTITUDE 3000  // meters (1 ft = 0.3048 m)
 
 // --------------------------------------------------------------------------
 // GPS MODULE CONFIGURATION
@@ -139,14 +145,17 @@
 // GPS baud rate (in bits per second).
 #define GPS_BAUDRATE 9600 // bps
 
+// GPS invalidation time (in milliseconds).
+// how long to wait before marking old GPS fix data as stale
+#define GPS_STALE_AGE 5000 // milliseconds
+// ie if no new data is received in this GPS_STALE_AGE since the last good
+// fix, the data becomes stale and will be invalidated and not used
+
 // --------------------------------------------------------------------------
 // RADIO MODULE CONFIGURATION
 // --------------------------------------------------------------------------
 
 // Radio Config (radio.cpp)
-
-// set power to HIGH (1W) or LOW (0.5W)
-#define POWER HIGH
 
 // Forward error correction (FEC) mode:
 // #define FEC_ENABLED // uncomment to enable FEC
@@ -178,38 +187,72 @@
 
 #define SD_BAUDRATE 9600 // bps
 
+// how often to log data to the SD card
+#define LOG_INTERVAL 5000 // milliseconds
+
 // --------------------------------------------------------------------------
 // LORA CONFIGURATION
 // --------------------------------------------------------------------------
 
 // LoRa Config (lora.cpp)
 
-// LoRa frequency in MHz
-#define LORA_FREQ 434.0 // MHz
+// LoRa frequency in Hz
+#define LORA_FREQ 915E6 // Hz (E6 = 10^6)
+
+// Seconds between transmissions
+#define LORA_INTERVAL 30 // seconds
+
+// Offset in seconds from the top of the minute
+// Set to -1 to disable. Not including GPS will also disable this feature.
+#define LORA_SLOT 0 // seconds (0-59) offset from top of minute
+// for example, a LORA_INTERVAL of 15 and LORA_SLOT of 7 would mean
+// transmission would occur at 0:07, 0:22, 0:37, 0:52, 1:07, etc.
+
+// LoRa altitude cutoff in meters
+// transmissions will stop above this altitude
+#define LORA_ALTITUDE 3000.0 // meters (1 ft = 0.3048 m)
+// set to a really high number to (effectively) disable
+
+// LoRa transmit power in dBm
+#define LORA_TX_POWER 17 // dBm (5-20)
+
+// While setting the following parameters (if changing them from the defaults),
+// it is advised that you test them in this calculator:
+// https://www.thethingsnetwork.org/airtime-calculator
+// to ensure that your transmissions will not exceed the duty cycle:
+// https://www.thethingsnetwork.org/docs/lorawan/duty-cycle/
+// and to ensure your configuration is legal in your country:
+// https://www.thethingsnetwork.org/docs/lorawan/frequency-plans/
+
+// LoRa spreading factor
+#define LORA_SPREADING_FACTOR 7 // 7-12
+// https://development.libelium.com/lora_networking_guide/transmission-modes#spreading-factor
+
+// LoRa bandwidth
+#define LORA_BANDWIDTH 125E3 // Hz
+// Supported values are 7.8E3, 10.4E3, 15.6E3, 20.8E3, 31.25E3,
+// 41.7E3, 62.5E3, 125E3, 250E3, and 500E3
+// https://development.libelium.com/lora_networking_guide/transmission-modes#bandwidth
+
+// LoRa coding rate denominator
+#define LORA_CODING_RATE 5 // 5-8 (4/5 - 4/8)
+// https://development.libelium.com/lora_networking_guide/transmission-modes#coding-rate
+
 
 // --------------------------------------------------------------------------
-// LOGGING CONFIGURATION
+// DEBUG CONFIGURATION
 // --------------------------------------------------------------------------
 
-// Whether or not to enable logging
-// Disabling logging may significantly improve performance, but can make it
-// more difficult to debug issues.
-// #define DISABLE_LOGGING // uncomment to disable logging
+// Whether or not to enable debug logging
+// Disabling logging may significantly improve performance but can be
+// useful for debugging.
 
-// Specify the log level:
-// * 0 - LOG_LEVEL_SILENT     no output 
-// * 1 - LOG_LEVEL_FATAL      fatal errors 
-// * 2 - LOG_LEVEL_ERROR      all errors  
-// * 3 - LOG_LEVEL_WARNING    errors, and warnings 
-// * 4 - LOG_LEVEL_NOTICE     errors, warnings and notices 
-// * 5 - LOG_LEVEL_TRACE      errors, warnings, notices & traces 
-// * 6 - LOG_LEVEL_VERBOSE    all 
-#define LOG_LEVEL 0
+// To use debug logging, you MUST have the transmitter daughterboard
+// disconnected. Otherwise, the debug messages will interfere with the
+// radio/satellite transmissions and cause errors.
+#define DEBUG // uncomment to enable debug logging
 
-// specify whether to write logs to Serial (USB) or SD card
-// Note: Do not use Serial when the Molex connector is plugged in
-// (ie unplug the transmitter daughterboard)
-#define LOG_OUTPUT SD // SERIAL or SD
+#define SERIAL_BAUDRATE 9600 // bps
 
 // --------------------------------------------------------------------------
 // PIN CONFIGURATION OVERRIDES
@@ -217,39 +260,55 @@
 
 // change the default pin assignments for each module here
 // the defaults are what are used in the schematic and PCB
+// our current setup uses the Arduino Nano Every
+// https://content.arduino.cc/assets/Pinout-NANOevery_latest.png
 
 // digital buzzer output pin
-// needs to be pwm for passive buzzer
+// needs to be PWM compatible for passive buzzer
 #define BUZZER_PIN 2
 
 // SPI pins
-// the below are the defaults for the Arduino Nano
-
+// the below are the defaults for the Arduino Nano Every
 // SCK (clock) pin
-#define SCK_PIN 13
+#define CLOCK_PIN 13
 // MISO/CIPO pin
-#define MISO_PIN 12
+#define CIPO_PIN 12
 // MOSI/COPI pin
-#define MOSI_PIN 11
+#define COPI_PIN 11
 
 // SD chip select pin
 #define SD_CS_PIN 10
 
 // LoRa chip select pin
-#define LORA_CS_PIN 9
+#define LORA_CS_PIN 19
+// LoRa reset pin
+#define LORA_RESET_PIN -1 // -1 to disable (tied to arduino reset pin)
+// LoRa interrupt pin
+#define LORA_DIO0_PIN -1 // interrupt pin (not used in this project's code)
 
+// GPS pins
+#define GPS_RX_PIN 7
+#define GPS_TX_PIN -1 // -1 to disable
+
+// Status LED pins
+#define GPS_LED_PIN 15 // A1
+#define ERROR_LED_PIN 16 // A2
+#define STATUS_LED_PIN 20 // A6
+
+// Temperature sensor pin
+#define TEMP_PIN A7
+// Voltage divider pin (for battery voltage)
+#define VOLTAGE_PIN A4
+
+// Transmitter daughterboard pins
 #if TRANSMITTER == RADIO_MODULE
   #define PTT_PIN 3
   #define PD_PIN 4
   #define MIC_PIN 6
-  #define RX_PIN 7
-  #define TX_PIN 8
 #elif TRANSMITTER == SATELLITE_MODULE
   #define PTT_PIN 3
   #define PD_PIN 4
   #define MIC_PIN 6
-  #define RX_PIN 7
-  #define TX_PIN 8
 #endif
 
 #endif

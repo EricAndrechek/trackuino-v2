@@ -1,10 +1,6 @@
 #include <SoftwareSerial.h>
-#include "Arduino.h"
-
-#include "config.h"
-#include "helpers.h"
-#include "radio.h"
-
+#include "fec_tag.h"
+#include "RS-FEC.h"
 // Our implementation of the FX.25 protocol
 // Takes telemetry data and config parameters
 // Turns it into APRS format, then AX.25 packet
@@ -15,8 +11,28 @@
 // It does not support MIC-E encoding
 // It does not support sending multiple packets in one FX.25 packet
 
+// globals
+unsigned char FLAG = 0x7e;
+unsigned char PID = 0xf0;
+unsigned char CF = 0x03;
+
+// will be defined in config.h
+#define check_value 32
+#define d_address "TOCALL"
+#define d_ssid 1
+#define s_address "MYCALL"
+#define s_ssid 0
+
+#define DEBUG
+// #define NO_HAM
+
 // packet buffers
 char ax25_header_packet[16];
+
+struct packet {
+    unsigned char len;
+    char* packet;
+};
 
 
 #ifdef DEBUG
@@ -32,34 +48,89 @@ char ax25_header_packet[16];
     }
 
     void print_unsigned_long_long(unsigned long long val) {
-        if (val < 10) {
-            Serial.print((unsigned int) val);
-        } else {
-            unsigned long long subproblem = val / 10;
-            int remainder = val % 10;
-            print_unsigned_long_long(subproblem);
-            Serial.print(remainder);
-        }
+      if (val < 10) {
+          Serial.print((unsigned int) val);
+      } else {
+          unsigned long long subproblem = val / 10;
+          int remainder = val % 10;
+          print_unsigned_long_long(subproblem);
+          Serial.print(remainder);
+      }
     }
  #endif
 
+ #ifdef __arm__
+// should use uinstd.h to define sbrk but Due causes a conflict
+extern "C" char* sbrk(int incr);
+#else  // __ARM__
+extern char *__brkval;
+#endif  // __arm__
+
+int freeMemory() {
+  char top;
+#ifdef __arm__
+  return &top - reinterpret_cast<char*>(sbrk(0));
+#elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
+  return &top - __brkval;
+#else  // __arm__
+  return __brkval ? &top - __brkval : &top - __malloc_heap_start;
+#endif  // __arm__
+}
+
+void print_free_mem() {
+    #ifdef DEBUG
+      Serial.print(freeMemory());
+      Serial.println(F(" Bytes Free"));
+    #endif
+}
+
+// Hardware Aspects
+
+const float baud_adj = 0.975;
+const float adj_1200 = 1.0 * baud_adj;
+const float adj_2400 = 1.0 * baud_adj;
+unsigned int tc1200 = (unsigned int)(0.5 * adj_1200 * 1000000.0 / 1200.0);
+unsigned int tc2400 = (unsigned int)(0.5 * adj_2400 * 1000000.0 / 2400.0);
+
+#define OUT_PIN 6
+
+// Defines the Dorji Control PIN
+#define _PTT      3
+#define _PD       4
+#define _POW      5
+
+#define DRJ_TXD 7
+#define DRJ_RXD 8
+
+SoftwareSerial dorji(DRJ_RXD, DRJ_TXD);
+
+#define _1200   1
+#define _2400   0
+
+// TODO: nada should initially be 1?
+bool nada = _2400;
+
 void set_nada_1200() {
-    digitalWrite(MIC_PIN, HIGH);
-    delayMicroseconds(tc1200);
-    digitalWrite(MIC_PIN, LOW);
-    delayMicroseconds(tc1200);
+    #ifndef NO_HAM
+      digitalWrite(OUT_PIN, HIGH);
+      delayMicroseconds(tc1200);
+      digitalWrite(OUT_PIN, LOW);
+      delayMicroseconds(tc1200);
+    #endif
 }
 
 void set_nada_2400() {
-    digitalWrite(MIC_PIN, HIGH);
-    delayMicroseconds(tc2400);
-    digitalWrite(MIC_PIN, LOW);
-    delayMicroseconds(tc2400);
-    
-    digitalWrite(MIC_PIN, HIGH);
-    delayMicroseconds(tc2400);
-    digitalWrite(MIC_PIN, LOW);
-    delayMicroseconds(tc2400);
+    #ifndef NO_HAM
+      digitalWrite(OUT_PIN, HIGH);
+      delayMicroseconds(tc2400);
+      digitalWrite(OUT_PIN, LOW);
+      delayMicroseconds(tc2400);
+      
+      digitalWrite(OUT_PIN, HIGH);
+      delayMicroseconds(tc2400);
+      digitalWrite(OUT_PIN, LOW);
+      delayMicroseconds(tc2400);
+    #endif
 }
 
 void set_nada(bool nada) {
@@ -72,24 +143,27 @@ void set_nada(bool nada) {
 
 // send the flag a bunch of times to initialize
 void send_flag(int flags) {
-    for (; flags >= 0; flags--) {
-        for (char j = 0; j < 8; j++) {
-            if (FLAG & (1 << j)) {
-                set_nada(nada);
-            } else {
-                nada ^= 1;
-                set_nada(nada);
-            }
+  for (int i = 0; i < flags; i++) {
+    for (int j = 0; j < 8; j++) {
+        if (FLAG & (1 << j)) {
+            set_nada(nada);
+        } else {
+          nada ^= 1;
+          set_nada(nada);
         }
     }
+  }
 }
 
 void send_packet(packet pack) {
-    digitalWrite(PTT_PIN, LOW);
+    digitalWrite(LED_BUILTIN, HIGH);
+    #ifndef NO_HAM
+      digitalWrite(_PTT, LOW);
+    #endif
     delay(300);
     send_flag(100);
-    for (unsigned int i = 0; i < pack.len; i++) {
-        for (char j = 7; j >= 0; j--) {
+    for (int i = 0; i < pack.len; i++) {
+        for (int j = 7; j >= 0; j--) {
             if (((pack.packet[i] & 0xff) >> j) & 0x01) {
                 set_nada(nada);
             } else {
@@ -100,7 +174,7 @@ void send_packet(packet pack) {
     }
     send_flag(3);
     #ifndef NO_HAM
-        digitalWrite(_PTT, HIGH);
+      digitalWrite(_PTT, HIGH);
     #endif
     digitalWrite(LED_BUILTIN, LOW);
 }
@@ -363,8 +437,8 @@ unsigned short int crc16_ccitt(const char* packet, const int length) {
     };
 
     for (int i = 0; i < length; i++) {
-        unsigned short int j = (packet[i] ^ (crc >> 8)) & 0xff;
-        crc = crc16_table[j] ^ (crc << 8);
+      unsigned short int j = (packet[i] ^ (crc >> 8)) & 0xff;
+      crc = crc16_table[j] ^ (crc << 8);
     }
 
     crc = ((crc ^ 0xffff) & 0xffff);
@@ -691,12 +765,13 @@ void dorji_readback(SoftwareSerial &ser) {
     
     unsigned long current_time  = millis();
     while(ser.available() < 1) {
-        if ((millis() - current_time) / 100 > 5) {
-            Serial.println("Connection to DRA818V failed...");
-            break;
-        }
+      if ((millis() - current_time) / 100 > 5) {
+        Serial.println("Connection to DRA818V failed...");
+        break;
+      }
     }
-    if(ser.available() > 0) {
+    if(ser.available() > 0)
+    {
         d = ser.readString();
         Serial.print(d);
     }
@@ -706,26 +781,26 @@ void dorji_close(SoftwareSerial &ser) {
     ser.end();
 }
 
-void setup_handler() {
+void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(OUT_PIN, OUTPUT);
 
     #ifndef NO_HAM
-        pinMode(DRJ_RXD, INPUT);
-        pinMode(DRJ_TXD, OUTPUT);
-        pinMode(_PTT, OUTPUT);
-        pinMode(_PD, OUTPUT);
-        pinMode(_POW, OUTPUT);
+      pinMode(DRJ_RXD, INPUT);
+      pinMode(DRJ_TXD, OUTPUT);
+      pinMode(_PTT, OUTPUT);
+      pinMode(_PD, OUTPUT);
+      pinMode(_POW, OUTPUT);
 
-        digitalWrite(_PTT, HIGH);
-        digitalWrite(_PD, HIGH);
-        digitalWrite(_POW, LOW);
+      digitalWrite(_PTT, HIGH);
+      digitalWrite(_PD, HIGH);
+      digitalWrite(_POW, LOW);
     #endif
 
     Serial.begin(9600);
 
     #ifndef NO_HAM
-        dorji.begin(9600);
+      dorji.begin(9600);
     #endif
 
     delay(250); // may need delay after pin setup before interfacing
@@ -741,23 +816,23 @@ void setup_handler() {
     print_free_mem();
     
     #ifndef NO_HAM
-        Serial.println(F("Setting up DRA818V module..."));
-        dorji_reset(dorji);
-        dorji_readback(dorji);
-        Serial.println(F("DRA818V reset"));
-        // delay(1000); // - may need potential delay after restart
-        dorji_setfreq(146.390, 146.390, dorji);
-        dorji_readback(dorji);
-        Serial.println(F("DRA818V configured"));
-        // delay(1000); // - may need potential delay before setting filter
-        dorji_setfilter(0,0,0,dorji);
-        dorji_readback(dorji);
-        Serial.println(F("DRA818V filter on"));
-        Serial.println(F("DRA818V setup."));
+      Serial.println(F("Setting up DRA818V module..."));
+      dorji_reset(dorji);
+      dorji_readback(dorji);
+      Serial.println(F("DRA818V reset"));
+      // delay(1000); // - may need potential delay after restart
+      dorji_setfreq(146.390, 146.390, dorji);
+      dorji_readback(dorji);
+      Serial.println(F("DRA818V configured"));
+      // delay(1000); // - may need potential delay before setting filter
+      dorji_setfilter(0,0,0,dorji);
+      dorji_readback(dorji);
+      Serial.println(F("DRA818V filter on"));
+      Serial.println(F("DRA818V setup."));
 
-        Serial.println(' ');
+      Serial.println(' ');
 
-        dorji_close(dorji);
+      dorji_close(dorji);
     #endif
 
     Serial.println(F("Building packet..."));
@@ -783,6 +858,6 @@ void setup_handler() {
     Serial.println(F("\nSent."));
 }
 
-void loop_handler() {
+void loop() {
     
 }

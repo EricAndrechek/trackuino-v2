@@ -1,12 +1,6 @@
-#ifndef __HELPERS_CPP__
-#define __HELPERS_CPP__
-
-#include "config.h"
-#include "variables.h"
-
 #include <SoftwareSerial.h>
-
-#include "libraries/Arduino-Log/ArduinoLog.h"
+#include "Arduino.h"
+#include "config.h"
 
 #ifdef __arm__
 // should use uinstd.h to define sbrk but Due causes a conflict
@@ -14,19 +8,6 @@ extern "C" char* sbrk(int incr);
 #else  // __ARM__
 extern char *__brkval;
 #endif  // __arm__
-
-
-
-void logging_setup() {
-    #if LOG_OUTPUT == SD
-        // get SD serial
-        
-}
-
-
-#ifdef LOG_OUTPUT == SD
-    #include <SD.cpp>
-
 
 // returns the number of bytes currently free in RAM
 int freeMemory() {
@@ -42,9 +23,25 @@ int freeMemory() {
 
 // print number of bytes currently free in RAM to info
 void print_free_mem() {
-    #ifdef DEBUG_LEVEL >= 3
-        info_print(freeMemory() + F(" bytes free"));
+    #ifdef DEBUG
+        Serial.begin(SERIAL_BAUDRATE);
+        Serial.print(F("Free memory: "));
+        Serial.print(freeMemory());
+        Serial.println(F(" bytes"));
+        Serial.flush();
+        Serial.end();
     #endif
 }
 
-#endif
+void log_init(const char file[], unsigned long size) {
+    #ifdef DEBUG
+        Serial.begin(SERIAL_BAUDRATE);
+        Serial.print(F("Initialized "));
+        Serial.print(file);
+        Serial.print(F(" with "));
+        Serial.print(size);
+        Serial.println(F(" bytes"));
+        Serial.flush();
+        Serial.end();
+    #endif
+}
