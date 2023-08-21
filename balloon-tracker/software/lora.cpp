@@ -78,7 +78,7 @@ void Lora_class::loop_handler() {
             // we're in a good slot, broadcast
             broadcast();
         } else if (gps.stale) {
-            // GPS is stale but we're it has been about LORA_INTERVAL seconds
+            // GPS is stale but it has been about LORA_INTERVAL seconds
             // we want to broadcast that we are still alive, so broadcast anyway
             broadcast();
             return;

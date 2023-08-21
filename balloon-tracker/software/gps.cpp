@@ -32,7 +32,6 @@ void GPS::setup_handler(SoftwareSerial * ss) {
 }
 
 void GPS::loop_handler() {
-    // TODO: cannot be blocking
     while (gps_serial->available() > 0) {
         tinygps_object.encode(gps_serial->read());
     }

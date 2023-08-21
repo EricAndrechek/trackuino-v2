@@ -21,12 +21,16 @@ class Radio {
         char bit_stuff = 0;
         bool nada = _2400;
 
+        // packet buffers
+        char ax25_header_packet[16];
+
         void set_nada_1200();
         void set_nada_2400();
-        void set_nada(bool nada);
+        void set_nada(bool &nada);
 
+        void send_flag(int flag_len);
         void send_packet(packet pack);
-        void send_flag(unsigned char flag_len);
+
         void send_header(char msg_type);
         void send_payload(char type);
 

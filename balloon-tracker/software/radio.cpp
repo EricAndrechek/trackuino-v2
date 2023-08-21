@@ -5,22 +5,26 @@
 #include "helpers.h"
 #include "radio.h"
 
-// Our implementation of the FX.25 protocol
-// Takes telemetry data and config parameters
-// Turns it into APRS format, then AX.25 packet
-// Then adds HDLC framing and FEC tags to create FX.25 packet
+// take an APRS packet and turns it into an AX.25 packet
+// Then adds HDLC framing
+
+// Note: this code reverses the bit order as per protocol, 
+// however it does it in a less efficient way that doing so
+// during transmission. This is intentional as it is needed
+// for adding in forward error correction. FEC has been disabled
+// (see .fec.cpp) so it is not really needed, but is left in in
+// the event we can get FEC to run more efficiently.
 
 // This implementation does not support digipeating
 // and is only for sending packets
 // It does not support MIC-E encoding
 // It does not support sending multiple packets in one FX.25 packet
 
-// packet buffers
-char ax25_header_packet[16];
 
-
+// DEBUG HELPER FUNCTIONS
 #ifdef DEBUG
-    // DEBUG HELPER FUNCTIONS
+
+    // print a packet in hex
     void print_hex(char* packet, unsigned char length) {
         for (int i = 0; i < length; i++) {
             Serial.print("0x");
@@ -31,6 +35,8 @@ char ax25_header_packet[16];
         Serial.println();
     }
 
+    // print a long that is too big for Serial.print
+    // this is used only really for FEC stuff
     void print_unsigned_long_long(unsigned long long val) {
         if (val < 10) {
             Serial.print((unsigned int) val);
@@ -41,16 +47,22 @@ char ax25_header_packet[16];
             Serial.print(remainder);
         }
     }
+
  #endif
 
-void set_nada_1200() {
+
+// RADIO CODE
+
+// send 1200hz tone
+void Radio::set_nada_1200() {
     digitalWrite(MIC_PIN, HIGH);
     delayMicroseconds(tc1200);
     digitalWrite(MIC_PIN, LOW);
     delayMicroseconds(tc1200);
 }
 
-void set_nada_2400() {
+// send 2400hz tone
+void Radio::set_nada_2400() {
     digitalWrite(MIC_PIN, HIGH);
     delayMicroseconds(tc2400);
     digitalWrite(MIC_PIN, LOW);
@@ -62,7 +74,8 @@ void set_nada_2400() {
     delayMicroseconds(tc2400);
 }
 
-void set_nada(bool nada) {
+// send 1200hz or 2400hz tone
+void Radio::set_nada(bool &nada) {
     if (nada) {
         set_nada_1200();
     } else {
@@ -70,8 +83,11 @@ void set_nada(bool nada) {
     }
 }
 
+
+// PACKET HELPERS
+
 // send the flag a bunch of times to initialize
-void send_flag(int flags) {
+void Radio::send_flag(int flags) {
     for (; flags >= 0; flags--) {
         for (char j = 0; j < 8; j++) {
             if (FLAG & (1 << j)) {
@@ -84,7 +100,7 @@ void send_flag(int flags) {
     }
 }
 
-void send_packet(packet pack) {
+void Radio::send_packet(packet pack) {
     digitalWrite(PTT_PIN, LOW);
     delay(300);
     send_flag(100);
@@ -105,242 +121,13 @@ void send_packet(packet pack) {
     digitalWrite(LED_BUILTIN, LOW);
 }
 
-// FX.25 CODE
-
-// given ax.25 processed information, find the optimal FEC tag
-FEC_Tag opt_pack_tag(unsigned char data_size) {
-
-    #ifdef DEBUG
-        Serial.print(F("AX.25 Info Length: "));
-        Serial.println(data_size - 20);
-        Serial.print(F("Data Size: "));
-        Serial.println(data_size);
-    #endif
-
-    // find the smallest tag.data with the matching check value
-    // if no matching check value, find the smallest tag.data
-    FEC_Tag tag = FEC_Tag(0);
-    for (int i = 1; i <= 0xB; i++) {
-        FEC_Tag temp = FEC_Tag(i);
-        if (temp.check == check_value) {
-            if (temp.data >= data_size) {
-                if (tag.data == 0 || tag.check != check_value || (tag.check == check_value && temp.data < tag.data)) {
-                    tag = temp;
-                }
-            }
-        } else {
-            if (temp.data >= data_size) {
-                if (tag.data == 0 || (tag.check != check_value && temp.data < tag.data)) {
-                    tag = temp;
-                }
-            }
-        }
-    }
-
-    #ifdef DEBUG
-        Serial.print(F("Optimal Tag: "));
-        Serial.println(tag.tag);
-        Serial.print(F("Tag Data: "));
-        Serial.println(tag.data);
-        Serial.print(F("Tag Check: "));
-        Serial.println(tag.check);
-        Serial.print(F("Tag Value: "));
-        print_unsigned_long_long(tag.tag_value);
-        Serial.println();
-    #endif
-
-    return tag;
-}
-
-packet fx25_padded(FEC_Tag tag, packet hdlc) {
-    #ifdef DEBUG
-        Serial.print(F("FX.25 Data Packet Length: "));
-        Serial.println(tag.data);
-    #endif
-
-    packet p;
-
-    char* fx_p = new char[tag.data];
-
-    int i = 0;
-
-    // HDLC Packet
-    for (; i < hdlc.len; i++) {
-        fx_p[i] = hdlc.packet[i];
-    }
-
-    // potentially need to fix misaligned bytes
-
-    // PAD
-    for (; i < tag.data; i++) {
-        fx_p[i] = FLAG;
-    }
-
-    p.len = tag.data;
-    p.packet = fx_p;
-
-    #ifdef DEBUG
-        Serial.println(F("FX.25 Data Packet: "));
-        print_hex(p.packet, p.len);
-        Serial.println();
-    #endif
-
-    return p;
-}
-
-// TODO: implement this correctly for RS FEC
-char* fec_check_symbols(FEC_Tag tag, packet fx_padded) {
-    #ifdef DEBUG
-        Serial.print(F("FX.25 Check Packet Length: "));
-        Serial.println(tag.check);
-    #endif
-
-    const int message_length = 64;
-    const int ecc_length = 16;
-
-    RS::ReedSolomon<message_length, ecc_length> rs;
-
-    char encoded[message_length + ecc_length];
-    rs.Encode(fx_padded.packet, encoded);
-
-    char* fec_symbols = new char[tag.check];
-    for (int i = 0; i < tag.check; i++) {
-        fec_symbols[i] = encoded[fx_padded.len + i];
-    }
-
-    #ifdef DEBUG
-        Serial.println(F("FX.25 Check Packet: "));
-        print_hex(fec_symbols, tag.check);
-        Serial.println();
-    #endif
-
-    return fec_symbols;
-}
-
-packet fec_codeblock(FEC_Tag tag, packet hdlc) {
-    packet p;
-
-    char* fx_p = new char[tag.data + tag.check];
-
-    packet fx_padded = fx25_padded(tag, hdlc);
-    char* fec_symbols = fec_check_symbols(tag, fx_padded);
-
-    // HDLC Packet
-    for (int j = 0; j < fx_padded.len; j++) {
-        fx_p[j] = fx_padded.packet[j];
-    }
-
-    // FEC Check Symbols
-    for (int j = 0; j < tag.check; j++) {
-        fx_p[tag.data + j] = fec_symbols[j];
-        // flip MSB to LSB
-        char temp = 0;
-        for (int k = 0; k < 8; k++) {
-            temp |= ((fx_p[tag.data + j] >> k) & 0x01) << (7 - k);
-        }
-        fx_p[tag.data + j] = temp;
-    }
-
-    p.len = tag.data + tag.check;
-    p.packet = fx_p;
-
-    #ifdef DEBUG
-        Serial.print(F("FX.25 Codeblock Length: "));
-        Serial.println(tag.data + tag.check);
-        Serial.println(F("FX.25 Codeblock: "));
-        print_hex(p.packet, p.len);
-        Serial.println();
-    #endif
-
-    return p;
-}
-
-packet fx25_packet(FEC_Tag tag, packet hdlc) {
-    // two preambles (2 bytes)
-    // correlation tag value (8 bytes)
-    // FEC codeblock (data + check bytes)
-    // two postambles (2 bytes)
-    // total: data + check + 12 bytes
-
-    packet p;
-
-    char* fx_p = new char[tag.data + tag.check + 12];
-
-    // Preamble
-    fx_p[0] = FLAG;
-    fx_p[1] = FLAG;
-
-    // Correlation Tag Value
-    int i = 2;
-    for (; i < 10; i++) {
-        fx_p[i] = (tag.tag_value >> (8 * (i - 2))) & 0xff;
-        char temp = 0;
-        for (int j = 0; j < 8; j++) {
-            temp |= ((fx_p[i] >> j) & 0x01) << (7 - j);
-        }
-        fx_p[i] = temp;
-    }
-    
-
-    // FEC Codeblock
-    packet fx_codeblock = fec_codeblock(tag, hdlc);
-    for (int j = 0; j < fx_codeblock.len; j++) {
-        fx_p[i + j] = fx_codeblock.packet[j];
-    }
-
-
-
-    // Postamble
-    fx_p[i + fx_codeblock.len] = FLAG;
-    fx_p[i + fx_codeblock.len + 1] = FLAG;
-
-    #ifdef DEBUG
-        Serial.print(F("FX.25 Packet Length: "));
-        Serial.println(tag.data + tag.check + 12);
-        Serial.println(F("FX.25 Packet: "));
-        print_hex(fx_p, tag.data + tag.check + 12);
-        Serial.println();
-    #endif
-
-    p.len = tag.data + tag.check + 12;
-    p.packet = fx_p;
-    
-    return p;
-}
-
 // HDLC CODE
 
-char* flipped_order(unsigned char len, char* ax25_packet) {
-    #ifdef DEBUG
-        Serial.print(F("Flipped Packet Length: "));
-        Serial.println(len - 4);
-    #endif
+// calculate the CRC-16-CCITT of a packet
+unsigned short int Radio::crc16_ccitt(const char* packet, const int length) {
+    // TODO: ESP32 ROM built in and faster
+    // check other implementations for speed on other boards
 
-    // HDLC Packet
-    char* packet = new char[len - 4];
-
-    // AX.25 Packet
-    int i = 0;
-    for (; i < len - 3; i++) {
-        // swap bit order (MSB -> LSB)
-        packet[i] = 0;
-        for (int j = 0; j < 8; j++) {
-            packet[i] |= ((ax25_packet[i] >> j) & 0x1) << (7 - j);
-        }
-    }
-
-    #ifdef DEBUG
-        Serial.println(F("Flipped Packet: "));
-        print_hex(packet, len - 4);
-        Serial.println();
-    #endif
-
-    return packet;
-}
-
-
-// TODO: ESP32 ROM built in and faster
-unsigned short int crc16_ccitt(const char* packet, const int length) {
     unsigned short int crc = 0xffff;
 
     unsigned short int crc16_table[] = {
@@ -378,7 +165,37 @@ unsigned short int crc16_ccitt(const char* packet, const int length) {
     return crc;
 }
 
-char* raw_hdlc(unsigned char len, char* ax25_packet) {
+// takes a packet and returns it with the bit order flipped
+char* Radio::flipped_order(unsigned char len, char* ax25_packet) {
+    #ifdef DEBUG
+        Serial.print(F("Flipped Packet Length: "));
+        Serial.println(len - 4);
+    #endif
+
+    // HDLC Packet
+    char* packet = new char[len - 4];
+
+    // AX.25 Packet
+    int i = 0;
+    for (; i < len - 3; i++) {
+        // swap bit order (MSB -> LSB)
+        packet[i] = 0;
+        for (int j = 0; j < 8; j++) {
+            packet[i] |= ((ax25_packet[i] >> j) & 0x1) << (7 - j);
+        }
+    }
+
+    #ifdef DEBUG
+        Serial.println(F("Flipped Packet: "));
+        print_hex(packet, len - 4);
+        Serial.println();
+    #endif
+
+    return packet;
+}
+
+// takes an AX.25 packet and returns it with HDLC framing
+char* Radio::raw_hdlc(unsigned char len, char* ax25_packet) {
     ax25_packet = flipped_order(len, ax25_packet);
 
     #ifdef DEBUG
@@ -418,7 +235,8 @@ char* raw_hdlc(unsigned char len, char* ax25_packet) {
     return packet;
 }
 
-packet stuffed_hdlc_packet(unsigned char len, char* raw_hdlc_packet) {
+// takes a raw HDLC packet and returns it with bit stuffing
+packet Radio::stuffed_hdlc_packet(unsigned char len, char* raw_hdlc_packet) {
     packet p;
 
     p.len = len;
@@ -472,7 +290,8 @@ packet stuffed_hdlc_packet(unsigned char len, char* raw_hdlc_packet) {
     return p;
 }
 
-packet hdlc_packet(unsigned char len, char* ax25_packet) {
+// takes an AX.25 packet and returns it with HDLC framing and bit stuffing
+packet Radio::hdlc_packet(unsigned char len, char* ax25_packet) {
     char* raw_packet = raw_hdlc(len, ax25_packet);
     print_free_mem();
     packet p = stuffed_hdlc_packet(len, raw_packet);
@@ -485,7 +304,7 @@ packet hdlc_packet(unsigned char len, char* ax25_packet) {
 
 // takes a callsign and returns it in AX.25 format
 // (uppercase, padded with spaces, shifted left by 1 bit)
-char* ax25_call_sign(String call_sign, bool is_source) {
+char* Radio::ax25_call_sign(String call_sign, bool is_source) {
     char* ax25_call_sign = new char[7];
 
     // ensure we only get the first 6 characters
@@ -518,7 +337,7 @@ char* ax25_call_sign(String call_sign, bool is_source) {
 }
 
 // takes an ssid and returns in AX.25 format
-unsigned char ax25_ssid(unsigned char ssid, bool is_source) {
+unsigned char Radio::ax25_ssid(unsigned char ssid, bool is_source) {
     // ax.25 ssid format:
     // CRRSSID0
     // C = Command/Response
@@ -554,7 +373,7 @@ unsigned char ax25_ssid(unsigned char ssid, bool is_source) {
 }
 
 // builds global ax25_header_packet
-void ax25_header() {
+void Radio::ax25_header() {
     #ifdef DEBUG
         Serial.println(F("AX.25 Header Packet Length: 16"));
     #endif
@@ -589,7 +408,8 @@ void ax25_header() {
 
 // AX.25 CODE
 
-char* ax25_packet(unsigned char len, String info) {
+// takes a length and info field and returns an AX.25 packet
+char* Radio::ax25_packet(unsigned char len, String info) {
     #ifdef DEBUG
         Serial.print(F("AX.25 Packet Length: "));
         Serial.println(len - 4);
@@ -622,7 +442,7 @@ char* ax25_packet(unsigned char len, String info) {
 
 // take a total length and pre-packeted info
 // and return a FX.25 packet
-packet aprs_packet(String info) {
+packet Radio::aprs_packet(String info) {
     // flag = 1 byte
     // header = 16 bytes
     // info = info.length() bytes
@@ -635,14 +455,20 @@ packet aprs_packet(String info) {
     print_free_mem();
     packet hdlc = hdlc_packet(len, ax25);
     print_free_mem();
-    FEC_Tag tag = opt_pack_tag(hdlc.len);
-    packet fx25 = fx25_packet(tag, hdlc);
-    return fx25;
+    return hdlc;
+
+    // this forward error correction (FEC) code
+    // to turn things into FX.25 for improved range
+    // has been removed. See .fec.cpp for more.
+
+    // FEC_Tag tag = opt_pack_tag(hdlc.len);
+    // packet fx25 = fx25_packet(tag, hdlc);
+    // return fx25;
 }
 
 // takes telemetry data and comments
 // and returns a formatted APRS message
-String format_info(String telemetry, String comment) {
+String Radio::format_info(String telemetry, String comment) {
     String info = ">T" + telemetry + " " + comment;
 
     #ifdef DEBUG
@@ -658,18 +484,18 @@ String format_info(String telemetry, String comment) {
 
 // MAIN
 
-void dorji_init(SoftwareSerial &ser) {
+void Radio::dorji_init(SoftwareSerial &ser) {
     ser.println(F("AT+DMOCONNECT"));
 }
 
-void dorji_reset(SoftwareSerial &ser) {
+void Radio::dorji_reset(SoftwareSerial &ser) {
     for(char i=0;i<1;i++) {
         Serial.println("sending connect command...");
         ser.println(F("AT+DMOCONNECT"));
     }
 }
 
-void dorji_setfreq(float txf, float rxf, SoftwareSerial &ser) {
+void Radio::dorji_setfreq(float txf, float rxf, SoftwareSerial &ser) {
     ser.print(F("AT+DMOSETGROUP=0,"));
     ser.print(txf, 4);
     ser.print(',');
@@ -677,7 +503,7 @@ void dorji_setfreq(float txf, float rxf, SoftwareSerial &ser) {
     ser.println(F(",0000,0,0000"));
 }
 
-void dorji_setfilter(bool emph, bool hpf, bool lpf, SoftwareSerial &ser) {
+void Radio::dorji_setfilter(bool emph, bool hpf, bool lpf, SoftwareSerial &ser) {
     ser.print(F("AT+SETFILTER="));
     ser.print(emph);
     ser.print(',');
@@ -686,7 +512,7 @@ void dorji_setfilter(bool emph, bool hpf, bool lpf, SoftwareSerial &ser) {
     ser.println(lpf);
 }
 
-void dorji_readback(SoftwareSerial &ser) {
+void Radio::dorji_readback(SoftwareSerial &ser) {
     String d;
     
     unsigned long current_time  = millis();
@@ -702,11 +528,11 @@ void dorji_readback(SoftwareSerial &ser) {
     }
 }
 
-void dorji_close(SoftwareSerial &ser) {
+void Radio::dorji_close(SoftwareSerial &ser) {
     ser.end();
 }
 
-void setup_handler() {
+void Radio::setup_handler() {
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(OUT_PIN, OUTPUT);
 
@@ -783,6 +609,6 @@ void setup_handler() {
     Serial.println(F("\nSent."));
 }
 
-void loop_handler() {
+void Radio::loop_handler() {
     
 }

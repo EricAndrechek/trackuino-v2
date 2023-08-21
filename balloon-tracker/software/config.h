@@ -1,29 +1,26 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-// THIS IS THE TRACKUINO FIRMWARE CONFIGURATION FILE. YOUR CALLSIGN AND
+// THIS IS THE HAB TRACKER FIRMWARE CONFIGURATION FILE. YOUR CALLSIGN AND
 // OTHER SETTINGS GO HERE.
-//
-// NOTE: all pins are Arduino based, not the Atmega chip. Mapping:
-// https://www.arduino.cc/en/Hacking/PinMapping
 
 // --------------------------------------------------------------------------
 // GENERAL CONFIGURATION
 // --------------------------------------------------------------------------
 
-// Trackuino Config
+// Tracker Config
 
 // How frequently should data be transmitted via radio/satellite?
 // SD data logging and LoRa transmissions happen at their own intervals.
 #define DATA_TIMEOUT 60 // seconds
 
 // The offset in seconds from the top of the minute that messages are
-// transmitted/stored. This is primarily for radio messages so that they
+// transmitted. This is primarily for radio messages so that they
 // do not step on each other and cause interference.
-// For multiple Trackuinos all using radios, give them all different offsets
+// For multiple trackers all using radios, give them all different offsets
 // of equal spacing. 
-// Set to -1 to disable. Not including GPS will also disable this feature.
-#define LOG_SLOT -1 // seconds (0-59) offset from top of minute
+// Set to -1 to disable.
+#define DATA_SLOT -1 // seconds (0-59) offset from top of minute
 
 // Whether to broadcast/save data in compressed APRS format or uncompressed.
 // Compressed will use more CPU time and memory, but will save bandwidth.
@@ -176,7 +173,8 @@
 
 // Satellite Config (satellite.cpp)
 
-// TODO: add Satellite module configuration
+// Satellite baud rate (in bits per second).
+#define SATELLITE_BAUDRATE 19200 // bps
 
 
 // --------------------------------------------------------------------------
