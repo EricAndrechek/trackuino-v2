@@ -81,9 +81,9 @@ void loop() {
     lora_object.loop_handler();
     #if TRANSMITTER == 1
         // transmit data over satellite
-        satellite_object.loop_handler();
+        satellite.loop_handler();
     #else
         // transmit data over radio
-        radio_object.loop_handler();
+        radio.loop_handler();
     #endif
 }

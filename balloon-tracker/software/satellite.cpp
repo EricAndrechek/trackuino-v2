@@ -5,10 +5,8 @@
 #include "helpers.h"
 #include "satellite.h"
 #include "aprs.h"
-
-// number of seconds of error it can be off from slot to broadcast
-// should be slightly longer than the time it takes for a full loop
-#define SLOT_ERROR 5
+#include "leds.h"
+#include "gps.h"
 
 Satellite::Satellite() {
     setup_handler();
@@ -16,18 +14,7 @@ Satellite::Satellite() {
 
 void Satellite::setup_handler() {
     // this uses the Arduino Nano Every's hardware serial
-    if (!Serial.begin(SATELLITE_BAUDRATE)) {
-        #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.println(F("Satellite module failed to initialize"));
-            Serial.flush();
-            Serial.end();
-        #endif
-        leds.set_error();
-
-        // kill program
-        while (1);
-    }
+    Serial.begin(SATELLITE_BAUDRATE);
 
     // TODO: need some sort of debug handling for while reading in status info and connecting, etc
 
@@ -169,7 +156,7 @@ void Satellite::write_packet() {
 void Satellite::loop_handler() {
 
     // check if it is time to broadcast
-    if ((millis() - last_transmission) >= (DATA_TIMEOUT - (SLOT_ERROR / 2))) {
+    if ((millis() - last_transmission) / 1000 >= (DATA_TIMEOUT - (SLOT_ERROR / 2))) {
         // check again to make sure slot is good
         // get current seconds, subtract slot,
         // and check if it's divisible by DATA_TIMEOUT

@@ -1,9 +1,11 @@
-#include <SoftwareSerial.h>
 #include "Arduino.h"
 
 #include "config.h"
 #include "helpers.h"
 #include "radio.h"
+#include "leds.h"
+#include "aprs.h"
+#include "gps.h"
 
 // take an APRS packet and turns it into an AX.25 packet
 // Then adds HDLC framing
@@ -100,13 +102,13 @@ void Radio::send_flag(int flags) {
     }
 }
 
-void Radio::send_packet(packet pack) {
+void Radio::send_packet() {
     digitalWrite(PTT_PIN, LOW);
     delay(300);
     send_flag(100);
-    for (unsigned int i = 0; i < pack.len; i++) {
+    for (unsigned int i = 0; i < packet_length; i++) {
         for (char j = 7; j >= 0; j--) {
-            if (((pack.packet[i] & 0xff) >> j) & 0x01) {
+            if (((packet[i] & 0xff) >> j) & 0x01) {
                 set_nada(nada);
             } else {
                 nada ^= 1;
@@ -115,16 +117,13 @@ void Radio::send_packet(packet pack) {
         }
     }
     send_flag(3);
-    #ifndef NO_HAM
-        digitalWrite(_PTT, HIGH);
-    #endif
-    digitalWrite(LED_BUILTIN, LOW);
+    digitalWrite(PTT_PIN, HIGH);
 }
 
 // HDLC CODE
 
 // calculate the CRC-16-CCITT of a packet
-unsigned short int Radio::crc16_ccitt(const char* packet, const int length) {
+unsigned short int Radio::crc16_ccitt() {
     // TODO: ESP32 ROM built in and faster
     // check other implementations for speed on other boards
 
@@ -149,126 +148,84 @@ unsigned short int Radio::crc16_ccitt(const char* packet, const int length) {
         0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8, 0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
     };
 
-    for (int i = 0; i < length; i++) {
-        unsigned short int j = (packet[i] ^ (crc >> 8)) & 0xff;
+    for (unsigned char i = 0; i < aprs_object.info_len; i++) {
+        unsigned short int j = (packet[17 + i] ^ (crc >> 8)) & 0xff;
         crc = crc16_table[j] ^ (crc << 8);
     }
 
     crc = ((crc ^ 0xffff) & 0xffff);
 
-    #ifdef DEBUG
-        Serial.print(F("CRC: 0x"));
-        Serial.print(crc < 16 ? "0" : "");
-        Serial.println(crc, HEX);
-    #endif
-
     return crc;
 }
 
-// takes a packet and returns it with the bit order flipped
-char* Radio::flipped_order(unsigned char len, char* ax25_packet) {
-    #ifdef DEBUG
-        Serial.print(F("Flipped Packet Length: "));
-        Serial.println(len - 4);
-    #endif
+// takes a packet and re-builds it with the bit order flipped
+void Radio::flip_order() {
 
-    // HDLC Packet
-    char* packet = new char[len - 4];
-
-    // AX.25 Packet
-    int i = 0;
-    for (; i < len - 3; i++) {
+    // first byte is empty for flag, ignore
+    unsigned char i = 1;
+    for (; i < max_packet_len; i++) {
         // swap bit order (MSB -> LSB)
+        char raw_byte = packet[i];
         packet[i] = 0;
-        for (int j = 0; j < 8; j++) {
-            packet[i] |= ((ax25_packet[i] >> j) & 0x1) << (7 - j);
+        for (char j = 0; j < 8; j++) {
+            packet[i] |= ((raw_byte >> j) & 0x1) << (7 - j);
         }
     }
-
-    #ifdef DEBUG
-        Serial.println(F("Flipped Packet: "));
-        print_hex(packet, len - 4);
-        Serial.println();
-    #endif
-
-    return packet;
 }
 
-// takes an AX.25 packet and returns it with HDLC framing
-char* Radio::raw_hdlc(unsigned char len, char* ax25_packet) {
-    ax25_packet = flipped_order(len, ax25_packet);
-
-    #ifdef DEBUG
-        Serial.print(F("Raw HDLC Packet Length: "));
-        Serial.println(len);
-    #endif
-
-    // Un-Stuffed HDLC Packet
-    char* packet = new char[len];
+// takes an AX.25 packet and re-builds it with HDLC framing
+void Radio::raw_hdlc() {
+    flip_order();
 
     // Flag
     packet[0] = FLAG;
 
-    int i = 1;
-
-    // AX.25 Packet
-    for (; i < len - 3; i++) {
-        packet[i] = ax25_packet[i - 1];
-    }
-
     // CRC
-    unsigned short int crc = crc16_ccitt(ax25_packet, len - 4);
-    packet[i] = (crc >> 8) & 0xff;
-    packet[i + 1] = crc & 0xff;
+    unsigned short int crc = crc16_ccitt();
+    packet[aprs_object.info_len + 17] = (crc >> 8) & 0xff;
+    packet[aprs_object.info_len + 17 + 1] = crc & 0xff;
 
     // TODO: might need more flags?
 
     // Flag
-    packet[i + 2] = FLAG;
-
-    #ifdef DEBUG
-        Serial.println("Raw HDLC Packet: ");
-        print_hex(packet, len);
-        Serial.println();
-    #endif
-
-    return packet;
+    packet[aprs_object.info_len + 17 + 2] = FLAG;
 }
 
 // takes a raw HDLC packet and returns it with bit stuffing
-packet Radio::stuffed_hdlc_packet(unsigned char len, char* raw_hdlc_packet) {
-    packet p;
+void Radio::stuff_hdlc_packet() {
 
-    p.len = len;
-    char* packet = new char[len];
+    // TODO: very bad way of doing this...
+    // wastes lots of memory and makes unsafe assumptions
+    char stuffed_packet[max_packet_len];
+
     // set all bits to 0
-    for (int i = 0; i < len; i++) {
-        packet[i] = 0;
+    // cannot assume they already are
+    for (unsigned char i = 0; i < max_packet_len; i++) {
+        stuffed_packet[i] = 0;
     }
 
     // add flag
-    packet[0] = FLAG;
+    stuffed_packet[0] = FLAG;
 
     unsigned short int bit_pos = 0;
     unsigned char stuffing = 0;
-    for (int i = 1; i < len; i++) {
-        // printf("i: %d v: %02x\n", i, raw_hdlc_packet[i] & 0xff);
-        for (int j = 0; j < 8; j++) {
-            unsigned char bit = (raw_hdlc_packet[i] >> (7 - j)) & 0x1;
+    for (unsigned char i = 1; i < aprs_object.info_len + 16; i++) {
+        for (unsigned char j = 0; j < 8; j++) {
+            unsigned char bit = (packet[i] >> (7 - j)) & 0x1;
             if (bit == 0) {
                 stuffing = 0;
-            } else if (i != len - 1) {
+            } else if (i != aprs_object.info_len + 16 - 1) {
                 stuffing++;
             }
 
             // printf("index: %d bit_pos: %d bit: %d\n", i + ((j + bit_pos) / 8), 7 - ((j + bit_pos) % 8), bit);
-            packet[i + ((j + bit_pos) / 8)] |= bit << (7 - ((j + bit_pos) % 8));
+            stuffed_packet[i + ((j + bit_pos) / 8)] |= bit << (7 - ((j + bit_pos) % 8));
 
             if (stuffing == 5) {
                 bit_pos++;
                 stuffing = 0;
                 // printf("[STUFF] index: %d bit_pos: %d bit: %d\n", i + ((j + bit_pos) / 8), 7 - ((j + bit_pos) % 8), bit);
-                packet[i + ((j + bit_pos) / 8)] |= 0x0 << (7 - ((j + bit_pos) % 8));
+                stuffed_packet[i + ((j + bit_pos) / 8)] |= 0x0 << (7 - ((j + bit_pos) % 8));
             }
         }
     }
@@ -276,68 +233,83 @@ packet Radio::stuffed_hdlc_packet(unsigned char len, char* raw_hdlc_packet) {
     // TODO: unclear what stuffing offset is supposed to do to final flag transmission
 
     // add to length the number of bytes added by stuffing
-    p.len += bit_pos / 8 + (bit_pos % 8 != 0);
-    p.packet = packet;
+    packet_length = aprs_object.info_len + 20 + (bit_pos / 8) + (bit_pos % 8 != 0);
 
-    #ifdef DEBUG
-        Serial.print(F("Stuffed HDLC Packet Length: "));
-        Serial.println(p.len);
-        Serial.println(F("Stuffed HDLC Packet: "));
-        print_hex(p.packet, p.len);
-        Serial.println();
-    #endif
-
-    return p;
+    strcpy(packet, stuffed_packet);
 }
 
-// takes an AX.25 packet and returns it with HDLC framing and bit stuffing
-packet Radio::hdlc_packet(unsigned char len, char* ax25_packet) {
-    char* raw_packet = raw_hdlc(len, ax25_packet);
-    print_free_mem();
-    packet p = stuffed_hdlc_packet(len, raw_packet);
-    print_free_mem();
-    delete[] raw_packet;
-    return p;
+// takes an AX.25 packet and formats it with HDLC framing and bit stuffing
+void Radio::build_hdlc_packet() {
+    raw_hdlc();
+    stuff_hdlc_packet();
 }
 
 // AX.25 HEADER W/ HLDC ADDRESS FIELD CODE
 
-// takes a callsign and returns it in AX.25 format
+// takes a callsign and modifies it in AX.25 format
 // (uppercase, padded with spaces, shifted left by 1 bit)
-char* Radio::ax25_call_sign(String call_sign, bool is_source) {
-    char* ax25_call_sign = new char[7];
+void Radio::ax25_call_sign(char *output, bool is_source) {
+    char i = 0;
 
-    // ensure we only get the first 6 characters
-    // add spaces if less than 6
-    if (call_sign.length() > 6) {
-        call_sign = call_sign.substring(0, 6);
-    } else if (call_sign.length() < 6) {
-        while (call_sign.length() < 6) {
-            call_sign += " ";
+    if (!is_source) {
+        // set output to D_CALLSIGN
+        for (; i < 6; i++) {
+            if (i > sizeof(D_CALLSIGN) - 2) {
+                break;
+            }
+            output[i] = D_CALLSIGN[i];
+        }
+
+        if (i == 3) {
+            // we have a 3 character callsign,
+            // room to add symbol and table and overlay
+            output[i++] = APRS_SYMBOL;
+            output[i++] = APRS_TABLE;
+            output[i++] = APRS_OVERLAY;
+        }
+
+        if (i < 6) {
+            // add padding
+            while (i < 6) {
+                output[i++] = ' ';
+            }
+        }
+    } else {
+        // set output to S_CALLSIGN
+        for (; i < 6; i++) {
+            if (i > sizeof(S_CALLSIGN) - 2) {
+                break;
+            }
+            output[i] = S_CALLSIGN[i];
+        }
+
+        if (i < 6) {
+            // add padding
+            while (i < 6) {
+                output[i++] = ' ';
+            }
         }
     }
 
     // uppercase
-    for (int i = 0; i < call_sign.length(); i++) {
-        call_sign[i] = toupper(call_sign[i]);
+    for (i = 0; i < 6; i++) {
+        output[i] = toupper(output[i]);
     }
 
     // shift left by 1 bit
-    for (int i = 0; i < call_sign.length(); i++) {
-        ax25_call_sign[i] = call_sign[i] << 1;
+    for (i = 0; i < 6; i++) {
+        output[i] = output[i] << 1;
         // set the last bit to 0 if we're a source
         // and 1 if we're a destination
-        ax25_call_sign[i] |= is_source ? 0x0 : 0x0;
+        output[i] |= is_source ? 0x0 : 0x0;
     }
-
-    // add null terminator
-    ax25_call_sign[6] = '\0';
-
-    return ax25_call_sign;
 }
 
 // takes an ssid and returns in AX.25 format
-unsigned char Radio::ax25_ssid(unsigned char ssid, bool is_source) {
+unsigned char Radio::ax25_ssid(bool is_source) {
+    // ssid is S_SSID if source, D_SSID if destination
+    unsigned char ssid = is_source ? S_SSID : D_SSID;
+
     // ax.25 ssid format:
     // CRRSSID0
     // C = Command/Response
@@ -374,75 +346,45 @@ unsigned char Radio::ax25_ssid(unsigned char ssid, bool is_source) {
 
 // builds global ax25_header_packet
 void Radio::ax25_header() {
-    #ifdef DEBUG
-        Serial.println(F("AX.25 Header Packet Length: 16"));
-    #endif
+    // build callsigns
+    char d_address[6];
+    char s_address[6];
+    ax25_call_sign(d_address, false);
+    ax25_call_sign(s_address, true);
 
-    char* dest_addy = ax25_call_sign(d_address, false);
-    char* sour_addy = ax25_call_sign(s_address, true);
+    // add callsigns and ssids to header
     for (int i = 0; i < 6; i++) {
         // ensure we only get the first 7 bits of each character
-        ax25_header_packet[i] = dest_addy[i] & 0xff;
+        ax25_header_packet[i] = d_address[i] & 0xff;
     }
-    ax25_header_packet[6] = ax25_ssid(d_ssid, false);
+    ax25_header_packet[6] = ax25_ssid(false);
+
     for (int i = 0; i < 6; i++) {
         // ensure we only get the first 7 bits of each character
-        ax25_header_packet[i + 7] = sour_addy[i] & 0xff;
+        ax25_header_packet[i + 7] = s_address[i] & 0xff;
     }
-    ax25_header_packet[13] = ax25_ssid(s_ssid, true);
+    ax25_header_packet[13] = ax25_ssid(true);
+
     // TODO: AX.25 4.2.1 bit lengths
     ax25_header_packet[14] = CF;
     ax25_header_packet[15] = PID;
 
-    #ifdef DEBUG
-        Serial.println(F("AX.25 Header: "));
-        print_hex(ax25_header_packet, 16);
-        Serial.println();
-    #endif
-
     // TODO: can CRC be partially built for AX.25 header?
-
-    delete[] dest_addy;
-    delete[] sour_addy;
 }
 
 // AX.25 CODE
 
-// takes a length and info field and returns an AX.25 packet
-char* Radio::ax25_packet(unsigned char len, String info) {
-    #ifdef DEBUG
-        Serial.print(F("AX.25 Packet Length: "));
-        Serial.println(len - 4);
-    #endif
-
-    char* packet = new char[len - 4];
-
-    // AX.25 Header
-    int i = 0;
-    for (; i < 16; i++) {
-        packet[i] = ax25_header_packet[i];
-    }
-
-    // Info Field
-    int j = 0;
-    for (; j < info.length(); j++) {
-        packet[i + j] = info[j];
-    }
-
-    #ifdef DEBUG
-        Serial.println(F("AX.25 Packet: "));
-        print_hex(packet, len - 4);
-        Serial.println();
-    #endif
-
-    return packet;
+// takes an info field and builds an AX.25 packet
+void Radio::build_ax25_packet() {
+    char empty = 0x0;
+    sprintf(packet, "%c%s%s%c%c%c", empty, ax25_header_packet, (aprs_object.packet + 18), empty, empty, empty);
 }
 
 // APRS CODE
 
 // take a total length and pre-packeted info
 // and return a FX.25 packet
-packet Radio::aprs_packet(String info) {
+void Radio::build_aprs_packet() {
     // flag = 1 byte
     // header = 16 bytes
     // info = info.length() bytes
@@ -450,12 +392,8 @@ packet Radio::aprs_packet(String info) {
     // flag = 1 byte
     // total = info.length() + 20 bytes
     
-    unsigned char len = info.length() + 20;
-    char* ax25 = ax25_packet(len, info);
-    print_free_mem();
-    packet hdlc = hdlc_packet(len, ax25);
-    print_free_mem();
-    return hdlc;
+    build_ax25_packet();
+    build_hdlc_packet();
 
     // this forward error correction (FEC) code
     // to turn things into FX.25 for improved range
@@ -466,149 +404,120 @@ packet Radio::aprs_packet(String info) {
     // return fx25;
 }
 
-// takes telemetry data and comments
-// and returns a formatted APRS message
-String Radio::format_info(String telemetry, String comment) {
-    String info = ">T" + telemetry + " " + comment;
+// RADIO CODE
 
-    #ifdef DEBUG
-        Serial.print(F("Info Field: "));
-        Serial.println(info.c_str());
-        Serial.println();
-    #endif
-
-    return info;
+// Send connection AT command to DRA818V
+void Radio::init_radio() {
+    Serial.println(F("AT+DMOCONNECT"));
 }
 
-// TODO: something to turn telemetry data into a String
-
-// MAIN
-
-void Radio::dorji_init(SoftwareSerial &ser) {
-    ser.println(F("AT+DMOCONNECT"));
-}
-
-void Radio::dorji_reset(SoftwareSerial &ser) {
-    for(char i=0;i<1;i++) {
-        Serial.println("sending connect command...");
-        ser.println(F("AT+DMOCONNECT"));
+// Send reset AT command to DRA818V
+// This is just 3 inits without reading back
+void Radio::reset_radio() {
+    for (char i = 0; i < 1; i++) {
+        Serial.println(F("AT+DMOCONNECT"));
     }
 }
 
-void Radio::dorji_setfreq(float txf, float rxf, SoftwareSerial &ser) {
-    ser.print(F("AT+DMOSETGROUP=0,"));
-    ser.print(txf, 4);
-    ser.print(',');
-    ser.print(rxf, 4);
-    ser.println(F(",0000,0,0000"));
+// Send AT command to DRA818V to set frequency
+void Radio::set_frequency() {
+    Serial.print(F("AT+DMOSETGROUP=0,"));
+    Serial.print(RADIO_FREQ, 4);
+    Serial.print(',');
+    Serial.print(RADIO_FREQ, 4);
+    Serial.println(F(",0000,0,0000"));
 }
 
-void Radio::dorji_setfilter(bool emph, bool hpf, bool lpf, SoftwareSerial &ser) {
-    ser.print(F("AT+SETFILTER="));
-    ser.print(emph);
-    ser.print(',');
-    ser.print(hpf);
-    ser.print(',');
-    ser.println(lpf);
+// Send AT command to DRA818V to set filter
+void Radio::set_filter() {
+    // TODO: make configurable and explain settings
+    Serial.print(F("AT+SETFILTER="));
+    Serial.print(0);
+    Serial.print(',');
+    Serial.print(0);
+    Serial.print(',');
+    Serial.println(0);
 }
 
-void Radio::dorji_readback(SoftwareSerial &ser) {
+// Read incoming data from DRA818V
+// Needed between AT commands
+void Radio::read_radio() {
+    // technically this variable isn't needed
+    // as we aren't doing anything with the data atm
     String d;
     
     unsigned long current_time  = millis();
-    while(ser.available() < 1) {
+    while (Serial.available() < 1) {
         if ((millis() - current_time) / 100 > 5) {
-            Serial.println("Connection to DRA818V failed...");
+            // TODO: connection failed, handle error
+            leds.set_error();
             break;
         }
     }
-    if(ser.available() > 0) {
-        d = ser.readString();
-        Serial.print(d);
+    if (Serial.available() > 0) {
+        d = Serial.readString();
+        // handle data if we want more advanced error handling and logic here
     }
 }
 
-void Radio::dorji_close(SoftwareSerial &ser) {
-    ser.end();
-}
+// MAIN
 
+// Send AT commands over Serial to setup the DRA818V
 void Radio::setup_handler() {
-    pinMode(LED_BUILTIN, OUTPUT);
-    pinMode(OUT_PIN, OUTPUT);
+    pinMode(MIC_PIN, OUTPUT);
+    pinMode(PTT_PIN, OUTPUT);
+    pinMode(PD_PIN, OUTPUT);
 
-    #ifndef NO_HAM
-        pinMode(DRJ_RXD, INPUT);
-        pinMode(DRJ_TXD, OUTPUT);
-        pinMode(_PTT, OUTPUT);
-        pinMode(_PD, OUTPUT);
-        pinMode(_POW, OUTPUT);
 
-        digitalWrite(_PTT, HIGH);
-        digitalWrite(_PD, HIGH);
-        digitalWrite(_POW, LOW);
-    #endif
+    digitalWrite(PTT_PIN, HIGH); // low -> tx, high -> rx
+    digitalWrite(PD_PIN, HIGH); // low -> sleep mode, high -> normal mode
 
-    Serial.begin(9600);
-
-    #ifndef NO_HAM
-        dorji.begin(9600);
-    #endif
+    Serial.begin(RADIO_BAUDRATE);
 
     delay(250); // may need delay after pin setup before interfacing
-    Serial.println(F("\n\n"));
-    Serial.println(F("Pins intialized..."));
 
-    print_free_mem();
-
-    Serial.println(F("Building header..."));
     ax25_header();
-    Serial.println(F("Header built."));
-
-    print_free_mem();
     
-    #ifndef NO_HAM
-        Serial.println(F("Setting up DRA818V module..."));
-        dorji_reset(dorji);
-        dorji_readback(dorji);
-        Serial.println(F("DRA818V reset"));
-        // delay(1000); // - may need potential delay after restart
-        dorji_setfreq(146.390, 146.390, dorji);
-        dorji_readback(dorji);
-        Serial.println(F("DRA818V configured"));
-        // delay(1000); // - may need potential delay before setting filter
-        dorji_setfilter(0,0,0,dorji);
-        dorji_readback(dorji);
-        Serial.println(F("DRA818V filter on"));
-        Serial.println(F("DRA818V setup."));
+    reset_radio();
+    read_radio();
+    // delay(1000); // - may need potential delay after reset
 
-        Serial.println(' ');
+    set_frequency();
+    read_radio();
+    // delay(1000); // - may need potential delay before setting filter
 
-        dorji_close(dorji);
-    #endif
+    set_filter();
+    read_radio();
 
-    Serial.println(F("Building packet..."));
-    String telemetry = "12345678";
-    String comment = "Hello World!";
-
-    String info = format_info(telemetry, comment);
-
-    print_free_mem();
-
-    packet pack = aprs_packet(info);
-
-    print_free_mem();
-
-    Serial.println(F("Done Building."));
-
-    delay(500);
-
-    Serial.println(F("Sending...\n"));
-
-    send_packet(pack);
-
-    Serial.println(F("\nSent."));
+    Serial.end();
 }
 
 void Radio::loop_handler() {
-    
+    // check if it is time to broadcast
+    if ((millis() - last_transmission) / 1000 >= (DATA_TIMEOUT - (SLOT_ERROR / 2))) {
+        // check again to make sure slot is good
+        // get current seconds, subtract slot,
+        // and check if it's divisible by DATA_TIMEOUT
+        // if it's not divisible, we're not in a good slot
+
+        // need margin of +/- SLOT_ERROR seconds to account for drift
+        if (!gps.stale && (gps.second - DATA_SLOT) % DATA_TIMEOUT < SLOT_ERROR) {
+            // we're in a good slot, write data
+            build_aprs_packet();
+            send_packet();
+            return;
+        } else if (gps.stale) {
+            // GPS is stale but it has been about DATA_TIMEOUT seconds
+            // we want to broadcast that we are still alive, so broadcast anyway
+            build_aprs_packet();
+            send_packet();
+            return;
+        }
+    }
 }
+
+Radio::Radio() {
+    setup_handler();
+}
+
+Radio radio = Radio();

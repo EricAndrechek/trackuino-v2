@@ -13,9 +13,10 @@ class APRS {
         void base91_encode(unsigned char& input, char* output, int length);
         void base91_encode(float& input, char* output, int length);
     public:
-        char *packet;
+        char packet[89];
+        unsigned char info_len = 0;
+        // if you want the info field, just use packet + 18
         APRS();
-        ~APRS();
         void loop_handler();
 };
 

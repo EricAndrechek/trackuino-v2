@@ -3,10 +3,11 @@
 #define _1200   1
 #define _2400   0
 
-struct packet {
-    unsigned char len;
-    char* packet;
-};
+// packet length is 90 bytes max for our use
+// this is not the best way to do this but it works
+// make 100 to roughly account for bit stuffing
+// bad way of doing it
+#define max_packet_len  100
 
 class Radio {
     private:
@@ -22,20 +23,46 @@ class Radio {
         bool nada = _2400;
 
         // packet buffers
-        char ax25_header_packet[16];
+        char ax25_header_packet[16]; // always 16 bytes
+        unsigned char packet_length = 0;
+        char packet[max_packet_len]; // max 100 bytes for simplicity
 
+        // timing
+        unsigned long last_transmission = 0;
+
+        // bit banging mic out functions
         void set_nada_1200();
         void set_nada_2400();
         void set_nada(bool &nada);
 
+        // send functions
         void send_flag(int flag_len);
-        void send_packet(packet pack);
+        void send_packet();
 
-        void send_header(char msg_type);
-        void send_payload(char type);
+        // build crc
+        unsigned short int crc16_ccitt();
 
-        void set_io(void);
-        void print_debug(char type);
+        // hdlc generation functions
+        void flip_order();
+        void raw_hdlc();
+        void stuff_hdlc_packet();
+        void build_hdlc_packet();
+
+        // ax25 generation functions
+        void ax25_call_sign(char *output, bool is_source);
+        unsigned char ax25_ssid(bool is_source);
+        void ax25_header();
+        void build_ax25_packet();
+
+        // main packet builder
+        void build_aprs_packet();
+
+        // radio functions
+        void init_radio();
+        void reset_radio();
+        void set_frequency();
+        void set_filter();
+        void read_radio();
     public:
         Radio();
         void setup_handler();

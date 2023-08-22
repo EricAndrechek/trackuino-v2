@@ -18,9 +18,13 @@
 // transmitted. This is primarily for radio messages so that they
 // do not step on each other and cause interference.
 // For multiple trackers all using radios, give them all different offsets
-// of equal spacing. 
-// Set to -1 to disable.
-#define DATA_SLOT -1 // seconds (0-59) offset from top of minute
+// of equal spacing.
+#define DATA_SLOT 0 // seconds (0-59) offset from top of minute
+// If you do not plan on using this, set it to a random number between 0 and 59.
+
+// number of seconds of error it can be off from slot to broadcast
+// should be slightly longer than the time it takes for a full loop
+#define SLOT_ERROR 5 // seconds
 
 // Whether to broadcast/save data in compressed APRS format or uncompressed.
 // Compressed will use more CPU time and memory, but will save bandwidth.
@@ -153,6 +157,17 @@
 // --------------------------------------------------------------------------
 
 // Radio Config (radio.cpp)
+
+// Radio baud rate (in bits per second).
+#define RADIO_BAUDRATE 9600 // bps
+
+// Radio transmit power in dBm
+// This is configured with the switch on the radio daughterboard
+// Off = 0.5 W
+// On = 1 W
+
+// Radio frequency in MHz
+#define RADIO_FREQ 144.390 // MHz
 
 // Forward error correction (FEC) mode:
 // #define FEC_ENABLED // uncomment to enable FEC
@@ -304,9 +319,7 @@
   #define PD_PIN 4
   #define MIC_PIN 6
 #elif TRANSMITTER == SATELLITE_MODULE
-  #define PTT_PIN 3
-  #define PD_PIN 4
-  #define MIC_PIN 6
+  #define SLP_PIN 4
 #endif
 
 #endif

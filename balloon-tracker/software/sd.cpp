@@ -76,7 +76,7 @@ void SD_class::loop_handler() {
 
         #ifdef DEBUG
             Serial.begin(SERIAL_BAUDRATE);
-            Serial.print(F("Logging to SD card: ");
+            Serial.print(F("Logging to SD card: "));
             Serial.println(aprs_object.packet);
             Serial.flush();
             Serial.end();

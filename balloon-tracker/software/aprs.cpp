@@ -16,19 +16,10 @@
 // define helper functions
 
 APRS::APRS() {
-    #if COMPRESSED == true
-        packet = new char[76];
-    #else
-        packet = new char[89];
-    #endif
 
     build_header();
 
     log_init(__FILE__, sizeof(APRS));
-}
-
-APRS::~APRS() {
-    delete[] packet;
 }
 
 // take the destination, source, and digipeating information and build the header
@@ -287,6 +278,7 @@ void APRS::loop_handler() {
         sprintf(packet, "%s%s", header, body);
         // null terminate packet
         packet[75] = '\0';
+        info_len = 75 - 18;
     #else
         char body[70];
         // build uncompressed body
@@ -295,6 +287,7 @@ void APRS::loop_handler() {
         sprintf(packet, "%s%s", header, body);
         // null terminate packet
         packet[88] = '\0';
+        info_len = 88 - 18;
     #endif
 }
 

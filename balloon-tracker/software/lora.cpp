@@ -13,10 +13,6 @@
 #include "aprs.h"
 #include "leds.h"
 
-// number of seconds of error it can be off from slot to broadcast
-// should be slightly longer than the time it takes for a full loop
-#define SLOT_ERROR 5
-
 Lora_class::Lora_class() {
     setup_handler();
 }
@@ -67,7 +63,7 @@ void Lora_class::loop_handler() {
     }
 
     // check if it is time to broadcast
-    if ((millis() - last_lora) >= (LORA_INTERVAL - (SLOT_ERROR / 2))) {
+    if ((millis() - last_lora) / 1000 >= (LORA_INTERVAL - (SLOT_ERROR / 2))) {
         // check again to make sure LORA_SLOT is good
         // get current seconds, subtract LORA_SLOT,
         // and check if it's divisible by LORA_INTERVAL
