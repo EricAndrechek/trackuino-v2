@@ -1,0 +1,638 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<export version="E">
+  <design>
+    <source>/Users/jackwoods/Documents/Balloon Tracker/Balloon Tracker PCB/DoBo/DoBoR2/DoBoR2.kicad_sch</source>
+    <date>2023 August 13, Sunday 18:19:40</date>
+    <tool>Eeschema 7.0.2-0</tool>
+    <sheet number="1" name="/" tstamps="/">
+      <title_block>
+        <title/>
+        <company/>
+        <rev/>
+        <date/>
+        <source>DoBoR2.kicad_sch</source>
+        <comment number="1" value=""/>
+        <comment number="2" value=""/>
+        <comment number="3" value=""/>
+        <comment number="4" value=""/>
+        <comment number="5" value=""/>
+        <comment number="6" value=""/>
+        <comment number="7" value=""/>
+        <comment number="8" value=""/>
+        <comment number="9" value=""/>
+      </title_block>
+    </sheet>
+  </design>
+  <components>
+    <comp ref="C1">
+      <value>Capacitor</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <libsource lib="Trackuino" part="Capacitor" description="Capacitor symbol for simulation only"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Capacitor symbol for simulation only"/>
+      <property name="ki_keywords" value="simulation"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>1c56438c-30aa-4ac9-a6e9-8d503b7502b1</tstamps>
+    </comp>
+    <comp ref="C2">
+      <value>20 pF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <libsource lib="" part="Capacitor_1" description="Capacitor symbol for simulation only"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Capacitor symbol for simulation only"/>
+      <property name="ki_keywords" value="simulation"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>08e7a105-0e35-48f3-9601-96f842e5d856</tstamps>
+    </comp>
+    <comp ref="C3">
+      <value>36 pF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <libsource lib="" part="Capacitor_1" description="Capacitor symbol for simulation only"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Capacitor symbol for simulation only"/>
+      <property name="ki_keywords" value="simulation"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>d4e03b17-be83-479a-8b6e-56d45548c7f5</tstamps>
+    </comp>
+    <comp ref="C4">
+      <value>36 pF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <libsource lib="" part="Capacitor_1" description="Capacitor symbol for simulation only"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Capacitor symbol for simulation only"/>
+      <property name="ki_keywords" value="simulation"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>b10f8360-c2b0-4424-b6db-07ac8472a724</tstamps>
+    </comp>
+    <comp ref="C5">
+      <value>20 pF</value>
+      <footprint>Capacitor_SMD:C_1206_3216Metric</footprint>
+      <libsource lib="" part="Capacitor_1" description="Capacitor symbol for simulation only"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Capacitor symbol for simulation only"/>
+      <property name="ki_keywords" value="simulation"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>c7fafa20-ea7f-4873-a5cd-e91742feaf06</tstamps>
+    </comp>
+    <comp ref="D1">
+      <value>3.3V LDO</value>
+      <footprint>LED_SMD:LED_1206_3216Metric</footprint>
+      <libsource lib="Trackuino" part="LED" description="Light emitting diode"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Light emitting diode"/>
+      <property name="ki_keywords" value="LED diode"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>43cd69b8-ef32-4ebc-a3c2-c9a03e6ebfdf</tstamps>
+    </comp>
+    <comp ref="D2">
+      <value>SQUELCH</value>
+      <footprint>LED_SMD:LED_1206_3216Metric</footprint>
+      <libsource lib="Trackuino" part="LED" description="Light emitting diode"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Light emitting diode"/>
+      <property name="ki_keywords" value="LED diode"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>7fd0ef18-76c1-49d3-b75d-bbcf90e4b03a</tstamps>
+    </comp>
+    <comp ref="D3">
+      <value>AF_OUT</value>
+      <footprint>LED_SMD:LED_1206_3216Metric</footprint>
+      <libsource lib="Trackuino" part="LED" description="Light emitting diode"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Light emitting diode"/>
+      <property name="ki_keywords" value="LED diode"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>6a1eb718-6bac-4973-b54e-42dfead1803f</tstamps>
+    </comp>
+    <comp ref="D4">
+      <value>~</value>
+      <footprint>Tracker Custom Library:DORJI_DRA818V</footprint>
+      <libsource lib="Trackuino" part="DRA818V" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a6b066c3-5d6d-477b-a00b-bc0c28d25c56</tstamps>
+    </comp>
+    <comp ref="J1">
+      <value>10 Pin PicoBlade MOLEX</value>
+      <footprint>Connector_Molex:Molex_PicoBlade_53048-1010_1x10_P1.25mm_Horizontal</footprint>
+      <datasheet>https://componentsearchengine.com/Datasheets/2/53048-1010.pdf</datasheet>
+      <fields>
+        <field name="Height">3.7</field>
+        <field name="Manufacturer_Name">Molex</field>
+        <field name="Manufacturer_Part_Number">53048-1010</field>
+        <field name="Mouser Part Number">538-53048-1010</field>
+        <field name="Mouser Price/Stock">https://www.mouser.co.uk/ProductDetail/Molex/53048-1010?qs=th8CuLdcYnkN%252Bd6WV%252BYS%2FA%3D%3D</field>
+      </fields>
+      <libsource lib="53048-1010" part="53048-1010" description="Headers &amp; Wire Housings RIGHT ANGLE HDR 10P"/>
+      <property name="Height" value="3.7"/>
+      <property name="Mouser Part Number" value="538-53048-1010"/>
+      <property name="Mouser Price/Stock" value="https://www.mouser.co.uk/ProductDetail/Molex/53048-1010?qs=th8CuLdcYnkN%252Bd6WV%252BYS%2FA%3D%3D"/>
+      <property name="Manufacturer_Name" value="Molex"/>
+      <property name="Manufacturer_Part_Number" value="53048-1010"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Headers &amp; Wire Housings RIGHT ANGLE HDR 10P"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>7c7f3ed4-a886-4e13-be67-bebcf05ac9e3</tstamps>
+    </comp>
+    <comp ref="J2">
+      <value>Conn_Coaxial</value>
+      <footprint>Tracker Custom Library:Molex SMA Edge Mount</footprint>
+      <datasheet> ~</datasheet>
+      <libsource lib="Connector" part="Conn_Coaxial" description="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, LEMO, ...)"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, LEMO, ...)"/>
+      <property name="ki_keywords" value="BNC SMA SMB SMC LEMO coaxial connector CINCH RCA"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>069556fb-02d0-4162-860e-d4e7f3d1a4e8</tstamps>
+    </comp>
+    <comp ref="L1">
+      <value>56 nH</value>
+      <footprint>Inductor_SMD:L_1206_3216Metric</footprint>
+      <libsource lib="Device" part="L" description="Inductor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Inductor"/>
+      <property name="ki_keywords" value="inductor choke coil reactor magnetic"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>405036c2-9476-40aa-b7df-244bdf67c9ca</tstamps>
+    </comp>
+    <comp ref="L2">
+      <value>68 nH</value>
+      <footprint>Inductor_SMD:L_1210_3225Metric</footprint>
+      <libsource lib="Device" part="L" description="Inductor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Inductor"/>
+      <property name="ki_keywords" value="inductor choke coil reactor magnetic"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>daf8894b-28c4-4ed9-894f-c54be302faec</tstamps>
+    </comp>
+    <comp ref="L3">
+      <value>56 nH</value>
+      <footprint>Inductor_SMD:L_1206_3216Metric</footprint>
+      <libsource lib="Device" part="L" description="Inductor"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Inductor"/>
+      <property name="ki_keywords" value="inductor choke coil reactor magnetic"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>999264e5-62d6-436c-86b3-669ad3ec6c7d</tstamps>
+    </comp>
+    <comp ref="LVL1">
+      <value>TXU0104BQAR</value>
+      <footprint>Package_SO:TSSOP-14_4.4x5mm_P0.65mm</footprint>
+      <datasheet>TXU0104BQAR</datasheet>
+      <libsource lib="Trackuino2" part="TXU0104BQAR" description=""/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_keywords" value="TXU0104BQAR"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>580cd850-e5c6-4a75-b944-8c1769a079cd</tstamps>
+    </comp>
+    <comp ref="R1">
+      <value>Resistor</value>
+      <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <libsource lib="Trackuino" part="Resistor" description="Resistor, US symbol"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Resistor, US symbol"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>26e59b15-5be4-40bc-a596-ca0e2dcbbc5e</tstamps>
+    </comp>
+    <comp ref="R2">
+      <value>Resistor</value>
+      <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <libsource lib="Trackuino" part="Resistor" description="Resistor, US symbol"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Resistor, US symbol"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>ebae738e-8020-4d18-b5d4-ca22790e89cf</tstamps>
+    </comp>
+    <comp ref="R3">
+      <value>Resistor</value>
+      <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <libsource lib="Trackuino" part="Resistor" description="Resistor, US symbol"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Resistor, US symbol"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>efcddb6b-feec-4ebc-ad57-6c0c2da192fa</tstamps>
+    </comp>
+    <comp ref="R4">
+      <value>50 ohm</value>
+      <footprint>Resistor_SMD:R_1206_3216Metric</footprint>
+      <libsource lib="Trackuino" part="Resistor" description="Resistor, US symbol"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="Resistor, US symbol"/>
+      <property name="ki_keywords" value="R res resistor"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>a87d6da0-67ec-47f5-ba4f-54bbedebd04d</tstamps>
+    </comp>
+    <comp ref="SW1">
+      <value>SW_DIP_x01</value>
+      <footprint>Button_Switch_THT:SW_DIP_SPSTx01_Piano_10.8x4.1mm_W7.62mm_P2.54mm</footprint>
+      <libsource lib="Switch" part="SW_DIP_x01" description="1x DIP Switch, Single Pole Single Throw (SPST) switch, small symbol"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="1x DIP Switch, Single Pole Single Throw (SPST) switch, small symbol"/>
+      <property name="ki_keywords" value="dip switch"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>dcb6a10f-5581-41b4-9f29-02daadd24f61</tstamps>
+    </comp>
+    <comp ref="U1">
+      <value>LD1117S33TR_SOT223</value>
+      <footprint>Package_TO_SOT_SMD:SOT-223-3_TabPin2</footprint>
+      <datasheet>http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00000544.pdf</datasheet>
+      <libsource lib="Regulator_Linear" part="LD1117S33TR_SOT223" description="800mA Fixed Low Drop Positive Voltage Regulator, Fixed Output 3.3V, SOT-223"/>
+      <property name="Sheetname" value=""/>
+      <property name="Sheetfile" value="DoBoR2.kicad_sch"/>
+      <property name="ki_description" value="800mA Fixed Low Drop Positive Voltage Regulator, Fixed Output 3.3V, SOT-223"/>
+      <property name="ki_keywords" value="REGULATOR LDO 3.3V"/>
+      <sheetpath names="/" tstamps="/"/>
+      <tstamps>fc43a88b-c87f-4098-8e36-46a364d030dc</tstamps>
+    </comp>
+  </components>
+  <libparts>
+    <libpart lib="" part="Capacitor_1">
+      <description>Capacitor symbol for simulation only</description>
+      <docs>~</docs>
+      <fields>
+        <field name="Reference">C?</field>
+        <field name="Value">Capacitor</field>
+        <field name="Footprint">Trackuino:Capacitor</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="power_in"/>
+        <pin num="2" name="" type="power_out"/>
+      </pins>
+    </libpart>
+    <libpart lib="53048-1010" part="53048-1010">
+      <description>Headers &amp; Wire Housings RIGHT ANGLE HDR 10P</description>
+      <docs>https://componentsearchengine.com/Datasheets/2/53048-1010.pdf</docs>
+      <fields>
+        <field name="Reference">J2</field>
+        <field name="Value">53048-1010</field>
+        <field name="Footprint">530481010</field>
+        <field name="Datasheet">https://componentsearchengine.com/Datasheets/2/53048-1010.pdf</field>
+        <field name="Height">3.7</field>
+        <field name="Mouser Part Number">538-53048-1010</field>
+        <field name="Mouser Price/Stock">https://www.mouser.co.uk/ProductDetail/Molex/53048-1010?qs=th8CuLdcYnkN%252Bd6WV%252BYS%2FA%3D%3D</field>
+        <field name="Manufacturer_Name">Molex</field>
+        <field name="Manufacturer_Part_Number">53048-1010</field>
+      </fields>
+      <pins>
+        <pin num="1" name="RX" type="output"/>
+        <pin num="2" name="CTS" type="passive"/>
+        <pin num="3" name="RTS" type="passive"/>
+        <pin num="4" name="NETAV" type="passive"/>
+        <pin num="5" name="RI" type="passive"/>
+        <pin num="6" name="TX" type="passive"/>
+        <pin num="7" name="On/Off" type="passive"/>
+        <pin num="8" name="5V" type="input"/>
+        <pin num="9" name="3.7V" type="passive"/>
+        <pin num="10" name="GND" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Connector" part="Conn_Coaxial">
+      <description>coaxial connector (BNC, SMA, SMB, SMC, Cinch/RCA, LEMO, ...)</description>
+      <docs> ~</docs>
+      <footprints>
+        <fp>*BNC*</fp>
+        <fp>*SMA*</fp>
+        <fp>*SMB*</fp>
+        <fp>*SMC*</fp>
+        <fp>*Cinch*</fp>
+        <fp>*LEMO*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">J</field>
+        <field name="Value">Conn_Coaxial</field>
+        <field name="Datasheet"> ~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="In" type="passive"/>
+        <pin num="2" name="Ext" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Device" part="L">
+      <description>Inductor</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>Choke_*</fp>
+        <fp>*Coil*</fp>
+        <fp>Inductor_*</fp>
+        <fp>L_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">L</field>
+        <field name="Value">L</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="1" type="passive"/>
+        <pin num="2" name="2" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Regulator_Linear" part="LD1117S33TR_SOT223">
+      <description>800mA Fixed Low Drop Positive Voltage Regulator, Fixed Output 3.3V, SOT-223</description>
+      <docs>http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00000544.pdf</docs>
+      <footprints>
+        <fp>SOT?223*TabPin2*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">U</field>
+        <field name="Value">LD1117S33TR_SOT223</field>
+        <field name="Footprint">Package_TO_SOT_SMD:SOT-223-3_TabPin2</field>
+        <field name="Datasheet">http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00000544.pdf</field>
+      </fields>
+      <pins>
+        <pin num="1" name="GND" type="power_in"/>
+        <pin num="2" name="VO" type="power_out"/>
+        <pin num="3" name="VI" type="power_in"/>
+      </pins>
+    </libpart>
+    <libpart lib="Switch" part="SW_DIP_x01">
+      <description>1x DIP Switch, Single Pole Single Throw (SPST) switch, small symbol</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>SW?DIP?x1*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">SW</field>
+        <field name="Value">SW_DIP_x01</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Trackuino" part="Capacitor">
+      <description>Capacitor symbol for simulation only</description>
+      <docs>~</docs>
+      <fields>
+        <field name="Reference">C?</field>
+        <field name="Value">Capacitor</field>
+        <field name="Footprint">Trackuino:Capacitor</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="power_in"/>
+        <pin num="2" name="" type="power_out"/>
+      </pins>
+    </libpart>
+    <libpart lib="Trackuino" part="DRA818V">
+      <fields>
+        <field name="Reference">D1</field>
+        <field name="Value">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="SQ" type="output"/>
+        <pin num="3" name="AF_OUT" type="output"/>
+        <pin num="5" name="PTT" type="input"/>
+        <pin num="6" name="PD" type="input"/>
+        <pin num="7" name="H/L" type="input"/>
+        <pin num="8" name="VIN" type="power_in"/>
+        <pin num="9" name="GND" type="passive"/>
+        <pin num="10" name="GND" type="passive"/>
+        <pin num="12" name="ANT" type="passive"/>
+        <pin num="16" name="RXD" type="input"/>
+        <pin num="17" name="TXD" type="output"/>
+        <pin num="18" name="MIC_IN" type="input"/>
+      </pins>
+    </libpart>
+    <libpart lib="Trackuino" part="LED">
+      <description>Light emitting diode</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>LED*</fp>
+        <fp>LED_SMD:*</fp>
+        <fp>LED_THT:*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">D?</field>
+        <field name="Value">LED</field>
+        <field name="Footprint">Trackuino:LED</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="K" type="passive"/>
+        <pin num="2" name="A" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Trackuino" part="Resistor">
+      <description>Resistor, US symbol</description>
+      <docs>~</docs>
+      <footprints>
+        <fp>R_*</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">R?</field>
+        <field name="Value">Resistor</field>
+        <field name="Footprint">Trackuino:Resistor</field>
+        <field name="Datasheet">~</field>
+      </fields>
+      <pins>
+        <pin num="1" name="" type="passive"/>
+        <pin num="2" name="" type="passive"/>
+      </pins>
+    </libpart>
+    <libpart lib="Trackuino2" part="TXU0104BQAR">
+      <docs>TXU0104BQAR</docs>
+      <footprints>
+        <fp>U_TXU0104_TEX</fp>
+        <fp>U_TXU0104_TEX-M</fp>
+        <fp>U_TXU0104_TEX-L</fp>
+      </footprints>
+      <fields>
+        <field name="Reference">LVL</field>
+        <field name="Value">TXU0104BQAR</field>
+        <field name="Footprint">U_TXU0104_TEX</field>
+        <field name="Datasheet">TXU0104BQAR</field>
+      </fields>
+      <pins>
+        <pin num="1" name="VCC_A" type="unspecified"/>
+        <pin num="2" name="A1" type="unspecified"/>
+        <pin num="3" name="A2" type="unspecified"/>
+        <pin num="4" name="A3" type="unspecified"/>
+        <pin num="5" name="A4" type="unspecified"/>
+        <pin num="6" name="NC" type="no_connect"/>
+        <pin num="7" name="GND" type="unspecified"/>
+        <pin num="8" name="OE" type="unspecified"/>
+        <pin num="9" name="NC" type="no_connect"/>
+        <pin num="10" name="B4Y" type="unspecified"/>
+        <pin num="11" name="B3Y" type="unspecified"/>
+        <pin num="12" name="B2Y" type="unspecified"/>
+        <pin num="13" name="B1Y" type="unspecified"/>
+        <pin num="14" name="VCC_B" type="unspecified"/>
+        <pin num="15" name="" type="unspecified"/>
+      </pins>
+    </libpart>
+  </libparts>
+  <libraries>
+    <library logical="53048-1010">
+      <uri>/Users/jackwoods/Downloads/Molex 53048-1010/53048-1010/KiCad/53048-1010.kicad_sym</uri>
+    </library>
+    <library logical="Connector">
+      <uri>/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols//Connector.kicad_sym</uri>
+    </library>
+    <library logical="Device">
+      <uri>/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols//Device.kicad_sym</uri>
+    </library>
+    <library logical="Regulator_Linear">
+      <uri>/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols//Regulator_Linear.kicad_sym</uri>
+    </library>
+    <library logical="Switch">
+      <uri>/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols//Switch.kicad_sym</uri>
+    </library>
+    <library logical="Trackuino">
+      <uri>/Users/jackwoods/Documents/GitHub/trackuino-v2/hardware/Custom Libraries/Trackuino.kicad_sym</uri>
+    </library>
+    <library logical="Trackuino2">
+      <uri>/Users/jackwoods/Documents/GitHub/trackuino-v2/hardware/Custom Libraries/Trackuino.kicad_sym</uri>
+    </library>
+  </libraries>
+  <nets>
+    <net code="1" name="+3.3V">
+      <node ref="C1" pin="1" pintype="power_in"/>
+      <node ref="D4" pin="8" pinfunction="VIN" pintype="power_in"/>
+      <node ref="LVL1" pin="1" pinfunction="VCC_A" pintype="unspecified"/>
+      <node ref="R1" pin="2" pintype="passive"/>
+      <node ref="U1" pin="2" pinfunction="VO" pintype="power_out"/>
+    </net>
+    <net code="2" name="+5V">
+      <node ref="J1" pin="8" pinfunction="5V" pintype="input"/>
+      <node ref="LVL1" pin="14" pinfunction="VCC_B" pintype="unspecified"/>
+      <node ref="LVL1" pin="8" pinfunction="OE" pintype="unspecified"/>
+      <node ref="U1" pin="3" pinfunction="VI" pintype="power_in"/>
+    </net>
+    <net code="3" name="GND">
+      <node ref="C1" pin="2" pintype="power_out"/>
+      <node ref="C2" pin="2" pintype="power_out"/>
+      <node ref="C3" pin="2" pintype="power_out"/>
+      <node ref="C4" pin="2" pintype="power_out"/>
+      <node ref="C5" pin="2" pintype="power_out"/>
+      <node ref="D1" pin="1" pinfunction="K" pintype="passive"/>
+      <node ref="D2" pin="1" pinfunction="K" pintype="passive"/>
+      <node ref="D3" pin="1" pinfunction="K" pintype="passive"/>
+      <node ref="D4" pin="10" pinfunction="GND" pintype="passive"/>
+      <node ref="D4" pin="9" pinfunction="GND" pintype="passive"/>
+      <node ref="J1" pin="10" pinfunction="GND" pintype="passive"/>
+      <node ref="J2" pin="2" pinfunction="Ext" pintype="passive"/>
+      <node ref="LVL1" pin="15" pintype="unspecified"/>
+      <node ref="LVL1" pin="7" pinfunction="GND" pintype="unspecified"/>
+      <node ref="R4" pin="2" pintype="passive"/>
+      <node ref="SW1" pin="1" pintype="passive"/>
+      <node ref="U1" pin="1" pinfunction="GND" pintype="power_in"/>
+    </net>
+    <net code="4" name="Net-(C3-Pad1)">
+      <node ref="C3" pin="1" pintype="power_in"/>
+      <node ref="L1" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="L2" pin="1" pinfunction="1" pintype="passive"/>
+    </net>
+    <net code="5" name="Net-(C4-Pad1)">
+      <node ref="C4" pin="1" pintype="power_in"/>
+      <node ref="L2" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="L3" pin="1" pinfunction="1" pintype="passive"/>
+    </net>
+    <net code="6" name="Net-(D1-A)">
+      <node ref="D1" pin="2" pinfunction="A" pintype="passive"/>
+      <node ref="R1" pin="1" pintype="passive"/>
+    </net>
+    <net code="7" name="Net-(D2-A)">
+      <node ref="D2" pin="2" pinfunction="A" pintype="passive"/>
+      <node ref="R2" pin="1" pintype="passive"/>
+    </net>
+    <net code="8" name="Net-(D3-A)">
+      <node ref="D3" pin="2" pinfunction="A" pintype="passive"/>
+      <node ref="R3" pin="1" pintype="passive"/>
+    </net>
+    <net code="9" name="Net-(D4-AF_OUT)">
+      <node ref="D4" pin="3" pinfunction="AF_OUT" pintype="output"/>
+      <node ref="J1" pin="7" pinfunction="On/Off" pintype="passive"/>
+      <node ref="R3" pin="2" pintype="passive"/>
+    </net>
+    <net code="10" name="Net-(D4-ANT)">
+      <node ref="C2" pin="1" pintype="power_in"/>
+      <node ref="D4" pin="12" pinfunction="ANT" pintype="passive"/>
+      <node ref="L1" pin="1" pinfunction="1" pintype="passive"/>
+    </net>
+    <net code="11" name="Net-(D4-H{slash}L)">
+      <node ref="D4" pin="7" pinfunction="H/L" pintype="input"/>
+      <node ref="SW1" pin="2" pintype="passive"/>
+    </net>
+    <net code="12" name="Net-(D4-MIC_IN)">
+      <node ref="D4" pin="18" pinfunction="MIC_IN" pintype="input"/>
+      <node ref="LVL1" pin="3" pinfunction="A2" pintype="unspecified"/>
+    </net>
+    <net code="13" name="Net-(D4-PD)">
+      <node ref="D4" pin="6" pinfunction="PD" pintype="input"/>
+      <node ref="LVL1" pin="4" pinfunction="A3" pintype="unspecified"/>
+    </net>
+    <net code="14" name="Net-(D4-PTT)">
+      <node ref="D4" pin="5" pinfunction="PTT" pintype="input"/>
+      <node ref="LVL1" pin="5" pinfunction="A4" pintype="unspecified"/>
+    </net>
+    <net code="15" name="Net-(D4-RXD)">
+      <node ref="D4" pin="16" pinfunction="RXD" pintype="input"/>
+      <node ref="LVL1" pin="2" pinfunction="A1" pintype="unspecified"/>
+    </net>
+    <net code="16" name="Net-(D4-SQ)">
+      <node ref="D4" pin="1" pinfunction="SQ" pintype="output"/>
+      <node ref="J1" pin="4" pinfunction="NETAV" pintype="passive"/>
+      <node ref="R2" pin="2" pintype="passive"/>
+    </net>
+    <net code="17" name="Net-(D4-TXD)">
+      <node ref="D4" pin="17" pinfunction="TXD" pintype="output"/>
+      <node ref="J1" pin="1" pinfunction="RX" pintype="output"/>
+    </net>
+    <net code="18" name="Net-(J1-CTS)">
+      <node ref="J1" pin="2" pinfunction="CTS" pintype="passive"/>
+      <node ref="LVL1" pin="12" pinfunction="B2Y" pintype="unspecified"/>
+    </net>
+    <net code="19" name="Net-(J1-RI)">
+      <node ref="J1" pin="5" pinfunction="RI" pintype="passive"/>
+      <node ref="LVL1" pin="10" pinfunction="B4Y" pintype="unspecified"/>
+    </net>
+    <net code="20" name="Net-(J1-RTS)">
+      <node ref="J1" pin="3" pinfunction="RTS" pintype="passive"/>
+      <node ref="LVL1" pin="11" pinfunction="B3Y" pintype="unspecified"/>
+    </net>
+    <net code="21" name="Net-(J1-TX)">
+      <node ref="J1" pin="6" pinfunction="TX" pintype="passive"/>
+      <node ref="LVL1" pin="13" pinfunction="B1Y" pintype="unspecified"/>
+    </net>
+    <net code="22" name="Net-(J2-In)">
+      <node ref="C5" pin="1" pintype="power_in"/>
+      <node ref="J2" pin="1" pinfunction="In" pintype="passive"/>
+      <node ref="L3" pin="2" pinfunction="2" pintype="passive"/>
+      <node ref="R4" pin="1" pintype="passive"/>
+    </net>
+    <net code="23" name="unconnected-(J1-3.7V-Pad9)">
+      <node ref="J1" pin="9" pinfunction="3.7V" pintype="passive"/>
+    </net>
+    <net code="24" name="unconnected-(LVL1-NC-Pad6)">
+      <node ref="LVL1" pin="6" pinfunction="NC" pintype="no_connect"/>
+    </net>
+    <net code="25" name="unconnected-(LVL1-NC-Pad9)">
+      <node ref="LVL1" pin="9" pinfunction="NC" pintype="no_connect"/>
+    </net>
+  </nets>
+</export>
