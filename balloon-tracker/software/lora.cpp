@@ -12,20 +12,23 @@
 #include "gps.h"
 #include "aprs.h"
 #include "leds.h"
+#include "microsd.h"
 
 Lora_class::Lora_class() {
-    setup_handler();
+    last_lora = 0;
 }
 
 void Lora_class::setup_handler() {
+    chip_select_lora();
+
     LoRa.setPins(LORA_CS_PIN, LORA_RESET_PIN, LORA_DIO0_PIN);
     
     if (!LoRa.begin(LORA_FREQ)) {
         #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.println(F("LoRa module failed to initialize"));
-            Serial.flush();
-            Serial.end();
+            chip_select_sd();
+            micro_sd.current_file.println(F("LoRa module failed to initialize"));
+            micro_sd.current_file.flush();
+            chip_select_lora();
         #endif
         leds.set_error();
 
@@ -40,6 +43,8 @@ void Lora_class::setup_handler() {
     // LoRa.setSyncWord(LORA_SYNC_WORD);
     // LoRa.enableCrc();
     LoRa.idle();
+
+    chip_select_sd();
 
     log_init(__FILE__, sizeof(Lora_class));
 }
@@ -87,9 +92,11 @@ void Lora_class::loop_handler() {
 
 void Lora_class::broadcast() {
     // then send it over LoRa
+    chip_select_lora();
     LoRa.beginPacket();
     LoRa.print(aprs_object.packet);
-    LoRa.endPacket(true);
+    LoRa.endPacket(false);
+    chip_select_sd();
 
     // 
 

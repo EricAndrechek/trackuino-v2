@@ -8,24 +8,21 @@
 
 #include "config.h"
 #include "helpers.h"
-#include "sd.h"
+#include "microsd.h"
 #include "leds.h"
 #include "aprs.h"
 
 #define MAIN_FILE "data.txt"
 
-SD_class::SD_class() {
-    setup_handler();
+MicroSD::MicroSD() {
+    last_log = 0;
 }
 
-void SD_class::setup_handler() {
+void MicroSD::setup_handler() {
     // initialize SD card
     if (!SD.begin(SD_CS_PIN)) {
         #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.println(F("SD module failed to initialize"));
-            Serial.flush();
-            Serial.end();
+            Serial.println(F("MicroSD module failed to initialize"));
         #endif
         leds.set_error();
 
@@ -40,21 +37,18 @@ void SD_class::setup_handler() {
     if (!current_file) {
         // if file failed to open
         #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.println(F("SD module failed to open main file"));
-            Serial.flush();
-            Serial.end();
+            Serial.println(F("MicroSD module failed to open main file"));
         #endif
         leds.set_error();
         
         // lets not kill the program, just try to open the file again later
     }
 
-    log_init(__FILE__, sizeof(SD_class));
+    log_init(__FILE__, sizeof(MicroSD));
 }
 
 // grabs data from every module and logs it to the SD card
-void SD_class::loop_handler() {
+void MicroSD::loop_handler() {
     // if it's time to log
     if (millis() - last_log >= LOG_INTERVAL) {
         // open main file if not opened
@@ -65,22 +59,12 @@ void SD_class::loop_handler() {
         if (!current_file) {
             // if file failed to open
             #ifdef DEBUG
-                Serial.begin(SERIAL_BAUDRATE);
-                Serial.println(F("SD module failed to open main file"));
-                Serial.flush();
-                Serial.end();
+                current_file.println(F("MicroSD module failed to open main file"));
+                current_file.flush();
             #endif
             leds.set_error();
             return;
         }
-
-        #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.print(F("Logging to SD card: "));
-            Serial.println(aprs_object.packet);
-            Serial.flush();
-            Serial.end();
-        #endif
 
         current_file.println(aprs_object.packet);
         current_file.flush();
@@ -89,4 +73,4 @@ void SD_class::loop_handler() {
     }
 }
 
-SD_class sd_object = SD_class();
+MicroSD micro_sd = MicroSD();

@@ -9,26 +9,26 @@
 // bad way of doing it
 #define max_packet_len  100
 
+// globals
+const unsigned char FLAG = 0x7e;
+const unsigned char PID = 0xf0;
+const unsigned char CF = 0x03;
+const unsigned int tc1200 = (unsigned int)(0.5 * 0.975 * 1000000.0 / 1200.0);
+const unsigned int tc2400 = (unsigned int)(0.5 * 0.975 * 1000000.0 / 2400.0);
+
 class Radio {
     private:
-        // globals
-        const unsigned char FLAG = 0x7e;
-        const unsigned char PID = 0xf0;
-        const unsigned char CF = 0x03;
-        const unsigned int tc1200 = (unsigned int)(0.5 * 0.975 * 1000000.0 / 1200.0);
-        const unsigned int tc2400 = (unsigned int)(0.5 * 0.975 * 1000000.0 / 2400.0);
-
-        unsigned short crc=0xffff;
-        char bit_stuff = 0;
-        bool nada = _2400;
+        unsigned short crc;
+        char bit_stuff;
+        bool nada;
 
         // packet buffers
         char ax25_header_packet[16]; // always 16 bytes
-        unsigned char packet_length = 0;
+        unsigned char packet_length;
         char packet[max_packet_len]; // max 100 bytes for simplicity
 
         // timing
-        unsigned long last_transmission = 0;
+        unsigned long last_transmission;
 
         // bit banging mic out functions
         void set_nada_1200();

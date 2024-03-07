@@ -44,7 +44,7 @@ def api_upload():
     
     # accept upload data
     try:
-        data_obj.upload(request)
+        data_obj.upload(data)
     except Exception as e:
         return e, 400
     

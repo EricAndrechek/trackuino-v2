@@ -6,6 +6,7 @@
 #include "leds.h"
 #include "aprs.h"
 #include "gps.h"
+#include "microsd.h"
 
 // take an APRS packet and turns it into an AX.25 packet
 // Then adds HDLC framing
@@ -21,36 +22,6 @@
 // and is only for sending packets
 // It does not support MIC-E encoding
 // It does not support sending multiple packets in one FX.25 packet
-
-
-// DEBUG HELPER FUNCTIONS
-#ifdef DEBUG
-
-    // print a packet in hex
-    void print_hex(char* packet, unsigned char length) {
-        for (int i = 0; i < length; i++) {
-            Serial.print("0x");
-            Serial.print((packet[i] & 0xff) < 16 ? "0" : "");
-            Serial.print(packet[i] & 0xff, HEX);
-            Serial.print(" ");
-        }
-        Serial.println();
-    }
-
-    // print a long that is too big for Serial.print
-    // this is used only really for FEC stuff
-    void print_unsigned_long_long(unsigned long long val) {
-        if (val < 10) {
-            Serial.print((unsigned int) val);
-        } else {
-            unsigned long long subproblem = val / 10;
-            int remainder = val % 10;
-            print_unsigned_long_long(subproblem);
-            Serial.print(remainder);
-        }
-    }
-
- #endif
 
 
 // RADIO CODE
@@ -408,35 +379,35 @@ void Radio::build_aprs_packet() {
 
 // Send connection AT command to DRA818V
 void Radio::init_radio() {
-    Serial.println(F("AT+DMOCONNECT"));
+    Serial1.println(F("AT+DMOCONNECT"));
 }
 
 // Send reset AT command to DRA818V
 // This is just 3 inits without reading back
 void Radio::reset_radio() {
     for (char i = 0; i < 1; i++) {
-        Serial.println(F("AT+DMOCONNECT"));
+        Serial1.println(F("AT+DMOCONNECT"));
     }
 }
 
 // Send AT command to DRA818V to set frequency
 void Radio::set_frequency() {
-    Serial.print(F("AT+DMOSETGROUP=0,"));
-    Serial.print(RADIO_FREQ, 4);
-    Serial.print(',');
-    Serial.print(RADIO_FREQ, 4);
-    Serial.println(F(",0000,0,0000"));
+    Serial1.print(F("AT+DMOSETGROUP=0,"));
+    Serial1.print(RADIO_FREQ, 4);
+    Serial1.print(',');
+    Serial1.print(RADIO_FREQ, 4);
+    Serial1.println(F(",0000,0,0000"));
 }
 
 // Send AT command to DRA818V to set filter
 void Radio::set_filter() {
     // TODO: make configurable and explain settings
-    Serial.print(F("AT+SETFILTER="));
-    Serial.print(0);
-    Serial.print(',');
-    Serial.print(0);
-    Serial.print(',');
-    Serial.println(0);
+    Serial1.print(F("AT+SETFILTER="));
+    Serial1.print(0);
+    Serial1.print(',');
+    Serial1.print(0);
+    Serial1.print(',');
+    Serial1.println(0);
 }
 
 // Read incoming data from DRA818V
@@ -447,22 +418,27 @@ void Radio::read_radio() {
     String d;
     
     unsigned long current_time  = millis();
-    while (Serial.available() < 1) {
-        if ((millis() - current_time) / 100 > 5) {
+    while (Serial1.available() < 1) {
+        if ((millis() - current_time) / 1000 > 5) {
             // TODO: connection failed, handle error
-            leds.set_error();
+            #ifdef DEBUG
+                micro_sd.current_file.println(F("Radio connection failed"));
+                micro_sd.current_file.flush();
+            #endif
+            // leds.set_error();
+            // TODO: maybe we kill the program instead?
             break;
         }
     }
-    if (Serial.available() > 0) {
-        d = Serial.readString();
+    if (Serial1.available() > 0) {
+        d = Serial1.readString();
         // handle data if we want more advanced error handling and logic here
     }
 }
 
 // MAIN
 
-// Send AT commands over Serial to setup the DRA818V
+// Send AT commands over Serial1 to setup the DRA818V
 void Radio::setup_handler() {
     pinMode(MIC_PIN, OUTPUT);
     pinMode(PTT_PIN, OUTPUT);
@@ -472,7 +448,7 @@ void Radio::setup_handler() {
     digitalWrite(PTT_PIN, HIGH); // low -> tx, high -> rx
     digitalWrite(PD_PIN, HIGH); // low -> sleep mode, high -> normal mode
 
-    Serial.begin(RADIO_BAUDRATE);
+    Serial1.begin(RADIO_BAUDRATE);
 
     delay(250); // may need delay after pin setup before interfacing
 
@@ -480,16 +456,16 @@ void Radio::setup_handler() {
     
     reset_radio();
     read_radio();
-    // delay(1000); // - may need potential delay after reset
+    delay(1000); // - may need potential delay after reset
 
     set_frequency();
     read_radio();
-    // delay(1000); // - may need potential delay before setting filter
+    delay(1000); // - may need potential delay before setting filter
 
     set_filter();
     read_radio();
 
-    Serial.end();
+    Serial1.end();
 }
 
 void Radio::loop_handler() {
@@ -517,7 +493,13 @@ void Radio::loop_handler() {
 }
 
 Radio::Radio() {
-    setup_handler();
+    crc = 0xffff;
+    bit_stuff = 0;
+    nada = _2400;
+
+    packet_length = 0;
+
+    last_transmission = 0;
 }
 
 Radio radio = Radio();

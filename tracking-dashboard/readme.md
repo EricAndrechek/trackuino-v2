@@ -35,6 +35,8 @@ cd trackuino-v2
 git sparse-checkout set --no-cone tracking-dashboard
 git checkout
 cd tracking-dashboard
+chmod +x setup.sh
+./setup.sh
 ```
 
 ## Setup Server

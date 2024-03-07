@@ -10,15 +10,15 @@ enum BuzzerStatus {
 class Buzzer {
     private:
         // last time buzzer was on
-        unsigned long last_buzz = 0;
+        unsigned long last_buzz;
         // last state of buzzer
-        bool last_buzz_state = false;
+        bool last_buzz_state;
         // number of buzzes remaining
-        char buzzes_remaining = 0;
+        char buzzes_remaining;
         // status of buzzer
-        BuzzerStatus buzzer_status = BuzzerStatus::On;
+        BuzzerStatus buzzer_status;
         // status to be transmitted
-        BuzzerStatus queued_status = BuzzerStatus::On;
+        BuzzerStatus queued_status;
 
         void _start_buzz();
         void _stop_buzz();

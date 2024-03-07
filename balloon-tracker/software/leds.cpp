@@ -15,12 +15,23 @@
 #include "leds.h"
 
 // how long to keep the ERROR LED on for
-#define ERROR_LED_INTERVAL 5000 // 5 seconds
+#define ERROR_LED_INTERVAL 500 // 500 milliseconds
 
 // status LED just copies buzzer LED time constants
 
 LEDS::LEDS() {
-    setup_handler();
+    // false = off, true = on
+    GPS_LED_state = false;
+    ERROR_LED_state = false;
+    STATUS_LED_state = false;
+
+    // last time LEDs were updated
+    last_ERROR_LED = 0;
+    last_STATUS_LED = 0;
+
+    STATUS_LED_flashes_remaining = 0;
+    STATUS_LED_status = STATUS::ON;
+    STATUS_LED_queued_status = STATUS::ON;
 }
 
 void LEDS::setup_handler() {

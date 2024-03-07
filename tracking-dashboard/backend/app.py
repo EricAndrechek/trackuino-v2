@@ -9,11 +9,8 @@ psycogreen.gevent.patch_psycopg()
 
 from flask import Flask, Blueprint, render_template, request, jsonify, redirect, url_for
 from utils.config_helper import config
-from utils.pydb import PyDB
-import requests
-import subprocess
-import logging
-import json
+
+from sql.db import Session
 
 app = Flask(__name__)
 
@@ -32,12 +29,3 @@ def page_not_found(e):
 @app.errorhandler(500)
 def internal_server_error(e):
     return "Internal server error: {}".format(e), 500
-
-# MAIN
-
-if __name__ == '__main__':
-    if config.debug:
-        print("Config:")
-        print(json.dumps(config, indent=4))
-    logging.basicConfig(filename='error.log', level=logging.DEBUG if config.debug else logging.INFO)
-    app.run(debug=True if config.debug else False, host=config.host, port=config.port)

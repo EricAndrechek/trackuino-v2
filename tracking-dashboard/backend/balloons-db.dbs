@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="balloons-db" id="Project-13a6" database="PostgreSQL" >
+	<schema name="balloons-db" >
+		<table name="data" prior="tbl" >
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<identity><![CDATA[GENERATED ALWAYS AS IDENTITY ]]></identity>
+			</column>
+			<column name="message" type="integer" jt="4" mandatory="y" />
+			<column name="callsign" type="text" jt="12" mandatory="y" />
+			<column name="ssid" type="integer" jt="4" mandatory="y" />
+			<column name="symbol" type="text" jt="12" mandatory="y" />
+			<column name="speed" type="real" jt="7" />
+			<column name="course" type="real" jt="7" />
+			<index name="pk_tbl" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+		</table>
+		<table name="messages" prior="tbl" spec="" >
+			<comment><![CDATA[store timestampe and raw (and unique) APRS messages]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<identity><![CDATA[GENERATED ALWAYS AS IDENTITY ]]></identity>
+			</column>
+			<column name="timestamp" type="timestamptz" length="12" jt="93" mandatory="y" >
+				<defo><![CDATA[CURRENT_TIMESTAMP]]></defo>
+			</column>
+			<column name="message" type="integer" jt="4" mandatory="y" />
+			<index name="pk_messages" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="unq_messages" unique="UNIQUE_KEY" >
+				<column name="message" />
+			</index>
+		</table>
+		<table name="sources" prior="tbl" >
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<identity><![CDATA[GENERATED ALWAYS AS IDENTITY ]]></identity>
+			</column>
+			<column name="message" type="integer" jt="4" mandatory="y" />
+			<column name="timestamp" type="timestamptz" length="12" jt="93" mandatory="y" >
+				<defo><![CDATA[CURRENT_TIMESTAMP]]></defo>
+			</column>
+			<column name="callsign" type="text" jt="12" mandatory="y" />
+			<column name="ssid" type="smallint" jt="5" mandatory="y" />
+			<column name="ip" type="inet" jt="1111" />
+			<index name="pk_sources" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<constraint name="callsignvalidation" >
+				<string><![CDATA[char_length(callsign) < 7]]></string>
+				<comment><![CDATA[Ensure callsign is only numbers and letters (all caps) and no longer than 6 characters]]></comment>
+			</constraint>
+			<constraint name="ssidcheck" >
+				<string><![CDATA[ssid >= 0 AND ssid < 16]]></string>
+			</constraint>
+			<fk name="fk_sources_messages" to_schema="balloons-db" to_table="messages" >
+				<fk_column name="message" pk="id" />
+			</fk>
+		</table>
+		<table name="telemetry" prior="tbl" >
+			<comment><![CDATA[Store message id, raw telemetry data, and parsed telemetry data.]]></comment>
+			<column name="id" type="integer" jt="4" mandatory="y" >
+				<identity><![CDATA[GENERATED ALWAYS AS IDENTITY ]]></identity>
+			</column>
+			<column name="message" type="integer" jt="4" mandatory="y" />
+			<column name="raw" type="text" jt="12" mandatory="y" />
+			<column name="parsed" type="jsonb" jt="2000" mandatory="y" />
+			<index name="pk_telemetry" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<fk name="fk_telemetry_messages" to_schema="balloons-db" to_table="messages" >
+				<fk_column name="message" pk="id" />
+			</fk>
+		</table>
+	</schema>
+	<layout name="Default Layout" id="Layout-1105" show_column_type="y" show_schema_name="y" show_relation="columns" >
+		<entity schema="balloons-db" name="data" color="C1D8EE" x="640" y="336" />
+		<entity schema="balloons-db" name="messages" color="C1D8EE" x="48" y="64" />
+		<entity schema="balloons-db" name="sources" color="C1D8EE" x="464" y="48" />
+		<entity schema="balloons-db" name="telemetry" color="C1D8EE" x="288" y="224" />
+	</layout>
+</project>

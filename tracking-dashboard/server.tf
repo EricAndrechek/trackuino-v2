@@ -37,11 +37,11 @@ resource "oci_core_instance" "generated_oci_core_instance" {
 	}
 	shape = "VM.Standard.A1.Flex"
 	shape_config {
-		memory_in_gbs = "8"
-		ocpus = "2"
+		memory_in_gbs = "24"
+		ocpus = "4"
 	}
 	source_details {
-		boot_volume_size_in_gbs = "50"
+		boot_volume_size_in_gbs = "200"
 		boot_volume_vpus_per_gb = "30"
 		source_id = ""
 		source_type = "image"

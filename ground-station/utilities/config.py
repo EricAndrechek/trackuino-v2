@@ -1,10 +1,8 @@
-# Automatically loads config file and returns a dictionary
+from box import Box, ConfigBox, exceptions
 
-import yaml
+# TODO: check all values to verify they are correct
 
-def Config(config_file):
-    with open(config_file) as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-    return config
-
-# TODO: add a function to change and save the config file, potentially from the web interface
+try:
+    config = ConfigBox(Box.from_yaml(filename='config.yaml', camel_killer_box=True))
+except exceptions.BoxError:
+    config = ConfigBox(Box.from_yaml(filename='../config.yaml', camel_killer_box=True))

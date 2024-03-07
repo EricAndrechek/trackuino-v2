@@ -15,3 +15,4 @@ def api_db_get():
     return "not implemented", 501
 
 # TODO: allow getting specific tables from the db and render them in the browser
+# maybe just redirect to pgadmin instead?

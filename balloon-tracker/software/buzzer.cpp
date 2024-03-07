@@ -9,9 +9,14 @@
 #include "helpers.h"
 #include "buzzer.h"
 #include "gps.h"
+#include "microsd.h"
 
 Buzzer::Buzzer() {
-    setup_handler();
+    last_buzz = 0;
+    last_buzz_state = false;
+    buzzes_remaining = 0;
+    buzzer_status = BuzzerStatus::On;
+    queued_status = BuzzerStatus::On;
 }
 
 // handle turning buzzer on/off to transmit status beeps

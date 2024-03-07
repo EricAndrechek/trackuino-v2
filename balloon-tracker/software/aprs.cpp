@@ -12,13 +12,18 @@
 #include "aprs.h"
 #include "gps.h"
 #include "sensors.h"
+#include "microsd.h"
 
 // define helper functions
 
 APRS::APRS() {
+    sequence = 0;
+    info_len = 0;
+}
 
+void APRS::setup_handler() {
+    // build header
     build_header();
-
     log_init(__FILE__, sizeof(APRS));
 }
 

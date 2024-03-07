@@ -1,3 +1,6 @@
-from box import Box, ConfigBox
+from box import Box, ConfigBox, exceptions
 
-config = ConfigBox(Box.from_yaml(filename='config.yaml', camel_killer_box=True))
+try:
+    config = ConfigBox(Box.from_yaml(filename='config.yaml', camel_killer_box=True))
+except exceptions.BoxError:
+    config = ConfigBox(Box.from_yaml(filename='../config.yaml', camel_killer_box=True))

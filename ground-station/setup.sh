@@ -15,7 +15,7 @@ if [ "$(uname)" = "Linux" ]; then
         sudo apt autoremove -y
 
         # Install the required packages
-        sudo apt install rtl-sdr multimon-ng sox -y
+        sudo apt install rtl-sdr multimon-ng sox gpsd gpsd-clients -y
 
         # Setup udev rules
         wget https://github.com/osmocom/rtl-sdr/raw/master/rtl-sdr.rules
@@ -53,33 +53,6 @@ if [ "$(uname)" = "Linux" ]; then
 
         echo "To setup custom DNS, please edit the /boot/efi/network-config file.\n"
 
-        # setup netdata
-        read -p "Would you like to install netdata to monitor your ground station's system metrics (CPU, ram, temp, etc) (Note: this assumes you are running a Netdata parent client elsewhere. If you don't want to do this, setup Netdata yourself - it's super easy)? (y/n): " netdata_install
-        if [ $netdata_install = "y" ]; then
-            # install netdata
-            wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh --no-updates --stable-channel --disable-telemetry
-            
-            # copy stream config and modify to send data to parent
-            sudo cp /etc/netdata/stream.conf /lib/netdata/conf.d/stream.conf
-            
-            sudo sed -zi "s/# Enable this on child nodes, to have them send metrics.\n    enabled = no/# Enable this on child nodes, to have them send metrics.\n    enabled = yes/g" /etc/netdata/stream.conf
-
-            read -p "What is the hostname of your Netdata parent client? (Note: this is the hostname of the parent client): " netdata_parent_hostname
-            sudo sed -i "s/destination =/destination = $netdata_parent_hostname/g" /etc/netdata/stream.conf
-            
-            read -p "What is your Netdata API key? (Note: this is the API key of the parent client): " netdata_api_key
-            sudo sed -i "s/api key =/api key = $netdata_api_key/g" /etc/netdata/stream.conf
-
-            # copy preconfigured netdata config
-            sudo cp netdata.conf /etc/netdata/netdata.conf
-
-            echo "Restarting Netdata...\n"
-            sudo systemctl restart netdata
-
-            echo "Netdata setup complete\!"
-            echo "To view your Netdata dashboard, go to http://$netdata_parent_hostname:19999"
-            echo "If no data is showing, check\n\nsudo tail -f /var/log/netdata/error.log\n\nfor errors."
-        fi
 
         # TODO: setup systemd service
         

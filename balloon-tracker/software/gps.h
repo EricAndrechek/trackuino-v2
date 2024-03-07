@@ -19,7 +19,8 @@ class GPS {
         int year;
         char month, day, hour, minute, second, hundredths;
         unsigned long age;
-        bool stale = false;
+        bool stale;
+        bool last_stale;
         char datetime[32];
 
         void get_datetime();

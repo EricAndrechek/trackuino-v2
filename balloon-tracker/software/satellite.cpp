@@ -7,29 +7,32 @@
 #include "aprs.h"
 #include "leds.h"
 #include "gps.h"
+#include "microsd.h"
 
 Satellite::Satellite() {
-    setup_handler();
+    last_transmission = 0;
+    last_MO_status = 5; // 5 is reserved, we will init to it.
+    packet_write_errors = 0;
 }
 
 void Satellite::setup_handler() {
-    // this uses the Arduino Nano Every's hardware serial
-    Serial.begin(SATELLITE_BAUDRATE);
+    // this uses the Arduino Nano Every's hardware Serial1
+    Serial1.begin(SATELLITE_BAUDRATE);
 
     // TODO: need some sort of debug handling for while reading in status info and connecting, etc
 
     // initial AT command to init
-    Serial.println(F("AT\r"));
+    Serial1.println(F("AT\r"));
     delay(1000);
-    while (Serial.available()) {
-        Serial.read();
+    while (Serial1.available()) {
+        Serial1.read();
     }
 
     // Get status
-    Serial.println(F("AT+SBDSX\r"));
+    Serial1.println(F("AT+SBDSX\r"));
     delay(1000);
-    while (Serial.available()) {
-        Serial.read();
+    while (Serial1.available()) {
+        Serial1.read();
     }
 
     // done with setup, ready to transmit
@@ -37,19 +40,19 @@ void Satellite::setup_handler() {
     log_init(__FILE__, sizeof(Satellite));
 }
 
-// read in serial and parse +SBDIX response
+// read in Serial1 and parse +SBDIX response
 // setting last_MO_status if available
 void Satellite::get_MO_status() {
-    // read in serial if available and check if it is a +SBDIX response
+    // read in Serial1 if available and check if it is a +SBDIX response
     // if it is, parse it
     char response[64];
-    while (Serial.available()) {
-        response[0] = Serial.read();
+    while (Serial1.available()) {
+        response[0] = Serial1.read();
         if (response[0] == '+') {
             // read in the rest of the response
             unsigned char i = 1;
-            while (Serial.available() && i < 63) {
-                response[i] = Serial.read();
+            while (Serial1.available() && i < 63) {
+                response[i] = Serial1.read();
                 i++;
             }
             response[i] = '\0';
@@ -90,7 +93,7 @@ void Satellite::send_packet() {
     }
 
     // we have a packet to send, so send it
-    Serial.print(F("AT+SBDIX\r"));
+    Serial1.print(F("AT+SBDIX\r"));
 
     get_MO_status();
 }
@@ -101,10 +104,8 @@ void Satellite::write_packet() {
 
     if (packet_write_errors >= 3) {
         #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.println(F("Satellite module failed to write packet"));
-            Serial.flush();
-            Serial.end();
+            micro_sd.current_file.println(F("Satellite module failed to write packet"));
+            micro_sd.current_file.flush();
         #endif
         leds.set_error();
         packet_write_errors = 0;
@@ -114,27 +115,27 @@ void Satellite::write_packet() {
     }
 
     // clear buffer
-    while (Serial.available()) {
-        Serial.read();
+    while (Serial1.available()) {
+        Serial1.read();
     }
-    Serial.print(F("AT+SBDD0\r"));
+    Serial1.print(F("AT+SBDD0\r"));
     // may need to add a delay here
-    while (Serial.available()) {
-        Serial.read();
+    while (Serial1.available()) {
+        Serial1.read();
     }
     
     // TODO: change to binary mode in the future
-    Serial.print(F("AT+SBDWT="));
-    Serial.print(aprs_object.packet);
-    Serial.print(F("\r"));
+    Serial1.print(F("AT+SBDWT="));
+    Serial1.print(aprs_object.packet);
+    Serial1.print(F("\r"));
     // may need to add a delay here
 
     // read in response to variable
     // allow it to overwrite so that we don't overflow
     char response[16];
     unsigned char i = 0;
-    while (Serial.available()) {
-        response[i] = Serial.read();
+    while (Serial1.available()) {
+        response[i] = Serial1.read();
         i = (i + 1) % 16;
     }
 

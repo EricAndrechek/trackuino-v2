@@ -1,107 +1,102 @@
 # Config for trackuino-v2 ground station
 # See https://github.com/EricAndrechek/trackuino-v2/blob/main/ground-station/readme.md#31-configyml-settings for more info
 
-APRS-IS:
-    # Callsign of the ground station
-    callsign: N0CALL
+# Callsign of the ground station
+callsign: N0CALL
 
-    # SSID of the ground station (0-15)
-    # http://www.aprs.org/aprs11/SSIDs.txt
-    ssid: 0
+# SSID of the ground station (0-15)
+# http://www.aprs.org/aprs11/SSIDs.txt
+ssid: 0
 
-    # Callsign passcode
-    # https://apps.magicbug.co.uk/passcode/
-    # passcode: 123456
-    # (now automatically calculated from callsign)
+# Symbol table and symbol code for the ground station
+# See http://www.aprs.org/symbols.html for more info or
+# http://wa8lmf.net/miscinfo/APRS_Symbol_Chart_Rev-H.pdf
+symbol table: /
+symbol code: (
 
-    # APRS-IS server to connect to
-    # See http://www.aprs2.net/ for more info
-    host: rotate.aprs2.net
-    port: 14580
+# comment to send with ground station packets
+comment: Trackuino-v2 Ground Station
 
-    GS-Updates:
-        # Whether to send ground station update packets
-        enabled: true
+SERVER:
+  # server to send packets to
+  hostname: mqtt.umich-balloons.com
 
-        # Symbol table and symbol code for the ground station
-        # See http://www.aprs.org/symbols.html for more info or
-        # http://wa8lmf.net/miscinfo/APRS_Symbol_Chart_Rev-H.pdf
-        symbol-table: /
-        symbol-code: (
+  # port to send packets to
+  port: 1883
 
-        # What the tocall should be for the packets
-        # https://github.com/aprsorg/aprs-deviceid
-        to-call: APRS
+  # keepalive interval (in seconds)
+  keepalive: 60
 
-        # comment to send with ground station packets
-        comment: 'Trackuino-v2 Ground Station'
+  # whether to use TLS
+  tls: false
 
-        # Whether to send ground station position packets from USB GPS
-        # if GPS is not set, this will be ignored
-        position:
-            enabled: true
+  # whether to verify TLS certificates
+  tls verify: true
 
-            # How many satellite fixes are required before position packets
-            # If the number of fixes is less than this, the ground station will not send any position update packets
-            # 0 to transmit regardless of fix
-            required-fixes: 3
+  # whether to use a username and password
+  auth: false
 
-            # How often to send ground station position packets (in seconds)
-            # aprs.fi does not allow 30 seconds or faster
-            update-interval: 60
+  # username to use for MQTT
+  username: trackuino-v2
 
-        # Whether to send ground station telemetry data
-        telemetry:
-            enabled: true
-            # What telemetry data to send
+  # password to use for MQTT
+  password: password
 
-            # if all are false, no telemetry data will be sent
-            data:
-                - cpu: true
-                - memory: true
-                - disk: true
-                - network: true
-                - temperature: true
-                # TODO: add way for user to add custom telemetry data
+APRS IS:
+  # Whether to connect to send packets to APRS-IS
+  # https://blog.aprs.fi/2022/03/radiosonde-igates-are-quite-mess-and.html
+  # aprs.fi doesn't like balloons anymore, so by default this is disabled
+  enabled: false
 
-            # How often to send ground station telemetry packets (in seconds)
-            # aprs.fi does not allow 30 seconds or faster
-            update-interval: 60
+  # APRS-IS server to connect to
+  # See http://www.aprs2.net/ for more info
+  host: rotate.aprs2.net
+  port: 14580
+
+Telemetry:
+  # Whether to send telemetry packets such as GS cpu, ram, etc
+  enabled: true
+
+  # How often to send ground station telemetry packets (in seconds)
+  # these do not show up on aprs.fi
+  telemetry interval: 10
 
 GPS:
-    # Whether to use a USB GPS
-    # If false, the ground station will not send any position update packets
-    enabled: true
+  # Whether to use a USB GPS
+  # If false, the ground station will not send any position update packets
+  enabled: true
 
-    # Serial port to use for GPS
-    # If not set, this will attempt to be found automatically
-    port: ''
+  # How often to send ground station position packets (in seconds)
+  # aprs.fi does not allow 30 seconds or faster
+  update interval: 10
 
-    # Baud rate to use for GPS
-    baud: 4800
+  # Serial port to use for GPS
+  # If not set, this will attempt to be found automatically
+  port: ""
 
-RTL-SDR:
-    # Whether to use an RTL-SDR
-    # If false, the ground station will not receive any packets
-    enabled: true
+  # Baud rate to use for GPS
+  baud: 4800
 
-    # Frequency to tune to (in Hz)
-    # 144.390 MHz is the APRS frequency in the US
-    # Value can be specified as an integer (89100000), a float (89.1e6) or as a metric suffix (89.1M)
-    frequency: 144.390M
+RTL SDR:
+  # Whether to use an RTL-SDR
+  # If false, the ground station will not receive any packets
+  enabled: true
 
-    # Sample rate to use (in Hz)
-    # 22050 Hz is the minimum sample rate for the RTL-SDR
-    sample-rate: 22050
+  # Frequency to tune to (in Hz)
+  # 144.390 MHz is the APRS frequency in the US
+  # Value can be specified as an integer (89100000), a float (89.1e6) or as a metric suffix (89.1M)
+  frequency: 144.390M
 
-    # Gain to use (leave blank for automatic gain)
-    gain:
+  # Sample rate to use (in Hz)
+  # 22050 Hz is the minimum sample rate for the RTL-SDR
+  sample rate: 22050
 
-    # PPM correction to use
-    ppm: 0
+  # Gain to use (leave blank for automatic gain)
+  gain:
 
-    # Enable option (default: offset)
-    # See https://osmocom.org/projects/rtl-sdr/wiki/Rtl-sdr#rtl_fm for more info
-    enable-option: offset
+  # PPM correction to use
+  ppm: 0
 
-    
+  # Enable option (default: offset)
+  # See https://osmocom.org/projects/rtl-sdr/wiki/Rtl-sdr#rtl_fm for more info
+  enable option: offset

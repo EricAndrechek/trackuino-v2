@@ -1,31 +1,202 @@
-sudo apt update
-sudo apt upgrade -y
-sudo apt autoremove -y
+echo "Beginning setup..."
+
+# find the directory this script is in
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+cd $DIR
+
+sudo apt-get update
+sudo apt-get upgrade -y
+sudo apt-get autoremove -y
 
 echo ""
 echo "[WARNING] If you have not finished setting up SSH access, please press CTRL+C and do so now."
 echo "Once you have finished setting up SSH access, please reboot the server with the command 'sudo reboot' and run this script again."
+echo "Additionally, please note that if you have changed settings from the defaults this script initializes things as, they will be overwritten by running this script."
 
 read -p "Press enter once you have finished setting up SSH access and rebooted the server."
 
-
+# -------------------- ASK WHAT TO INSTALL --------------------
+echo "You will now be asked what you would like to install. Please answer y or n to each question."
+echo "All of the following are optional, and you can run this script again to install any of them later."
+echo "In order to properly run the backend, everything except the frontend must be installed, or configured manually to be run on another machine."
+echo ""
+echo "FRONTEND SERVICES: The frontend web interface the user interacts with."
+read -p "Would you like to setup the frontend web interface? (y/n): " frontend_setup
+echo ""
+echo "BACKEND SERVICES: The microservices that do the heavy lifting to make the frontend work."
+read -p "Would you like to setup the postgres database? (y/n): " postgres_setup
+read -p "Would you like to setup the mosquitto message broker? (y/n): " mosquitto_setup
+read -p "Would you like to setup the redis cache and background worker? (y/n): " redis_setup
+read -p "Would you like to setup the backend web API? (y/n): " backend_setup
+read -p "Would you like to setup the grafana data visualizer? (y/n): " grafana_setup
+read -p "Would you like to setup nginx, the load balancer and reverse proxy? (y/n): " nginx_setup
 
 
 # -------------------- APT --------------------
-# add postgres apt repo
-sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+echo "Setting up custom APT repositories..."
+# libaries list:
+libraries=""
 
-# add grafana apt repo
-wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
+curl
+git
+build-essential
+libssl-dev
+libffi-dev
+python3-dev
+python3-setuptools
+python3-pip
+python3-venv
+EOF
+)
+
+if [ $frontend_setup = "y" ]; then
+    # add nodejs apt repo
+    curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+
+    # add yarn apt repo
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+
+    # add yarn apt repo
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+
+    # add nodejs and yarn libraries
+    while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
+nodejs
+yarn
+EOF
+)
+fi
+
+if [ $postgres_setup = "y" ]; then
+    # add postgres apt repo
+    sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+    # add postgresql libraries
+    while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
+postgresql
+postgresql-15-postgis-3
+libpq-dev
+libgmp3-dev
+EOF
+)
+fi
+
+if [ $mosquitto_setup = "y" ]; then
+    # add mosquitto libraries
+    while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
+mosquitto
+mosquitto-clients
+EOF
+)
+fi
+
+if [ $redis_setup = "y" ]; then
+    # add redis libraries
+    while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
+redis-server
+EOF
+)
+fi
+
+if [ $grafana_setup = "y" ]; then
+    # add grafana apt repo
+    wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+    echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+
+    # add grafana libraries
+    while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
+grafana
+EOF
+)
+fi
+
+if [ $nginx_setup = "y" ]; then
+    # add nginx libraries
+    while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
+nginx
+certbot
+python3-certbot-nginx
+EOF
+)
+fi
 
 # install libraries we are using
-sudo apt update
-sudo apt install postgresql postgresql-15-postgis-3 grafana python3-pip python3-venv python3-dev libpq-dev mosquitto mosquitto-clients redis-server nginx certbot python3-certbot-nginx -y
+sudo apt-get update
 
+echo "Installing libraries $libraries..."
+
+sudo apt-get install $libraries -y
+
+echo "Finished setting up custom APT repositories."
+read -p "Press enter to continue."
+
+# -------------------- FRONTEND SETUP --------------------
+if [ $frontend_setup = "y" ]; then
+    echo "Setting up frontend..."
+    chmod +x ./scripts/frontend.sh
+    ./scripts/frontend.sh
+    read -p "Frontend set up. Press enter to continue."
+else
+    echo "Skipping frontend setup..."
+fi
+
+# -------------------- POSTGRES SETUP --------------------
+if [ $postgres_setup = "y" ]; then
+    echo "Setting up postgres..."
+    chmod +x ./scripts/postgres.sh
+    ./scripts/postgres.sh
+    read -p "Postgres set up. Press enter to continue."
+else
+    echo "Skipping postgres setup..."
+fi
+
+# -------------------- MOSQUITTO SETUP --------------------
+if [ $mosquitto_setup = "y" ]; then
+    echo "Setting up mosquitto..."
+    chmod +x ./scripts/mosquitto.sh
+    ./scripts/mosquitto.sh
+    read -p "Mosquitto set up. Press enter to continue."
+else
+    echo "Skipping mosquitto setup..."
+fi
+
+# -------------------- REDIS SETUP --------------------
+if [ $redis_setup = "y" ]; then
+    echo "Setting up redis..."
+    chmod +x ./scripts/redis.sh
+    ./scripts/redis.sh
+    read -p "Redis set up. Press enter to continue."
+else
+    echo "Skipping redis setup..."
+fi
+
+# -------------------- BACKEND SETUP --------------------
+if [ $backend_setup = "y" ]; then
+    echo "Setting up backend..."
+    chmod +x ./scripts/backend.sh
+    ./scripts/backend.sh
+    read -p "Backend set up. Press enter to continue."
+else
+    echo "Skipping backend setup..."
+fi
+
+# -------------------- GRAFANA SETUP --------------------
+if [ $grafana_setup = "y" ]; then
+    echo "Setting up grafana..."
+    chmod +x ./scripts/grafana.sh
+    ./scripts/grafana.sh
+    read -p "Grafana set up. Press enter to continue."
+else
+    echo "Skipping grafana setup..."
+fi
 
 # -------------------- OPEN PORTS --------------------
+echo "Opening ports for nginx and mqtt..."
+echo "Note: we do not open postgres ports due to security. If you need to access the db directly, you can use this server as a jump host. (Or you can use pgadmin.)"
+
+echo "This script assumes you are using iptables and not ufw to manage your server's firewall. This is the default on Oracle's Ubuntu images."
 # open ports for nginx
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
@@ -33,249 +204,15 @@ sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 1883 -j ACCEPT
 sudo netfilter-persistent save
 
+echo "Finished opening ports for nginx and mqtt."
+read -p "Press enter to continue."
 
 # -------------------- NGINX SETUP --------------------
-# setup nginx
-# ask for root domain
-read -p "What is your root domain? (e.g. example.com): " root_domain
-# ask for mqtt domain
-read -p "What is your mqtt domain? (e.g. mqtt.example.com): " mqtt_domain
-# ask for grafana domain
-read -p "What is your grafana domain? (e.g. status.example.com): " grafana_domain
-# ask for api domain
-read -p "What is your api domain? (e.g. api.example.com): " api_domain
-# build nginx config for each domain
-# TODO: allow mqtt to use wss and streams with tcp
-sudo tee /etc/nginx/sites-available/$mqtt_domain > /dev/null <<EOT
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $mqtt_domain;
-    return 301 https://\$host\$request_uri;
-}
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    server_name $mqtt_domain;
-    ssl_certificate /etc/letsencrypt/live/$mqtt_domain/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$mqtt_domain/privkey.pem;
-    location / {
-        proxy_pass http://localhost:9001;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-For \$remote_addr;
-    }
-}
-EOT
-sudo tee /etc/nginx/sites-available/$grafana_domain > /dev/null <<EOT
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $grafana_domain;
-    return 301 https://\$host\$request_uri;
-}
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    server_name $grafana_domain;
-    ssl_certificate /etc/letsencrypt/live/$grafana_domain/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$grafana_domain/privkey.pem;
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-For \$remote_addr;
-    }
-}
-EOT
-sudo tee /etc/nginx/sites-available/$api_domain > /dev/null <<EOT
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $api_domain;
-    return 301 https://\$host\$request_uri;
-}
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    server_name $api_domain;
-    ssl_certificate /etc/letsencrypt/live/$api_domain/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$api_domain/privkey.pem;
-    location / {
-        proxy_pass http://localhost:8000;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-For \$remote_addr;
-    }
-}
-EOT
-# enable nginx sites
-sudo ln -s /etc/nginx/sites-available/$mqtt_domain /etc/nginx/sites-enabled/
-sudo ln -s /etc/nginx/sites-available/$grafana_domain /etc/nginx/sites-enabled/
-sudo ln -s /etc/nginx/sites-available/$api_domain /etc/nginx/sites-enabled/
-# set default site to redirect to root domain
-sudo rm /etc/nginx/sites-enabled/default
-sudo tee /etc/nginx/sites-available/default > /dev/null <<EOT
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
-    return 301 https://$root_domain$request_uri;
-}
-EOT
-sudo ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
-
-# ask for email for certbot
-read -p "What is your email address? (for certbot): " email
-
-# create certs
-sudo certbot run -n --nginx --agree-tos -d $mqtt_domain,$grafana_domain,$api_domain --email $email --redirect
-
-
-# -------------------- POSTGRES SETUP --------------------
-# start postgres
-sudo systemctl daemon-reload
-sudo systemctl enable postgresql
-sudo systemctl start postgresql
-
-# setup postgres
-cd ~postgres/
-read -p "What would you like to set the postgres admin password to?: " password
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD '$password';"
-
-# create grafana user
-read -p "What would you like to set the postgres grafana password to?: " password
-sudo -u postgres psql -c "CREATE USER grafana WITH PASSWORD '$password'; GRANT USAGE ON SCHEMA schema TO grafanareader; GRANT SELECT ON schema.table TO grafanareader;"
-
-# create server user
-read -p "What would you like to set the postgres server password to? (this is the one you will later add to the config): " password
-sudo -u postgres psql -c "CREATE USER server WITH PASSWORD '$password'; ALTER USER server WITH CREATEDB;"
-sudo -u postgres psql -c "CREATE DATABASE db OWNER server; GRANT ALL PRIVILEGES ON DATABASE db TO server;"
-
-# create postgis extension for db
-sudo -u postgres psql -d db -c "CREATE EXTENSION postgis;"
-
-
-# -------------------- MOSQUITTO SETUP --------------------
-# enable mosquitto
-sudo systemctl enable mosquitto
-sudo systemctl start mosquitto
-
-# allow mosquitto anonymous access
-sudo tee /etc/mosquitto/conf.d/default.conf > /dev/null <<EOT
-listener 1883
-allow_anonymous true
-EOT
-sudo systemctl restart mosquitto
-
-# -------------------- REDIS SETUP --------------------
-# setup redis
-# modify redis config to use systemd
-sudo sed -i 's/supervised no/supervised systemd/g' /etc/redis/redis.conf
-
-sudo systemctl enable redis-server
-sudo systemctl start redis-server
-
-
-# -------------------- GRAFANA SETUP --------------------
-# setup node_exporter
-cd ~
-wget https://github.com/prometheus/node_exporter/releases/download/v1.6.0/node_exporter-1.6.0.linux-arm64.tar.gz
-tar xvfz node_exporter-1.6.0.linux-arm64.tar.gz
-chmod +x node_exporter-1.6.0.linux-arm64/node_exporter
-sudo mv node_exporter-1.6.0.linux-arm64/node_exporter /usr/local/bin/
-rm -rf node_exporter-1.6.0.linux-arm64*
-sudo useradd -rs /bin/false node_exporter
-
-# setup node_exporter service
-sudo tee /etc/systemd/system/node_exporter.service > /dev/null <<EOT
-[Unit]
-Description=Node Exporter
-After=network.target
-
-[Service]
-User=node_exporter
-Group=node_exporter
-Type=simple
-ExecStart=/usr/local/bin/node_exporter
-
-[Install]
-WantedBy=multi-user.target
-EOT
-
-sudo systemctl daemon-reload
-sudo systemctl enable node_exporter
-sudo systemctl start node_exporter
-
-# install prometheus
-wget https://github.com/prometheus/prometheus/releases/download/v2.37.8/prometheus-2.37.8.linux-arm64.tar.gz
-tar xvfz prometheus-2.37.8.linux-arm64.tar.gz
-chmod +x prometheus-2.37.8.linux-arm64/prometheus
-chmod +x prometheus-2.37.8.linux-arm64/promtool
-sudo mv prometheus-2.37.8.linux-arm64/prometheus /usr/local/bin/
-sudo mv prometheus-2.37.8.linux-arm64/promtool /usr/local/bin/
-sudo mkdir /etc/prometheus
-sudo mkdir /var/lib/prometheus
-sudo mv prometheus-2.37.8.linux-arm64/consoles /etc/prometheus
-sudo mv prometheus-2.37.8.linux-arm64/console_libraries /etc/prometheus
-rm -rf prometheus-2.37.8.linux-arm64*
-sudo useradd -rs /bin/false prometheus
-
-# setup prometheus config
-sudo tee /etc/prometheus/prometheus.yml > /dev/null <<EOT
-global:
-  scrape_interval: 10s
-
-scrape_configs:
-  - job_name: 'prometheus_metrics'
-    scrape_interval: 5s
-    static_configs:
-      - targets: ['localhost:9090']
-  - job_name: 'node_exporter_metrics'
-    scrape_interval: 5s
-    static_configs:
-      - targets: ['localhost:9100']
-EOT
-sudo chown -R prometheus: /etc/prometheus /var/lib/prometheus
-
-# setup prometheus service
-sudo tee /etc/systemd/system/prometheus.service > /dev/null <<EOT
-[Unit]
-Description=Prometheus
-After=network.target
-
-[Service]
-User=prometheus
-Group=prometheus
-Type=simple
-ExecStart=/usr/local/bin/prometheus \
-    --config.file /etc/prometheus/prometheus.yml \
-    --storage.tsdb.path /var/lib/prometheus/ \
-    --web.console.templates=/etc/prometheus/consoles \
-    --web.console.libraries=/etc/prometheus/console_libraries
-
-[Install]
-WantedBy=multi-user.target
-EOT
-
-sudo systemctl daemon-reload
-sudo systemctl enable prometheus
-sudo systemctl start prometheus
-
-# enable grafana
-sudo systemctl enable grafana-server
-sudo systemctl start grafana-server
-
-# setup grafana
-# allow anonymous access
-sudo sed -i 's/;allow_sign_up = true/allow_sign_up = false/g' /etc/grafana/grafana.ini
-sudo sed -i 's/;allow_anonymous = false/allow_anonymous = true/g' /etc/grafana/grafana.ini
-sudo systemctl restart grafana-server
-
-# TODO: automate adding prometheus as a data source
-# TODO: automate adding Postgres as a data source
-# TODO: automate adding MQTT as a data source
-# TODO: automate adding Redis as a data source
-# TODO: automate adding nginx as a data source
-# TODO: add gunicorn as a data source
-# TODO: automate adding dashboards
+if [ $nginx_setup = "y" ]; then
+    echo "Setting up nginx..."
+    chmod +x ./scripts/nginx.sh
+    ./scripts/nginx.sh
+    read -p "Nginx set up. Press enter to continue."
+else
+    echo "Skipping nginx setup..."
+fi

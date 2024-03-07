@@ -1,22 +1,23 @@
 #include <SoftwareSerial.h>
 #include "Arduino.h"
 #include <TinyGPSMinus.h>
+
 #include "config.h"
 #include "helpers.h"
 #include "gps.h"
 #include "leds.h"
+#include "microsd.h"
 
 GPS::GPS() {
-    // do nothing
+    stale = true;
+    last_stale = false;
 }
 
 void GPS::setup_handler(SoftwareSerial * ss) {
     if (!ss) {
         #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.println(F("GPS serial port is null"));
-            Serial.flush();
-            Serial.end();
+            micro_sd.current_file.println(F("GPS serial port is null"));
+            micro_sd.current_file.flush();
         #endif
         leds.set_error();
 
@@ -33,39 +34,38 @@ void GPS::setup_handler(SoftwareSerial * ss) {
 
 void GPS::loop_handler() {
     while (gps_serial->available() > 0) {
-        tinygps_object.encode(gps_serial->read());
+        char temp = gps_serial->read();
+        tinygps_object.encode(temp);
+        Serial.print(temp);
     }
 
     // if GPS data is valid
     gps.get_datetime();
-    if (!stale) {
+    
+    #ifdef DEBUG
         // ready for use, stored in gps_object to avoid storing in multiple variables
         // LED library can check for fix and update LED accordingly
-        #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.println(F("GPS fix acquired"));
-            Serial.flush();
-            Serial.end();
-        #endif
-    } else {
-        // no fix yet
-        // LED library can check for fix and update LED accordingly
-        #ifdef DEBUG
-            Serial.begin(SERIAL_BAUDRATE);
-            Serial.println(F("No GPS fix yet"));
-            Serial.flush();
-            Serial.end();
-        #endif
-    }
+        if (!stale && last_stale) {
+            micro_sd.current_file.println(F("GPS fix acquired"));
+            micro_sd.current_file.flush();
+        } else if (stale && !last_stale) {
+            // no fix yet
+            // LED library can check for fix and update LED accordingly
+            micro_sd.current_file.println(F("No GPS fix yet"));
+            micro_sd.current_file.flush();
+        }
+    #endif
 }
 
 void GPS::get_datetime() {
     tinygps_object.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
     if (age == TinyGPSMinus::GPS_INVALID_AGE || age > GPS_STALE_AGE) {
         // don't bother overwriting datetime, just mark it as stale
+        last_stale = stale;
         stale = true;
     } else {
         sprintf(datetime, "%02d/%02d/%02d %02d:%02d:%02d ", month, day, year, hour, minute, second);
+        last_stale = stale;
         stale = false;
     }
 }

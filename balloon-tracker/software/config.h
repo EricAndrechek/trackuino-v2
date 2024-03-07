@@ -271,6 +271,8 @@
 // PIN CONFIGURATION OVERRIDES
 // --------------------------------------------------------------------------
 
+// TODO: change for new motherboard schematic
+
 // change the default pin assignments for each module here
 // the defaults are what are used in the schematic and PCB
 // our current setup uses the Arduino Nano Every
@@ -278,7 +280,7 @@
 
 // digital buzzer output pin
 // needs to be PWM compatible for passive buzzer
-#define BUZZER_PIN 2
+#define BUZZER_PIN -1
 
 // SPI pins
 // the below are the defaults for the Arduino Nano Every
@@ -293,33 +295,33 @@
 #define SD_CS_PIN 10
 
 // LoRa chip select pin
-#define LORA_CS_PIN 19
+#define LORA_CS_PIN 19 // A5
 // LoRa reset pin
 #define LORA_RESET_PIN -1 // -1 to disable (tied to arduino reset pin)
 // LoRa interrupt pin
 #define LORA_DIO0_PIN -1 // interrupt pin (not used in this project's code)
 
 // GPS pins
-#define GPS_RX_PIN 7
+#define GPS_RX_PIN 14 // A0
 #define GPS_TX_PIN -1 // -1 to disable
 
 // Status LED pins
 #define GPS_LED_PIN 15 // A1
 #define ERROR_LED_PIN 16 // A2
-#define STATUS_LED_PIN 20 // A6
+#define STATUS_LED_PIN -1 // A6
 
 // Temperature sensor pin
-#define TEMP_PIN A7
+#define TEMP_PIN 21 // A7
 // Voltage divider pin (for battery voltage)
-#define VOLTAGE_PIN A4
+#define VOLTAGE_PIN 18 // A4
 
 // Transmitter daughterboard pins
 #if TRANSMITTER == RADIO_MODULE
-  #define PTT_PIN 3
-  #define PD_PIN 4
-  #define MIC_PIN 6
+  #define PTT_PIN 4 // MOLEX pin 5
+  #define PD_PIN 3 // MOLEX pin 7
+  #define MIC_PIN 2 // MOLEX pin 2
 #elif TRANSMITTER == SATELLITE_MODULE
-  #define SLP_PIN 4
+  #define SLP_PIN 3 // MOLEX pin 7
 #endif
 
 #endif

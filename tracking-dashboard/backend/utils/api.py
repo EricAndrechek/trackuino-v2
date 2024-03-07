@@ -1,12 +1,15 @@
 from utils.config_helper import config
 import json
 
+from sql.models import *
+from sql.helpers import *
+
 class Data:
     def __init__(self):
         pass
 
     def upload(self, data):
-        self.raw = data
+        self.raw = data["data"]
 
         self.data = {}
 
@@ -72,11 +75,42 @@ class Data:
     
     def save(self):
         to_return = 400
-        # try to save to message table
-        # if successful, return 200, parse_data(), and save to telemetry and data tables with message id
-        # if unsuccessful, return 208
+
+        message = Message(
+            message=self.data["raw"],
+        )
+
+        print(message)
+
+        first, message_id = add_message(message)
+
+        print(first, message_id)
+
+        if first:
+            self.parse_data()
+            # TODO: save to telemetry and data tables with message id
+            to_return = 201
+        else:
+            to_return = 208
+
+        print(to_return)
+        
         # save to sources table with message id
-        pass
+
+        source = Source(
+            callsign=self.data["callsign"],
+            ssid=self.data["ssid"],
+            message=message_id,
+            ip=self.data["ip"],
+        )
+
+        print(source)
+        
+        success, source_id = add_source(source)
+
+        print(success, source_id)
+
+        return to_return
 
     def get_client_ip(self, request):
         ip = request.headers.get('X-Forwarded-For')

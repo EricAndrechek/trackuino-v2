@@ -9,11 +9,16 @@
 // define helper functions
 
 Sensors::Sensors() {
-    log_init(__FILE__, sizeof(Sensors));
+    temperature = 0.0;
+    voltage = 0.0;
+
+    last_sensors = 0;
 }
 
 void Sensors::setup_handler() {
     // don't need to do anything to initialize analog sensors
+
+    log_init(__FILE__, sizeof(Sensors));
 }
 
 // take analog pin and read and convert to voltage
