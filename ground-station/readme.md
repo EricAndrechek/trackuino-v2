@@ -137,7 +137,7 @@ Your file structure should now look something like `~/trackuino-v2/ground-statio
 pip3 install -r requirements.txt
 ```
 
-1. Update the hostname and DNS by modifying `/boot/efi/user-data` and `/boot/efi/network-config`.
+7. Update the hostname and DNS by modifying `/boot/efi/user-data` and `/boot/efi/network-config`.
 
 Hostname:
 
