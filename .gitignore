@@ -14,7 +14,10 @@
 **/*.db
 
 # kicad
-**/*.bak
-**/*.kicad_pcb-bak
-**/*.kicad_sch-bak
-**/*-backups/
+*.bak
+*.kicad_pcb-bak
+*.kicad_sch-bak
+*-backups/
+fp-info-cache
+**/fp-info-cache
+**/**/fp-info-cache
