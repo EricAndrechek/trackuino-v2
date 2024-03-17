@@ -17,7 +17,7 @@
 *.bak
 *.kicad_pcb-bak
 *.kicad_sch-bak
+*.kicad_*.lck
 *-backups/
 fp-info-cache
 **/fp-info-cache
-**/**/fp-info-cache
