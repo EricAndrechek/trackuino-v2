@@ -12,3 +12,9 @@
 **/config.yml
 **/config.yaml
 **/*.db
+
+# kicad
+**/*.bak
+**/*.kicad_pcb-bak
+**/*.kicad_sch-bak
+**/*-backups/
