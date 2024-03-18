@@ -27,6 +27,7 @@ def api_db_sync():
                     ip = request.remote_addr
             try:
                 timestamp = get_last_ip_addition(ip)
+                print("Last time this ip added a source: ", timestamp)
                 # convert to utc
                 timestamp = timestamp.astimezone().replace(tzinfo=None)
             except Exception as e:
