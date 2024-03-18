@@ -231,4 +231,8 @@ class Data:
             if ip is None:
                 ip = request.remote_addr
         
+        # only allow valid ip addresses
+        # remove invalid characters (ipv4 and ipv6)
+        ip = "".join([c for c in ip if c in "0123456789abcdef.:"])
+        
         self.data["ip"] = ip if ip is not None else "unknown"
