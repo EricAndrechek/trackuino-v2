@@ -1,3 +1,4 @@
+from logging import log
 from flask import Blueprint, request, jsonify
 from sql.helpers import bulk_add_messages, get_last_ip_addition, get_since_timestamp
 
@@ -28,6 +29,7 @@ def api_db_sync():
             try:
                 timestamp = get_last_ip_addition(ip)
                 print("Last time this ip added a source: ", timestamp)
+                return "Last time this ip added a source: " + str(timestamp), 200
                 # convert to utc
                 timestamp = timestamp.astimezone().replace(tzinfo=None)
             except Exception as e:
@@ -36,6 +38,8 @@ def api_db_sync():
             # convert to datetime object
             try:
                 timestamp = datetime.fromisoformat(timestamp)
+                print("Timestamp: ", timestamp)
+                return "Timestamp: " + str(timestamp), 200
                 # convert to utc
                 timestamp = timestamp.astimezone().replace(tzinfo=None)
             except ValueError as e:
