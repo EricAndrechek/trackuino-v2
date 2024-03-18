@@ -48,7 +48,10 @@ def api_db_sync():
             if len(data) == 0:
                 return "No new data found.", 204
             for i in range(len(data)):
-                data[i] = json.loads(data[i])
+                data[i] = {
+                    'timestamp': data[i].timestamp, 
+                    'message': json.loads(data[i].message)
+                }
             return jsonify(data), 200
         else:
             # get all entries since last time this callsign added to sources table, limit to 1000
@@ -56,7 +59,10 @@ def api_db_sync():
             if len(data) == 0:
                 return "No new data found.", 204
             for i in range(len(data)):
-                data[i] = json.loads(data[i])
+                data[i] = {
+                    'timestamp': data[i].timestamp, 
+                    'message': json.loads(data[i].message)
+                }
             return jsonify(data), 200
     elif request.method == 'POST':
         # update the db with new data
