@@ -78,6 +78,19 @@ def get_since_timestamp(timestamp):
         print(e)
     return data
 
+# get all messages since given callsign last added a source
+def get_since_callsign(callsign):
+    # print("Getting all new messages since callsign: ", callsign)
+    data = []
+    try:
+        timestamp = Session.query(func.max(Source.timestamp)).filter_by(callsign=callsign).first()[0]
+        messages = Session.query(Message).filter(Message.timestamp > timestamp).all()
+        for message in messages:
+            data.append(message.message)
+    except Exception as e:
+        print(e)
+    return data
+
 def bulk_add_messages(messages, request):
     if not isinstance(messages, list):
         messages = [messages]
