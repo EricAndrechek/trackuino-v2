@@ -1,6 +1,3 @@
-# create api user as system user
-adduser --system --no-create-home --disabled-login api
-
 cd $DIR/backend
 # create virtual environment
 python3 -m venv venv
@@ -21,7 +18,7 @@ Description=api
 After=network.target
 
 [Service]
-User=api
+User=ubuntu
 WorkingDirectory=$DIR/backend
 ExecStart=$DIR/backend/venv/bin/gunicorn -c gunicorn.conf.py
 Restart=always
@@ -40,13 +37,13 @@ WantedBy=multi-user.target
 EOT
 
 # setup rqworker systemd service
-sudo tee /etc/systemd/system/task_worker.service > /dev/null <<EOT
+sudo tee /etc/systemd/system/api-tasks@.service > /dev/null <<EOT
 [Unit]
 Description=API task worker %I
 After=network.target
 
 [Service]
-User=api
+User=ubuntu
 WorkingDirectory=$DIR/backend
 ExecStart=$DIR/backend/venv/bin/rq worker api-tasks
 Restart=always
@@ -60,6 +57,9 @@ EOT
 # https://docs.gunicorn.org/en/stable/design.html#how-many-workers
 sudo systemctl daemon-reload
 sudo systemctl enable api
-sudo systemctl enable api-tasks.target@{1..4}
+sudo systemctl enable api-tasks@{1..4}
 sudo systemctl start api
-sudo systemctl start api-tasks.target@{1..4}
+sudo systemctl start api-tasks@{1..4}
+
+
+# all info from: https://blog.miguelgrinberg.com/post/running-a-flask-application-as-a-service-with-systemd

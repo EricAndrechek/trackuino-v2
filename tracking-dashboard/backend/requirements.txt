@@ -30,3 +30,4 @@ urllib3==2.0.3
 Werkzeug==2.3.5
 zope.event==4.6
 zope.interface==6.0
+geoalchemy2

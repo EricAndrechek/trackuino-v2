@@ -220,8 +220,9 @@ class Data:
         return to_return
 
     def get_client_ip(self, request):
-        ip = request.headers.get('X-Forwarded-For')
-        if ip is None:
-            ip = request.remote_addr
+        headers_list = request.headers.getlist("HTTP_X_FORWARDED_FOR")
+        http_x_real_ip = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+
+        ip = headers_list[0] if headers_list else http_x_real_ip
         
         self.data["ip"] = ip if ip is not None else "unknown"
