@@ -73,7 +73,7 @@ def get_since_timestamp(timestamp):
     try:
         messages = Session.query(Message).filter(Message.timestamp > timestamp).all()
         for message in messages:
-            data.append((message.timestamp, message.message))
+            data.append({"timestamp": message.timestamp, "message": message.message})
     except Exception as e:
         print(e)
     return data
@@ -86,7 +86,7 @@ def get_since_callsign(callsign):
         timestamp = Session.query(func.max(Source.timestamp)).filter_by(callsign=callsign).first()[0]
         messages = Session.query(Message).filter(Message.timestamp > timestamp).all()
         for message in messages:
-            data.append((message.timestamp, message.message))
+            data.append({"timestamp": message.timestamp, "message": message.message})
     except Exception as e:
         print(e)
     return data
