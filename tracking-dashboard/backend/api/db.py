@@ -49,8 +49,8 @@ def api_db_sync():
                 return "No new data found.", 204
             for i in range(len(data)):
                 data[i] = {
-                    'timestamp': data[i].timestamp, 
-                    'message': json.loads(data[i].message)
+                    'timestamp': data[i]['timestamp'], 
+                    'message': json.loads(data[i]['message'])
                 }
             return jsonify(data), 200
         else:
@@ -60,8 +60,8 @@ def api_db_sync():
                 return "No new data found.", 204
             for i in range(len(data)):
                 data[i] = {
-                    'timestamp': data[i].timestamp, 
-                    'message': json.loads(data[i].message)
+                    'timestamp': data[i]['timestamp'], 
+                    'message': json.loads(data[i]['message'])
                 }
             return jsonify(data), 200
     elif request.method == 'POST':

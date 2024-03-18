@@ -73,6 +73,7 @@ def get_since_timestamp(timestamp):
     try:
         messages = Session.query(Message).filter(Message.timestamp > timestamp).all()
         for message in messages:
+            print(message)
             data.append({"timestamp": message.timestamp, "message": message.message})
     except Exception as e:
         print(e)
