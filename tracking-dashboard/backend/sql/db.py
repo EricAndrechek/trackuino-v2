@@ -28,3 +28,5 @@ Base.metadata.create_all(engine)
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 Session = scoped_session(sessionmaker(bind=engine))
+
+# to update the database schema, run `alembic revision --autogenerate -m "commmit message"` and then `alembic upgrade head`

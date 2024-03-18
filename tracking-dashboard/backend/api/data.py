@@ -71,4 +71,5 @@ def api_upload():
         elif status_code == 208:
             return "Data already exists", 208
     except Exception as e:
+        print("save error: ", e)
         return e, 400

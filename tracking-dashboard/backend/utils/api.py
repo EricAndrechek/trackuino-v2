@@ -13,7 +13,7 @@ class Data:
 
     def upload(self, data):
         try:
-            self.raw = data["data"]
+            self.raw = data
         except KeyError:
             raise Exception("No data in upload data")
 
@@ -85,6 +85,55 @@ class Data:
                 raise Exception("Symbol too long")
         except KeyError:
             raise Exception("Missing required fields in upload data")
+        
+        lat = None
+        try:
+            lat = self.data["data"]["lat"]
+            if lat < -90 or lat > 90:
+                raise Exception("Invalid latitude")
+        except KeyError:
+            pass
+
+        lon = None
+        try:
+            lon = self.data["data"]["lon"]
+            if lon < -180 or lon > 180:
+                raise Exception("Invalid longitude")
+        except KeyError:
+            pass
+
+        alt = None
+        try:
+            alt = self.data["data"]["alt"]
+        except KeyError:
+            pass
+
+        course = None
+        try:
+            course = self.data["data"]["course"]
+            if course < 0 or course > 360:
+                raise Exception("Invalid course")
+        except KeyError:
+            pass
+
+        speed = None
+        try:
+            speed = self.data["data"]["speed"]
+        except KeyError:
+            pass
+
+        comment = None
+        try:
+            comment = self.data["data"]["comment"]
+        except KeyError:
+            pass
+
+        self.data["data"]["lat"] = lat
+        self.data["data"]["lon"] = lon
+        self.data["data"]["alt"] = alt
+        self.data["data"]["course"] = course
+        self.data["data"]["speed"] = speed
+        self.data["data"]["comment"] = comment
     
     def parse(self):
         # check if data is in aprs format or json format
@@ -111,6 +160,8 @@ class Data:
         if first:
             self.parse_data()
 
+            print("parsed data")
+
             telemetry_success, telemetry_id = (False, None)
             if "telemetry" in self.data["data"]:
                 # add to telemetry table if telemetry data exists
@@ -120,10 +171,12 @@ class Data:
                     parsed=self.data["data"]["telemetry"],
                 )
                 telemetry_success, telemetry_id = add_telemetry(telemetry)
+
+                print(telemetry_success, telemetry_id)
             
             # build Geometry POINT object for lat/lon
             # format: 'POINT(-33.9034 152.73457)'
-            geo_point = f"POINT({self.data['data']['lat']} {self.data['data']['lon']})" if "lat" in self.data["data"] and "lon" in self.data["data"] else None
+            geo_point = f"POINT({self.data['data']['lat']} {self.data['data']['lon']})" if "lat" in self.data["data"] and self.data["data"]["lat"] is not None and "lon" in self.data["data"] and self.data["data"]["lon"] is not None else None
 
             # add to position table
             position = Position(
@@ -131,10 +184,10 @@ class Data:
                 ssid=self.data["ssid"],
                 symbol=self.data["data"]["symbol"],
                 geo=geo_point,
-                alt=self.data["data"]["alt"] or None,
-                course=self.data["data"]["course"] or None,
-                speed=self.data["data"]["speed"] or None,
-                comment=self.data["data"]["comment"] or None,
+                altitude=self.data["data"]["alt"],
+                course=self.data["data"]["course"],
+                speed=self.data["data"]["speed"],
+                comment=self.data["data"]["comment"],
                 telemetry=telemetry_id if telemetry_success else None,
                 message=message_id,
             )

@@ -3,7 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import CheckConstraint
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
 from geoalchemy2 import Geometry
 from sqlalchemy.sql import func
@@ -16,7 +16,7 @@ class Message(Base):
     __tablename__ = 'messages'
 
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, server_default=func.now(), nullable=False)
+    timestamp = Column(DateTime, server_default=func.now())
     message = Column(Text, nullable=False, unique=True) # don't really want unique, but don't want to deal with duplicates right now
 
     def __repr__(self):
@@ -34,7 +34,8 @@ class Source(Base):
     ip = Column(String, nullable=False)
     signed = Column(Boolean, nullable=False, default=False)
 
-    message_obj = relationship("Message", backref="sources")
+    # cascae delete this when message is deleted
+    message_obj = relationship("Message", backref="sources", cascade="all, delete")
 
     __table_args__ = (
         CheckConstraint(ssid >= 0, name='ssid_positive'),
@@ -52,7 +53,7 @@ class Telemetry(Base):
     raw = Column(Text, nullable=False)
     parsed = Column(JSONB, nullable=False)
 
-    message_obj = relationship("Message", backref="telemetry")
+    message_obj = relationship("Message", backref="telemetry", cascade="all, delete")
 
     def __repr__(self):
         return "<Telemetry(id='%s', message='%s', raw='%s', parsed='%s')>" % (self.id, self.message, self.raw, self.parsed)
@@ -72,8 +73,8 @@ class Position(Base):
     comment = Column(String, nullable=True)
     telemetry = Column(Integer, ForeignKey('telemetry.id'), nullable=True)
 
-    message_obj = relationship("Message", backref="positions")
-    telemetry_obj = relationship("Telemetry", backref="positions")
+    message_obj = relationship("Message", backref="positions", cascade="all, delete")
+    telemetry_obj = relationship("Telemetry", backref="positions", cascade="all, delete")
 
     __table_args__ = (
         CheckConstraint(ssid >= 0, name='ssid_positive'),

@@ -19,6 +19,7 @@ def add_message(message):
     except IntegrityError as e:
         Session.rollback()
         Session.flush()
+        print(e)
     
     # if message already exists, return id of existing message
     return (False, Session.query(Message).filter_by(message=message.message).first().id)

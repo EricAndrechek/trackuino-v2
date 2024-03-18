@@ -21,3 +21,6 @@
 *-backups/
 fp-info-cache
 **/fp-info-cache
+
+alembic.ini
+alembic/
