@@ -30,7 +30,7 @@ def api_db_sync():
                 # convert to utc
                 timestamp = timestamp.astimezone().replace(tzinfo=None)
             except Exception as e:
-                return e, 400
+                return str(e), 400
         else:
             # convert to datetime object
             try:
