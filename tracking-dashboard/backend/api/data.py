@@ -7,30 +7,31 @@ data_app = Blueprint('data_app', __name__)
 # data upload endpoints
 
 # upload should take data in the formats json and aprs, where data is replace with the aprs string or json object
-# {
-#     "callsign": "N0CALL",
-#     "ssid": 0,
-#     "timestamp": "2021-01-01T00:00:00Z",
-#     "type": "json",
-#     "data": {
-#         "callsign": "N0CALL",
-#         "ssid": 0,
-#         "symbol": "/",
-#         "lat": 0.0,
-#         "lon": 0.0,
-#         "alt": 0.0,
-#         "course": 0.0,
-#         "speed": 0.0,
-#         "comment": "test comment"
-#         "telemetry": {
-#             "battery": 0.0,
-#             "temperature": 0.0,
-#             "humidity": 0.0,
-#             "pressure": 0.0
-#         }
-#     }
-# }
+example = {
+    "callsign": "N0CALL",
+    "ssid": 0,
+    "timestamp": "2021-01-01T00:00:00Z",
+    "type": "json",
+    "data": {
+        "callsign": "N0CALL",
+        "ssid": 0,
+        "symbol": "/",
+        "lat": 0.0,
+        "lon": 0.0,
+        "alt": 0.0,
+        "course": 0.0,
+        "speed": 0.0,
+        "comment": "test comment",
+        "telemetry": {
+            "battery": 0.0,
+            "temperature": 0.0,
+            "humidity": 0.0,
+            "pressure": 0.0
+        }
+    }
+}
 
+# JSON upload route
 @data_app.route('/upload', methods=['POST'])
 def api_upload():
     data_obj = Data()
@@ -40,7 +41,9 @@ def api_upload():
     try:
         data = request.get_json()
     except Exception as e:
-        return "invalid json", 400
+        # if data is not in json format, return error and show expected format with 400 status code
+        # TODO: ideally prettier formatted json example?
+        return "Data must be in json format. Example: " + str(example), 400
     
     # accept upload data
     try:
@@ -49,8 +52,7 @@ def api_upload():
         return e, 400
     
     # check if sender matches token
-    if not data_obj.check_token(request.headers.get('Authorization')):
-        return "invalid token", 401
+    data_obj.check_token(request.headers.get('Authorization'))
 
     # get ip address of client
     data_obj.get_client_ip(request)

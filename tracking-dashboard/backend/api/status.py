@@ -8,6 +8,7 @@ status_app = Blueprint('status_app', __name__)
 
 @status_app.route('/status', methods=['GET'])
 def status_api():
+    # TODO
     # for now, we do Status().status every time
     # once we have a job scheduler, we can just return the .status value and not redefine Status() every time
     return jsonify(Status().status)

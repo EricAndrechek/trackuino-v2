@@ -35,3 +35,29 @@ def add_source(source):
     
     # if source already exists, return id of existing source
     return (False, Session.query(Source).filter_by(callsign=source.callsign).first().id)
+
+def add_position(position):
+    Session.add(position)
+    try:
+        Session.commit()
+        return (True, position.id)
+    except IntegrityError as e:
+        print(e)
+        Session.rollback()
+        Session.flush()
+    
+    # if position already exists, return id of existing position
+    return (False, Session.query(Position).filter_by(callsign=position.callsign).first().id)
+
+def add_telemetry(telemetry):
+    Session.add(telemetry)
+    try:
+        Session.commit()
+        return (True, telemetry.id)
+    except IntegrityError as e:
+        print(e)
+        Session.rollback()
+        Session.flush()
+    
+    # if telemetry already exists, return id of existing telemetry
+    return (False, Session.query(Telemetry).filter_by(battery=telemetry.battery).first().id)

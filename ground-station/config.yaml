@@ -53,14 +53,6 @@ APRS IS:
   host: rotate.aprs2.net
   port: 14580
 
-Telemetry:
-  # Whether to send telemetry packets such as GS cpu, ram, etc
-  enabled: true
-
-  # How often to send ground station telemetry packets (in seconds)
-  # these do not show up on aprs.fi
-  telemetry interval: 10
-
 GPS:
   # Whether to use a USB GPS
   # If false, the ground station will not send any position update packets

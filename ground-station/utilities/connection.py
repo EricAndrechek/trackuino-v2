@@ -52,14 +52,6 @@ class GS_Client():
         self.client.on_connect = self.on_connect
         self.client.on_disconnect = self.on_disconnect
 
-        if config.telemetry.enabled:
-            # run daemon thread to send telemetry every config.telemetry.telemetry_interval seconds
-            
-            from threading import Thread
-            self.telemetry_thread = Thread(target=self.telemetry_daemon, daemon=True, name="Telemetry Daemon")
-            self.telemetry_thread.daemon = True
-            self.telemetry_thread.start()
-
     def on_message(self, client, userdata, msg):
         print(parse_topic(msg.topic) + " " + msg.payload.decode())
     
@@ -68,29 +60,6 @@ class GS_Client():
 
     def on_disconnect(self, client, userdata, rc):
         print("Disconnected - " + parse_rc(rc))
-    
-    def send_telemetry(self):
-        cpu = "{:.2f}".format(psutil.cpu_percent()) + "%"
-        memory = "{:.2f}".format(psutil.virtual_memory().percent) + "%"
-        total_memory = humanfriendly.format_size(psutil.virtual_memory().total)
-        disk = "{:.2f}".format(psutil.disk_usage('/').percent) + "%"
-        total_disk = humanfriendly.format_size(psutil.disk_usage('/').total)
-        network = humanfriendly.format_size(psutil.net_io_counters().bytes_sent + psutil.net_io_counters().bytes_recv)
-        uptime = humanfriendly.format_timespan(time.mktime(time.localtime()) - psutil.boot_time())
-
-        self.client.publish(f"{self.station}/cpu", cpu, qos=0, retain=True)
-        self.client.publish(f"{self.station}/memory", memory, qos=0, retain=True)
-        self.client.publish(f"{self.station}/total-memory", total_memory, qos=0, retain=True)
-        self.client.publish(f"{self.station}/disk", disk, qos=0, retain=True)
-        self.client.publish(f"{self.station}/total-disk", total_disk, qos=0, retain=True)
-        self.client.publish(f"{self.station}/network", network, qos=0, retain=True)
-        self.client.publish(f"{self.station}/uptime", uptime, qos=0, retain=True)
-
-    def telemetry_daemon(self):
-        while True:
-            self.send_telemetry()
-            time.sleep(config.telemetry.telemetry_interval)
-
 
 # Main Loop
 

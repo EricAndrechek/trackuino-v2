@@ -1,3 +1,4 @@
+from xmlrpc.client import Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import CheckConstraint
@@ -16,7 +17,7 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, server_default=func.now(), nullable=False)
-    message = Column(Text, nullable=False, unique=True)
+    message = Column(Text, nullable=False, unique=True) # don't really want unique, but don't want to deal with duplicates right now
 
     def __repr__(self):
         return "<Message(id='%s', timestamp='%s', message='%s')>" % (self.id, self.timestamp, self.message)
@@ -31,6 +32,7 @@ class Source(Base):
     ssid = Column(Integer, nullable=False)
     # TODO: change to inet
     ip = Column(String, nullable=False)
+    signed = Column(Boolean, nullable=False, default=False)
 
     message_obj = relationship("Message", backref="sources")
 
