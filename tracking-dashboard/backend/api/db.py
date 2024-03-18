@@ -53,7 +53,7 @@ def api_db_sync():
             # if data is not in json format, return error and show expected format with 400 status code
             return "Data must be a list of messages in json format.", 400
         
-        return bulk_add_messages(data)
+        return bulk_add_messages(data, request)
 
 @db_app.route('/db', methods=['DELETE'])
 def api_db_delete():

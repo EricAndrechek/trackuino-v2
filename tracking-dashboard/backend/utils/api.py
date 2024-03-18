@@ -157,11 +157,12 @@ class Data:
         else:
             raise Exception("Invalid type in upload data")
     
-    def save(self):
+    def save(self, save_timestamp=False):
         to_return = 400
 
         message = Message(
             message=self.data["raw"],
+            timestamp=self.info["timestamp"] if save_timestamp else None,
         )
 
         print(message)

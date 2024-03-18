@@ -79,12 +79,14 @@ def get_since_timestamp(timestamp):
     return data
 
 def bulk_add_messages(messages, request):
+    if not isinstance(messages, list):
+        messages = [messages]
     for message in messages:
         data_obj = Data()
         try:
             data_obj.upload(message)
         except Exception as e:
-            return e, 400
+            return str(e), 400
         data_obj.check_token(request.headers.get('Authorization'))
 
         # get ip address of client
@@ -94,14 +96,14 @@ def bulk_add_messages(messages, request):
         try:
             data_obj.parse()
         except Exception as e:
-            return e, 400
+            return str(e), 400
         
         # save data
         try:
-            status_code = data_obj.save()
+            status_code = data_obj.save(True)
         except Exception as e:
-            print("save error: ", e)
-            return e, 400
+            print("bulk save error: ", e)
+            return str(e), 400
     return "New data saved", 201
 
 # given an ip address, get the last time that ip address added a source
