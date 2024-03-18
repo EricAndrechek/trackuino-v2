@@ -17,25 +17,33 @@ class Data:
         except KeyError:
             raise Exception("No data in upload data")
 
+        self.info = {
+            "callsign": None,
+            "ssid": None,
+            "type": None,
+            "timestamp": None,
+            "ip": None,
+        }
+
         self.data = {}
 
         # try parsing data object
         try:
-            self.data["callsign"] = data["callsign"]
-            self.data["ssid"] = data["ssid"]
-            self.data["type"] = data["type"]
+            self.info["callsign"] = data["callsign"]
+            self.info["ssid"] = data["ssid"]
+            self.info["type"] = data["type"]
         except KeyError:
             raise Exception("No callsign or ssid in upload data")
         
         try:
-            self.data["timestamp"] = data["timestamp"]
+            self.info["timestamp"] = data["timestamp"]
         except KeyError:
-            self.data["timestamp"] = None
+            self.info["timestamp"] = None
     
     def check_token(self, token):
         # check aprs callsign and token with passcode util
         if token is not None:
-            if get_passcode(self.data["callsign"]) == token:
+            if get_passcode(self.info["callsign"]) == token:
                 self.signed = True
             else:
                 # TODO: log invalid token
@@ -54,17 +62,17 @@ class Data:
 
     def parse_json(self):
         # parse json data
-        self.data["data"] = self.raw["data"]
+        self.data = self.raw["data"]
 
         # should we have assertions to check for required fields?
         # this is done in the save function
 
     def parse_data(self):
         # check if data is in aprs format or json format
-        if self.data["type"] == "aprs":
+        if self.info["type"] == "aprs":
             # possible for uploading raw APRS data, but JSON is ideal?
             self.parse_aprs()
-        elif self.data["type"] == "json":
+        elif self.info["type"] == "json":
             self.parse_json()
         else:
             raise Exception("Invalid type in upload data")
@@ -72,9 +80,9 @@ class Data:
         # check for required fields
         # verify callsign, ssid, symbol exists and are valid
         try:
-            callsign = self.data["data"]["callsign"]
-            ssid = self.data["data"]["ssid"]
-            symbol = self.data["data"]["symbol"]
+            callsign = self.raw["data"]["callsign"]
+            ssid = self.raw["data"]["ssid"]
+            symbol = self.raw["data"]["symbol"]
             if callsign is None or ssid is None or symbol is None:
                 raise KeyError
             if len(callsign) > 6:
@@ -88,7 +96,7 @@ class Data:
         
         lat = None
         try:
-            lat = self.data["data"]["lat"]
+            lat = self.raw["data"]["lat"]
             if lat < -90 or lat > 90:
                 raise Exception("Invalid latitude")
         except KeyError:
@@ -96,7 +104,7 @@ class Data:
 
         lon = None
         try:
-            lon = self.data["data"]["lon"]
+            lon = self.raw["data"]["lon"]
             if lon < -180 or lon > 180:
                 raise Exception("Invalid longitude")
         except KeyError:
@@ -104,13 +112,13 @@ class Data:
 
         alt = None
         try:
-            alt = self.data["data"]["alt"]
+            alt = self.raw["data"]["alt"]
         except KeyError:
             pass
 
         course = None
         try:
-            course = self.data["data"]["course"]
+            course = self.raw["data"]["course"]
             if course < 0 or course > 360:
                 raise Exception("Invalid course")
         except KeyError:
@@ -118,29 +126,34 @@ class Data:
 
         speed = None
         try:
-            speed = self.data["data"]["speed"]
+            speed = self.raw["data"]["speed"]
         except KeyError:
             pass
 
         comment = None
         try:
-            comment = self.data["data"]["comment"]
+            comment = self.raw["data"]["comment"]
         except KeyError:
             pass
 
-        self.data["data"]["lat"] = lat
-        self.data["data"]["lon"] = lon
-        self.data["data"]["alt"] = alt
-        self.data["data"]["course"] = course
-        self.data["data"]["speed"] = speed
-        self.data["data"]["comment"] = comment
+        self.data["callsign"] = callsign
+        self.data["ssid"] = ssid
+        self.data["symbol"] = symbol
+        self.data["lat"] = lat
+        self.data["lon"] = lon
+        self.data["alt"] = alt
+        self.data["course"] = course
+        self.data["speed"] = speed
+        self.data["comment"] = comment
+
+        self.parse()
     
     def parse(self):
         # check if data is in aprs format or json format
-        if self.data["type"] == "aprs":
-            self.data["raw"] = self.raw
-        elif self.data["type"] == "json":
-            self.data["raw"] = json.dumps(self.raw)
+        if self.info["type"] == "aprs":
+            self.data["raw"] = self.raw["data"]
+        elif self.info["type"] == "json":
+            self.data["raw"] = json.dumps(self.raw["data"])
         else:
             raise Exception("Invalid type in upload data")
     
@@ -163,12 +176,19 @@ class Data:
             print("parsed data")
 
             telemetry_success, telemetry_id = (False, None)
-            if "telemetry" in self.data["data"]:
+            if "telemetry" in self.data:
+                print("telemetry exists")
+                print(self.data)
+                print(self.data["raw"])
+                print(self.data["telemetry"])
+
                 # add to telemetry table if telemetry data exists
+
+                # TODO: this is data duplication and could be fixed
                 telemetry = Telemetry(
                     message=message_id,
                     raw=self.data["raw"],
-                    parsed=self.data["data"]["telemetry"],
+                    parsed=self.data["telemetry"],
                 )
                 telemetry_success, telemetry_id = add_telemetry(telemetry)
 
@@ -176,18 +196,18 @@ class Data:
             
             # build Geometry POINT object for lat/lon
             # format: 'POINT(-33.9034 152.73457)'
-            geo_point = f"POINT({self.data['data']['lat']} {self.data['data']['lon']})" if "lat" in self.data["data"] and self.data["data"]["lat"] is not None and "lon" in self.data["data"] and self.data["data"]["lon"] is not None else None
+            geo_point = f"POINT({self.data['lat']} {self.data['lon']})" if "lat" in self.data and self.data["lat"] is not None and "lon" in self.data and self.data["lon"] is not None else None
 
             # add to position table
             position = Position(
                 callsign=self.data["callsign"],
                 ssid=self.data["ssid"],
-                symbol=self.data["data"]["symbol"],
+                symbol=self.data["symbol"],
                 geo=geo_point,
-                altitude=self.data["data"]["alt"],
-                course=self.data["data"]["course"],
-                speed=self.data["data"]["speed"],
-                comment=self.data["data"]["comment"],
+                altitude=self.data["alt"],
+                course=self.data["course"],
+                speed=self.data["speed"],
+                comment=self.data["comment"],
                 telemetry=telemetry_id if telemetry_success else None,
                 message=message_id,
             )
@@ -204,10 +224,10 @@ class Data:
         # save to sources table with message id
 
         source = Source(
-            callsign=self.data["callsign"],
-            ssid=self.data["ssid"],
+            callsign=self.info["callsign"],
+            ssid=self.info["ssid"],
             message=message_id,
-            ip=self.data["ip"],
+            ip=self.info["ip"],
             signed=self.signed
         )
 
@@ -235,4 +255,4 @@ class Data:
         # remove invalid characters (ipv4 and ipv6)
         ip = "".join([c for c in ip if c in "0123456789abcdef.:"])
         
-        self.data["ip"] = ip if ip is not None else "unknown"
+        self.info["ip"] = ip if ip is not None else "unknown"

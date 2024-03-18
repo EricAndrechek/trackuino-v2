@@ -1,8 +1,59 @@
-from flask import Blueprint
+from flask import Blueprint, request, jsonify
+from sql.helpers import bulk_add_messages, get_last_ip_addition, get_since_timestamp
+
+from datetime import datetime
+import json
 
 db_app = Blueprint('db_app', __name__)
 
 # database endpoints
+
+# send a utc iso timestamp to the server, and get all data from the db since that timestamp or update the db with new data since that timestamp
+@db_app.route('/sync', methods=['GET', 'POST'])
+def api_db_sync():
+    if request.method == 'GET':
+        # check if timestamp is in the request, if not, set as now
+        timestamp = request.args.get('timestamp')
+        if timestamp is None:
+            # get all entries since last time this ip added to sources table, limit to 1000
+            ip = None
+            try:
+                ip = request.environ['HTTP_X_REAL_IP']
+            except:
+                ip = None
+            if ip is None:
+                ip = request.headers.get('X-Forwarded-For')
+                if ip is None:
+                    ip = request.remote_addr
+            try:
+                timestamp = get_last_ip_addition(ip)
+                # convert to utc
+                timestamp = timestamp.astimezone().replace(tzinfo=None)
+            except Exception as e:
+                return e, 400
+        else:
+            # convert to datetime object
+            try:
+                timestamp = datetime.fromisoformat(timestamp)
+                # convert to utc
+                timestamp = timestamp.astimezone().replace(tzinfo=None)
+            except ValueError as e:
+                return "Timestamp must be in iso format (YYYY-MM-DDTHH:MM:SSZ).", 400
+        # get all data from the db since the timestamp
+        data = get_since_timestamp(timestamp)
+        for i in range(len(data)):
+            data[i] = json.loads(data[i])
+        return jsonify(data), 200
+    elif request.method == 'POST':
+        # update the db with new data
+        data = {}
+        try:
+            data = request.get_json()
+        except Exception as e:
+            # if data is not in json format, return error and show expected format with 400 status code
+            return "Data must be a list of messages in json format.", 400
+        
+        return bulk_add_messages(data)
 
 @db_app.route('/db', methods=['DELETE'])
 def api_db_delete():

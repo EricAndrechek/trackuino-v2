@@ -49,7 +49,7 @@ def api_upload():
     try:
         data_obj.upload(data)
     except Exception as e:
-        return e, 400
+        return str(e), 400
     
     # check if sender matches token
     data_obj.check_token(request.headers.get('Authorization'))
@@ -61,7 +61,7 @@ def api_upload():
     try:
         data_obj.parse()
     except Exception as e:
-        return e, 400
+        return str(e), 400
     
     # save data
     try:
@@ -72,4 +72,4 @@ def api_upload():
             return "Data already exists", 208
     except Exception as e:
         print("save error: ", e)
-        return e, 400
+        return str(e), 400
