@@ -62,7 +62,7 @@ void Radio::set_nada(bool &nada) {
 // send the flag a bunch of times to initialize
 void Radio::send_flag(int flags) {
     for (; flags >= 0; flags--) {
-        for (char j = 0; j < 8; j++) {
+        for (unsigned char j = 0; j < 8; j++) {
             if (FLAG & (1 << j)) {
                 set_nada(nada);
             } else {
@@ -78,7 +78,7 @@ void Radio::send_packet() {
     delay(300);
     send_flag(100);
     for (unsigned int i = 0; i < packet_length; i++) {
-        for (char j = 7; j >= 0; j--) {
+        for (signed char j = 7; j >= 0; j--) {
             if (((packet[i] & 0xff) >> j) & 0x01) {
                 set_nada(nada);
             } else {
@@ -136,9 +136,9 @@ void Radio::flip_order() {
     unsigned char i = 1;
     for (; i < max_packet_len; i++) {
         // swap bit order (MSB -> LSB)
-        char raw_byte = packet[i];
+        unsigned char raw_byte = packet[i];
         packet[i] = 0;
-        for (char j = 0; j < 8; j++) {
+        for (unsigned char j = 0; j < 8; j++) {
             packet[i] |= ((raw_byte >> j) & 0x1) << (7 - j);
         }
     }
