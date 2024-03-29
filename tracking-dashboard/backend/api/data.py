@@ -51,10 +51,14 @@ def api_rock7_upload():
     {'momsn': 782, 'data': '48656c6c6f21205468697320697320612074657374206d6573736167652066726f6d20526f636b424c4f434b21', 'serial': 111111, 'iridium_latitude': 25.1694, 'iridium_cep': 52.0, 'JWT': 'really long jwt', 'imei': 'imeinumber', 'device_type': 'ROCKBLOCK', 'transmit_time': '24-03-29 03:20:26', 'iridium_longitude': 129.8162}
     '''
     # convert data['data'] to bytes from hex
-    encoded_data = bytes.fromhex(data['data'])
-    data['data'] = encoded_data.decode('utf-8')
-    # json decode the data['data']
-    decoded_data = json.loads(data['data'])
+    try:
+        encoded_data = bytes.fromhex(data['data'])
+        data['data'] = encoded_data.decode('utf-8')
+        # json decode the data['data']
+        decoded_data = json.loads(data['data'])
+    except Exception as e:
+        print("error decoding data: ", e)
+        return "Data must be in json format. Example: " + str(example), 400
 
     # if callsign is not in data, add as serial
     if 'callsign' not in decoded_data:
@@ -97,9 +101,9 @@ def api_rock7_upload():
     try:
         status_code = data_obj.save()
         if status_code == 201:
-            return "New data saved", 201
+            return "New data saved", 200
         elif status_code == 208:
-            return "Data already exists", 208
+            return "Data already exists", 200
     except Exception as e:
         print("save error: ", e)
         return str(e), 400
