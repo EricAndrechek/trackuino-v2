@@ -1,4 +1,5 @@
 from flask import Blueprint, request
+import json
 
 from utils.api import Data
 
@@ -30,6 +31,78 @@ example = {
         }
     }
 }
+
+# json upload for rock7 format
+@data_app.route('/rock7-upload', methods=['POST'])
+def api_rock7_upload():
+    data_obj = Data()
+
+    # receive data from request
+    data = {}
+    try:
+        data = request.get_json()
+    except Exception as e:
+        # if data is not in json format, return error and show expected format with 400 status code
+        # TODO: ideally prettier formatted json example?
+        return "Data must be in json format. Example: " + str(example), 400
+    
+    # data here comes in format:
+    '''
+    {'momsn': 782, 'data': '48656c6c6f21205468697320697320612074657374206d6573736167652066726f6d20526f636b424c4f434b21', 'serial': 111111, 'iridium_latitude': 25.1694, 'iridium_cep': 52.0, 'JWT': 'really long jwt', 'imei': 'imeinumber', 'device_type': 'ROCKBLOCK', 'transmit_time': '24-03-29 03:20:26', 'iridium_longitude': 129.8162}
+    '''
+    # convert data['data'] to bytes from hex
+    encoded_data = bytes.fromhex(data['data'])
+    data['data'] = encoded_data.decode('utf-8')
+    # json decode the data['data']
+    decoded_data = json.loads(data['data'])
+
+    # if callsign is not in data, add as serial
+    if 'callsign' not in decoded_data:
+        decoded_data['callsign'] = data['serial']
+    # if ssid is not in data, add as 0
+    if 'ssid' not in decoded_data:
+        decoded_data['ssid'] = 0
+    # if timestamp is not in data, add as transmit_time
+    if 'timestamp' not in decoded_data:
+        decoded_data['timestamp'] = data['transmit_time']
+    # if type is not in data, add as json
+    if 'type' not in decoded_data:
+        decoded_data['type'] = 'json'
+    # if 'timestamp' is None or empty, add as transmit_time
+    if decoded_data['timestamp'] is None or decoded_data['timestamp'] == "":
+        decoded_data['timestamp'] = data['transmit_time']
+
+    # set data to decoded_data
+    data = decoded_data
+    
+    # accept upload data
+    try:
+        data_obj.upload(data)
+    except Exception as e:
+        return str(e), 400
+    
+    # check if sender matches token
+    data_obj.check_token(request.headers.get('Authorization'))
+
+    # get ip address of client
+    data_obj.get_client_ip(request)
+
+    # parse data
+    try:
+        data_obj.parse()
+    except Exception as e:
+        return str(e), 400
+    
+    # save data
+    try:
+        status_code = data_obj.save()
+        if status_code == 201:
+            return "New data saved", 201
+        elif status_code == 208:
+            return "Data already exists", 208
+    except Exception as e:
+        print("save error: ", e)
+        return str(e), 400
 
 # JSON upload route
 @data_app.route('/upload', methods=['POST'])

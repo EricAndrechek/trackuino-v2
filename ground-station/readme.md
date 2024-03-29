@@ -15,6 +15,7 @@ For tracking the balloon once it has landed and triggering the cut-down burn wir
   - [1.1. Computing Device](#11-computing-device)
   - [1.2. Software-Define Radio (SDR)](#12-software-define-radio-sdr)
   - [1.3. Internet Uplink](#13-internet-uplink)
+    - [1.3.1. SIM Card Hat](#131-sim-card-hat)
   - [1.4. Display](#14-display)
   - [1.5. GPS](#15-gps)
 - [2. Setup](#2-setup)
@@ -28,10 +29,11 @@ For tracking the balloon once it has landed and triggering the cut-down burn wir
   - [3.1. Config.yml Settings](#31-configyml-settings)
   - [3.2. Web-Interface Setup \& Forwarding](#32-web-interface-setup--forwarding)
 - [4. Appendix](#4-appendix)
-  - [4.1. Libraries](#41-libraries)
-  - [4.2. References](#42-references)
-  - [4.3. SDR Software](#43-sdr-software)
-  - [4.4. Related Works](#44-related-works)
+  - [4.1. Direwolf Debugging](#41-direwolf-debugging)
+  - [4.2. Libraries](#42-libraries)
+  - [4.3. References](#43-references)
+  - [4.4. SDR Software](#44-sdr-software)
+  - [4.5. Related Works](#45-related-works)
 
 # 1. Hardware
 
@@ -50,6 +52,19 @@ Additionally you will need a good antenna for receiving from longer distances. D
 ## 1.3. Internet Uplink
 
 There are several different methods one could use to upload APRS and GPS data to the internet. This tools assumes all of that setup is done by the user and does not handle any of it. Everything should work fine so long as your device has an internet connection and has port 14580 open in the firewall.
+
+### 1.3.1. SIM Card Hat
+
+AT COMMANDS:
+
+AT+CSTT="hologram"
+
+// Facility Lock
+AT+CLCK
+Set to LTE mode
+AT+CNMP=38
+AT+COPS Operator Selection
+AT+CREG Network Registration
 
 ## 1.4. Display
 
@@ -216,14 +231,6 @@ sudo cloudflared service install <long_id>
 
 6. (Optional) Create a new public hostname for the same tunnel for the web interface and repeat steps 2-5.
 
-7. (Optional) Setup [netdata](https://www.netdata.cloud/) so that you can monitor the resource usage of your ground station remotely. It is suggested you do that with a parent netdata server running elsewhere, like on your tracking-dashboard server, in which case you would run:
-
-```bash
-wget -O /tmp/netdata-kickstart.sh https://my-netdata.io/kickstart.sh && sh /tmp/netdata-kickstart.sh --no-updates --stable-channel --disable-telemetry
-```
-
-For accessing this netdata server, see the documentation in tracking-dashboard.
-
 You should now be able to access your device via SSH with the cloudeflared proxy or SSH in the browser. If you are using the web interface, you should also be able to access it via the browser.
 
 # 3. Additional Walk-Throughs
@@ -244,9 +251,26 @@ Edit the config.yml file to suit your needs. The below (hidden) section document
 
 # 4. Appendix
 
+## 4.1. Direwolf Debugging
+
+When multiple modems are configured per channel, a simple spectrum display reveals which decoders
+picked up the signal properly.
+| means a frame was received with no error.
+: means a frame was received with a single bit error. (FIX_BITS 1 or higher configured.)
+. means a frame was received with multiple errors. (FIX_BITS 2 or higher configured.)
+_ means nothing was received on this decoder.
+
+Here are some samples and what they mean.
+___|___ Only the center decoder (e.g. 1600/1800 Hz) was successful.
+_|||___ 3 different lower frequency modems received it properly.
+Assuming USB operation, the transmitting station is probably a
+little low in frequency.
+___|||: 3 different higher frequency modems received it with no error.
+The highest one received it with a single bit error.
+
 Check out the resources below for additional information and readings:
 
-## 4.1. Libraries
+## 4.2. Libraries
 
 - [librtlsdr](https://github.com/steve-m/librtlsdr)
 - [multimon-ng](https://github.com/EliasOenal/multimon-ng)
@@ -256,14 +280,14 @@ Check out the resources below for additional information and readings:
 - [aprs-symbol-index](https://github.com/hessu/aprs-symbol-index)
 - [aprs-deviceid](https://github.com/aprsorg/aprs-deviceid)
 
-## 4.2. References
+## 4.3. References
 
 - [RTL-SDR Blog](https://www.rtl-sdr.com/about-rtl-sdr/)
 - [osmosom.org rtl-sdr](https://osmocom.org/projects/rtl-sdr/wiki/Rtl-sdr)
 - [Rtl_fm Guide](http://kmkeen.com/rtl-demod-guide/index.html)
 - [Radio Reference](https://www.radioreference.com/db/) (useful for seeing nearby frequency allocations)
 
-## 4.3. SDR Software
+## 4.4. SDR Software
 
 Ultimately, just follow this website list and use what works best for you: [rtl-sdr.com/big-list-rtl-sdr-supported-software/](https://www.rtl-sdr.com/big-list-rtl-sdr-supported-software/)
 
@@ -273,7 +297,7 @@ The applications I found the easiest and most useful were:
 - [GQRX](http://gqrx.dk/) (Linux/Mac/WSL)
 - [SDR++](https://github.com/AlexandreRouma/SDRPlusPlus) (Linux/Mac/Windows)
 
-## 4.4. Related Works
+## 4.5. Related Works
 
 - [Raspberry Pi + RTL SDR dongle = APRS Rx only gate](https://e.pavlin.si/2014/12/10/raspberry-pi-rtl-sdr-dongle-aprs-rx-only-gate-part-two/) (this exact project minus the packaging, easy setup/config, and web interface)
 - [APRS CLI Decoding](https://gist.github.com/jj1bdx/8ab103e774c81d2c068d455ab862b72e) (effectively what this project is doing without a few extra features unqiue to this project)

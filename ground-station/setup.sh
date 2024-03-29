@@ -14,8 +14,21 @@ if [ "$(uname)" = "Linux" ]; then
         sudo apt upgrade -y
         sudo apt autoremove -y
 
+        # enable serial port hardware, remote GPIO, I2C, SPI, 1-Wire, and SSH
+        sudo raspi-config nonint do_serial 0
+        sudo raspi-config nonint do_i2c 0
+        sudo raspi-config nonint do_spi 0
+        sudo raspi-config nonint do_onewire 0
+        sudo raspi-config nonint do_ssh 0
+
+        sudo apt-get install minicom -y
+
+        sudo apt-get install cmake -y
+        sudo apt-get install libasound2-dev -y
+        sudo apt-get install libudev-dev -y
+
         # Install the required packages
-        sudo apt install rtl-sdr multimon-ng sox gpsd gpsd-clients -y
+        sudo apt install rtl-sdr multimon-ng sox gpsd libgps-dev gpsd-clients -y
 
         # Setup udev rules
         wget https://github.com/osmocom/rtl-sdr/raw/master/rtl-sdr.rules
@@ -24,6 +37,10 @@ if [ "$(uname)" = "Linux" ]; then
         # Reload udev rules
         sudo udevadm control --reload-rules
         sudo udevadm trigger
+
+        sudo apt install direwolf -y
+
+        cp /usr/local/share/doc/direwolf/examples/direwolf.conf ~/direwolf.conf
 
         echo "\nGround station package setup complete\!\n"
 
@@ -73,6 +90,8 @@ source venv/bin/activate
 
 # upgrade pip
 pip3 install --upgrade pip
+
+sudo pip3 install paho-mqtt pyserial
 
 # install the necessary python packages
 pip3 install -r requirements.txt
