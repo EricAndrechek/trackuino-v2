@@ -77,7 +77,7 @@ def api_rock7_upload():
     # set data to decoded_data
     data = decoded_data
     source = {}
-    source['callsign'] = data['ROCK']
+    source['callsign'] = "ROCK"
     source['ssid'] = 7
     source['timestamp'] = data['transmit_time']
     source['type'] = 'json'
