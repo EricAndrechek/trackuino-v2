@@ -1,22 +1,20 @@
 from redis import Redis
 from rq import Queue
 import paho.mqtt.client as mqtt
-from paho.mqtt.packettypes import PacketTypes
-from paho.mqtt.properties import Properties
 import json
 
 def add_data_task(data_type, data):
     print("adding data to mqtt")
     client = mqtt.Client()
     client.connect("localhost", 1883, 60)
-    properties=Properties(PacketTypes.PUBLISH)
-    properties.MessageExpiryInterval=60 # retain messages for x seconds
 
     if data_type == "position":
-        client.publish("POSITION/" + data["name"], json.dumps(data), retain=True, qos=0, properties=properties)
+        topic = "POSITION/" + data["name"]
+        client.publish(topic, json.dumps(data), retain=True, qos=0)
     elif data_type == "telemetry":
         for key in data:
-            client.publish("TELEMETRY/" + key, json.dumps(data[key]), retain=True, qos=0, properties=properties)
+            topic = "TELEMETRY/" + data["name"] + "/" + key
+            client.publish(topic, json.dumps(data[key]), retain=True, qos=0)
     else:
         print("Invalid data type")
     
