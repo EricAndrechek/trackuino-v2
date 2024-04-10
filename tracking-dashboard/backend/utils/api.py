@@ -161,6 +161,8 @@ class Data:
         self.data["course"] = course
         self.data["speed"] = speed
         self.data["comment"] = comment
+        if "telemetry" in self.raw["data"]:
+            self.data["telemetry"] = self.raw["data"]["telemetry"]
 
         self.parse()
     
@@ -209,30 +211,44 @@ class Data:
                 )
                 telemetry_success, telemetry_id = add_telemetry(telemetry)
 
+                # add to mqtt
+                name = self.data["callsign"] + "-" + str(self.data["ssid"])
+                add_datum(name, telemetry)
+
                 print(telemetry_success, telemetry_id)
             
-            # build Geometry POINT object for lat/lon
-            # format: 'POINT(-33.9034 152.73457)'
-            geo_point = f"POINT({self.data['lat']} {self.data['lon']})" if "lat" in self.data and self.data["lat"] is not None and "lon" in self.data and self.data["lon"] is not None else None
+            # if position data exists, add to positions table
+            if 'lat' in self.data and 'lon' in self.data:
 
-            # add to position table
-            position = Position(
-                callsign=self.data["callsign"],
-                ssid=self.data["ssid"],
-                symbol=self.data["symbol"],
-                geo=geo_point,
-                altitude=self.data["alt"],
-                course=self.data["course"],
-                speed=self.data["speed"],
-                comment=self.data["comment"],
-                telemetry=telemetry_id if telemetry_success else None,
-                message=message_id,
-            )
-            position_success, position_id = add_position(position)
+                # build Geometry POINT object for lat/lon
+                # format: 'POINT(-33.9034 152.73457)'
+                geo_point = f"POINT({self.data['lat']} {self.data['lon']})" if "lat" in self.data and self.data["lat"] is not None and "lon" in self.data and self.data["lon"] is not None else None
 
-            print(position_success, position_id)
+                # add to position table
+                position = Position(
+                    callsign=self.data["callsign"],
+                    ssid=self.data["ssid"],
+                    symbol=self.data["symbol"],
+                    geo=geo_point,
+                    altitude=self.data["alt"],
+                    course=self.data["course"],
+                    speed=self.data["speed"],
+                    comment=self.data["comment"],
+                    telemetry=telemetry_id if telemetry_success else None,
+                    message=message_id,
+                )
+                position_success, position_id = add_position(position)
 
-            to_return = 201
+                # add to mqtt
+                name = self.data["callsign"] + "-" + str(self.data["ssid"])
+                add_datum(name, position)
+
+                print(position_success, position_id)
+
+                to_return = 201
+            else:
+                # only a telemetry packet
+                to_return = 202
         else:
             to_return = 208
 

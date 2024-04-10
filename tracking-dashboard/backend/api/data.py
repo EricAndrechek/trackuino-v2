@@ -1,3 +1,4 @@
+import stat
 from flask import Blueprint, request
 import json
 
@@ -69,19 +70,22 @@ def api_rock7_upload():
     # if timestamp is not in data, add as transmit_time
     if 'timestamp' not in decoded_data:
         decoded_data['timestamp'] = data['transmit_time']
-    # if type is not in data, add as json
-    if 'type' not in decoded_data:
-        decoded_data['type'] = 'json'
     # if 'timestamp' is None or empty, add as transmit_time
     if decoded_data['timestamp'] is None or decoded_data['timestamp'] == "":
         decoded_data['timestamp'] = data['transmit_time']
 
     # set data to decoded_data
     data = decoded_data
+    source = {}
+    source['callsign'] = data['ROCK']
+    source['ssid'] = 7
+    source['timestamp'] = data['transmit_time']
+    source['type'] = 'json'
+    source['data'] = data
     
     # accept upload data
     try:
-        data_obj.upload(data)
+        data_obj.upload(source)
     except Exception as e:
         return str(e), 400
     
@@ -100,7 +104,7 @@ def api_rock7_upload():
     # save data
     try:
         status_code = data_obj.save()
-        if status_code == 201:
+        if status_code == 201 or status_code == 202:
             return "New data saved", 200
         elif status_code == 208:
             return "Data already exists", 200
@@ -143,8 +147,8 @@ def api_upload():
     # save data
     try:
         status_code = data_obj.save()
-        if status_code == 201:
-            return "New data saved", 201
+        if status_code == 201 or status_code == 202:
+            return "New data saved", status_code
         elif status_code == 208:
             return "Data already exists", 208
     except Exception as e:

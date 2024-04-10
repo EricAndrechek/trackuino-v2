@@ -175,7 +175,7 @@ def on_message(client, userdata, message):
                 return
             try:
                 status_code = data_obj.save()
-                if status_code == 201:
+                if status_code == 201 or status_code == 202:
                     print("New data saved")
                 elif status_code == 208:
                     print("Data already exists")

@@ -6,9 +6,40 @@ except ImportError:
     sys.path.append("..")
     from sql.db import Session
     from sql.models import *
+from re import L
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import cast, func
+from tasks.mqttadder import add_data
+
+# add new datum to mqtt (position or telemetry)
+def add_datum(name, data):
+    # add to redis queue for adding to mqtt by worker
+    if isinstance(data, Position):
+        latitude = None
+        longitude = None
+        # convert geometry to lat/lon
+        if data.geo is not None:
+            latitude = data.geo.y
+            longitude = data.geo.x
+        mqtt_data = {
+            "name": name,
+            "lat": latitude,
+            "lon": longitude,
+            "alt": data.altitude,
+            "cse": data.course,
+            "spd": data.speed,
+            "cmnt": data.comment,
+            "sym": data.symbol
+        }
+        add_data("position", mqtt_data)
+    elif isinstance(data, Telemetry):
+        mqtt_data = {
+            "name": name,
+            "telemetry": data.parsed
+        }
+        add_data("telemetry", mqtt_data)
+
 
 # takes a message object and adds it to the database
 # returns message id of message object and whether or not it was added
@@ -42,6 +73,7 @@ def add_position(position):
     Session.add(position)
     try:
         Session.commit()
+        add_datum(position)
         return (True, position.id)
     except IntegrityError as e:
         print(e)
