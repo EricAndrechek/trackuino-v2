@@ -1,0 +1,75 @@
+html {
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+}
+
+.map-overlay {
+    position: absolute;
+    background: rgba(255,255,255,0.8);
+    border-radius: 3px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+}
+
+#layer-selector {
+    top: 10px;
+    left: 10px;
+}
+
+#notification {
+    top: 0;
+    left: 0;
+    height: 50px;
+    width: 100%;
+    position: absolute;
+    background-color: orange;
+    color: white;
+    text-align: center;
+    text-align: center;
+    line-height: 50px;
+    display: block;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: large;
+    font-weight: bold;
+
+    /* Animation properties */
+    transition: transform 0.5s ease-in-out;
+    transform: translateY(-100%);
+}
+
+#notification.show {
+    transform: translateY(0);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-100%);
+    }
+}

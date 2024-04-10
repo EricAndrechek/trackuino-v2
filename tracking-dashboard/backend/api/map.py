@@ -1,4 +1,5 @@
 from utils.map import Map
+from sql.helpers import get_items_last_n_minutes
 
 from flask import Flask, Blueprint, render_template, request, jsonify, redirect, url_for
 
@@ -18,6 +19,12 @@ map_app = Blueprint('map_app', __name__)
 # - upload just to our endpoint and have the option to push to (and pull from) APRS-IS
 # - upload to both our endpoint and APRS-IS and have the option to push to (and pull from) APRS-IS
 
-@map_app.route('/map', methods=['GET'])
-def map_api():
-    return "map api"
+@map_app.route('/liveTracks', methods=['GET'])
+def liveTracks():
+    # get param from request
+    age = request.args.get('age') or 60
+    # should get all callsigns that have transmitted in the last <age> minutes
+    # default to 60 minutes
+    # and return them as a list of dictionaries
+    data = get_items_last_n_minutes(age)
+    return jsonify(data)

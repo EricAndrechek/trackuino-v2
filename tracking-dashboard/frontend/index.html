@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balloon Tracking Map</title>
+    <link rel="manifest" href="/manifest.json">
+
+    <script src="/main.js"></script>
+
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+
+    <link rel="stylesheet" href="/styles.css">
+
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="map-overlay" id="layer-selector">
+        <select id="style-selector">
+            <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
+            <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
+            <option value="mapbox://styles/mapbox/light-v11">Light</option>
+            <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
+            <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+            <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
+        </select>
+    </div>
+    <div id="notification"></div>
+    <script>
+        onload = () => {
+            mapboxgl.accessToken =
+                "pk.eyJ1IjoiZXJpY2FuZHIiLCJhIjoiY2x1cnp3Z2tpMDcybTJycGVwN2czNTk3OCJ9.Ccv9oGIfUewgj2Iw-CqOyw";
+
+            var map = new mapboxgl.Map({
+                container: "map",
+                style: "mapbox://styles/mapbox/streets-v12",
+                center: [-83.743, 42.2808],
+                zoom: 13,
+            });
+
+            const geolocate = new mapboxgl.GeolocateControl({
+                positionOptions: {
+                    enableHighAccuracy: true,
+                },
+                // When active the map will receive updates to the device's location as it changes.
+                trackUserLocation: true,
+                // Draw an arrow next to the location dot to indicate which direction the device is heading.
+                showUserHeading: true,
+            })
+
+            map.addControl(geolocate);
+
+            // When a new style is selected, update the map style
+            document
+                .getElementById("style-selector")
+                .addEventListener("change", function (e) {
+                    map.setStyle(e.target.value);
+                });
+
+            map.on("load", async () => {
+                geolocate.trigger();
+
+                
+
+                // loop to update map with new data
+                const timer = setInterval(() => {
+                    // get tracks and update map with all tracks and their linestrings
+                    for (const track_id in tracks) {
+                        if (track_id === "undefined") {
+                            continue;
+                        }
+                        const track = tracks[track_id];
+                        if (!track || !track.id || track.id === "undefined" || track.id == undefined) {
+                            console.log('Invalid track', track)
+                            continue;
+                        }
+                        // check if source already exists
+                        if (map.getSource(track.id)) {
+                            // update source with new data
+                            map.getSource(track.id).setData({
+                                type: "Feature",
+                                properties: {},
+                                geometry: {
+                                    type: "Point",
+                                    coordinates: [track.lat, track.lon, track.alt]
+                                },
+                            });
+                            map.getSource(track.id + "-line").setData(track.geojson);
+                        } else {
+                            console.log('Adding new track', track.id);
+                            // create a new GeoJSON source and add it to the map
+                            map.addSource(track.id, {
+                                type: "geojson",
+                                data: {
+                                    type: "Feature",
+                                    properties: {},
+                                    geometry: {
+                                        type: "Point",
+                                        coordinates: [track.lat, track.lon, track.alt]
+                                    },
+                                },
+                            });
+                            map.addLayer({
+                                id: track.id,
+                                source: track.id,
+                                type: 'symbol',
+                                layout: {
+                                    'icon-image': 'car',
+                                    'icon-allow-overlap': true,
+                                    'icon-size': 2,
+                                },
+                            });
+
+
+                            map.addSource(track.id + "-line", {
+                                type: "geojson",
+                                data: track.geojson,
+                            });
+
+                            map.addLayer({
+                                id: track.id + "-line",
+                                source: track.id + "-line",
+                                type: "line",
+                                paint: {
+                                    "line-color": "#888",
+                                    "line-width": 4,
+                                },
+                            });
+                        }
+                    }
+                }, 100);
+            });
+            geolocate.on('error', () => {
+                console.log('GeoLocation error');
+            });
+        };
+    </script>
+    <script src="/mqtt.js"></script>
+    <script>
+        // Progressive Web App service worker registration
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+            .then(() => console.log('Service Worker registered successfully.'))
+            .catch(error => console.error('Service Worker registration failed:', error));
+        }
+    </script>
+</body>
+</html>

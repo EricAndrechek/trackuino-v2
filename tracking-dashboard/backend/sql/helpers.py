@@ -129,3 +129,39 @@ def get_last_ip_addition(ip):
         print(e)
     
     return time
+
+# get all items in the items table that have been updated in the last n minutes
+def get_items_last_n_minutes(n):
+    time = datetime.utcnow() - datetime.timedelta(minutes=n)
+    items = []
+    try:
+        items = Session.query(Items).filter(Items.last_updated > time).all()
+    except Exception as e:
+        print(e)
+    return items
+
+# check if an id is in the items table, returning the callsign, ssid, and symbol if it is - and updating the last_updated time to now
+def check_item_id(id):
+    item = None
+    try:
+        item = Session.query(Items).filter_by(id=id).first()
+        if item is not None:
+            item.last_updated = datetime.utcnow()
+            Session.commit()
+    except Exception as e:
+        print(e)
+    return item
+
+
+# add a given id with optional callsign, ssid, and symbol to the items table
+def add_item_id(id, callsign=None, ssid=None, symbol=None):
+    item = Items(id=id, callsign=callsign, ssid=ssid, symbol=symbol)
+    Session.add(item)
+    try:
+        Session.commit()
+        return True
+    except Exception as e:
+        print(e)
+        Session.rollback()
+        Session.flush()
+    return False

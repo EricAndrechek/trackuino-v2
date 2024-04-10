@@ -62,7 +62,7 @@ def api_rock7_upload():
 
     # if callsign is not in data, add as serial
     if 'callsign' not in decoded_data:
-        decoded_data['callsign'] = data['serial']
+        decoded_data['callsign'] = data['serial'][:6]
     # if ssid is not in data, add as 0
     if 'ssid' not in decoded_data:
         decoded_data['ssid'] = 0

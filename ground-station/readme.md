@@ -18,8 +18,9 @@ For tracking the balloon once it has landed and triggering the cut-down burn wir
     - [1.3.1. SIM Card Hat](#131-sim-card-hat)
   - [1.4. Display](#14-display)
   - [1.5. GPS](#15-gps)
+  - [1.6. Power](#16-power)
 - [2. Setup](#2-setup)
-  - [2.1. Install Ubuntu Server](#21-install-ubuntu-server)
+  - [2.1. Install Operating System](#21-install-operating-system)
   - [2.2. Download \& Install Dependencies](#22-download--install-dependencies)
     - [2.2.1. Automatic Setup](#221-automatic-setup)
     - [2.2.2. Manual Setup](#222-manual-setup)
@@ -57,14 +58,10 @@ There are several different methods one could use to upload APRS and GPS data to
 
 AT COMMANDS:
 
-AT+CSTT="hologram"
+AT*MCGDEFCONT="IP","hologram"
+AT+CGDCONT=1,"IP","hologram"
 
-// Facility Lock
-AT+CLCK
-Set to LTE mode
-AT+CNMP=38
-AT+COPS Operator Selection
-AT+CREG Network Registration
+
 
 ## 1.4. Display
 
@@ -74,17 +71,33 @@ While buying a display is not strictly necessary, it can make the initial setup 
 
 ## 1.5. GPS
 
-This software can optionally integrate the same functionality as the [vehicle-tracker](../vehicle-tracker/). In order to track your receiver vehicle/device without separate vehicle-tracker hardware, you will need a USB-enabled GPS device. Ideally find one that says it supports linux so that you don't run into driver issues.
+This software can optionally integrate the same functionality as the [vehicle-tracker](../vehicle-tracker/). In order to track your receiver vehicle/device without separate vehicle-tracker hardware, you will need a USB-enabled GPS device. Ideally find one that says it supports linux so that you don't run into driver issues. Alternatively, if you are using a SIM hat, you can use the GPS on that.
+
+## 1.6. Power
+
+"Le Potato" board lists its power draw as:
+
+- 4W Full Load
+- 2.5W Typical Load
+- < 1W Idle
+- < 0.1 Wake Ready
+
+
+
 
 # 2. Setup
 
-## 2.1. Install Ubuntu Server
+## 2.1. Install Operating System
 
-Start by installing Ubuntu Server 22.04 (or some other distribution or OS, but Ubuntu Server 22.04 is lightweight and tested)
+Download Raspberry Pi Imager from [here](https://www.raspberrypi.com/software/).
 
-Download an Ubuntu Server iso from the internet. [Here's the download for the Libre Computer](https://distro.libre.computer/ci/ubuntu/22.04/)
+Download the latest Raspberry Pi OS Full image from [here](https://distro.libre.computer/ci/raspbian/12/) if using Le Potato, or just directly from the imager if using a Raspberry Pi.
 
-Put the iso into a tool like [Raspberry Pi Imager](https://www.raspberrypi.com/software/) and install it onto a microSD card (for installing on SBCs) or a USB (for desktop/laptop style computers). Note that for single board computers, the faster the microSD the better.
+Plug a microSD of at least 8GB into your computer and open the imager.
+
+Note: If you are using a Libre Computer Board, you will need to use the "Custom" option in the imager and select the correct image. The popup prompt asking if you would like to apply custom settings (such as hostname, wifi, etc.) can be skipped, as the Le Potato does not support these settings.
+
+Once the image is written, plug the microSD into the device and boot it up.
 
 ## 2.2. Download & Install Dependencies
 

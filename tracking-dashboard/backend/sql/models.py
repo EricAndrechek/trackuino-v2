@@ -85,3 +85,18 @@ class Position(Base):
 
     def __repr__(self):
         return "<Position(id='%s', message='%s', callsign='%s', ssid='%s', symbol='%s', speed='%s', course='%s', geo='%s', altitude='%s', comment='%s', telemetry='%s')>" % (self.id, self.message, self.callsign, self.ssid, self.symbol, self.speed, self.course, self.geo, self.altitude, self.comment, self.telemetry)
+
+class Items(Base):
+    __tablename__ = 'items'
+
+    # list of all unique callsigns found in the positions table
+    id = Column(String, primary_key=True)
+    callsign = Column(String(6), nullable=False, unique=True)
+    ssid = Column(Integer, nullable=False)
+    symbol = Column(String(2), nullable=False)
+    last_updated = Column(DateTime, nullable=False, default=datetime.utcnow)
+
+    # TODO: should delete this if the callsign is deleted
+
+    def __repr__(self):
+        return "<Items(id='%s', callsign='%s', symbol='%s', last_updated='%s')>" % (self.id, self.callsign, self.symbol, self.last_updated)

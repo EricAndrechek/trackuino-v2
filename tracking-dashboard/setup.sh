@@ -20,15 +20,11 @@ echo "You will now be asked what you would like to install. Please answer y or n
 echo "All of the following are optional, and you can run this script again to install any of them later."
 echo "In order to properly run the backend, everything except the frontend must be installed, or configured manually to be run on another machine."
 echo ""
-echo "FRONTEND SERVICES: The frontend web interface the user interacts with."
-read -p "Would you like to setup the frontend web interface? (y/n): " frontend_setup
-echo ""
 echo "BACKEND SERVICES: The microservices that do the heavy lifting to make the frontend work."
 read -p "Would you like to setup the postgres database? (y/n): " postgres_setup
 read -p "Would you like to setup the mosquitto message broker? (y/n): " mosquitto_setup
 read -p "Would you like to setup the redis cache and background worker? (y/n): " redis_setup
 read -p "Would you like to setup the backend web API? (y/n): " backend_setup
-read -p "Would you like to setup the grafana data visualizer? (y/n): " grafana_setup
 read -p "Would you like to setup nginx, the load balancer and reverse proxy? (y/n): " nginx_setup
 
 
@@ -49,24 +45,6 @@ python3-pip
 python3-venv
 EOF
 )
-
-if [ $frontend_setup = "y" ]; then
-    # add nodejs apt repo
-    curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-
-    # add yarn apt repo
-    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-
-    # add yarn apt repo
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-
-    # add nodejs and yarn libraries
-    while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
-nodejs
-yarn
-EOF
-)
-fi
 
 if [ $postgres_setup = "y" ]; then
     # add postgres apt repo
@@ -100,18 +78,6 @@ EOF
 )
 fi
 
-if [ $grafana_setup = "y" ]; then
-    # add grafana apt repo
-    wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-    echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
-
-    # add grafana libraries
-    while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
-grafana
-EOF
-)
-fi
-
 if [ $nginx_setup = "y" ]; then
     # add nginx libraries
     while read -r p ; do libraries="$libraries $p" ; done < <(cat << "EOF"
@@ -132,16 +98,6 @@ sudo apt-get install $libraries -y
 echo "Finished setting up custom APT repositories."
 read -p "Press enter to continue."
 
-# -------------------- FRONTEND SETUP --------------------
-if [ $frontend_setup = "y" ]; then
-    echo "Setting up frontend..."
-    chmod +x ./scripts/frontend.sh
-    ./scripts/frontend.sh
-    read -p "Frontend set up. Press enter to continue."
-else
-    echo "Skipping frontend setup..."
-fi
-
 # -------------------- POSTGRES SETUP --------------------
 if [ $postgres_setup = "y" ]; then
     echo "Setting up postgres..."
@@ -157,6 +113,8 @@ if [ $mosquitto_setup = "y" ]; then
     echo "Setting up mosquitto..."
     chmod +x ./scripts/mosquitto.sh
     ./scripts/mosquitto.sh
+    # setup wss
+    sudo certbot certonly --manual --preferred-challenges dns -d 
     read -p "Mosquitto set up. Press enter to continue."
 else
     echo "Skipping mosquitto setup..."
@@ -182,16 +140,6 @@ else
     echo "Skipping backend setup..."
 fi
 
-# -------------------- GRAFANA SETUP --------------------
-if [ $grafana_setup = "y" ]; then
-    echo "Setting up grafana..."
-    chmod +x ./scripts/grafana.sh
-    ./scripts/grafana.sh
-    read -p "Grafana set up. Press enter to continue."
-else
-    echo "Skipping grafana setup..."
-fi
-
 # -------------------- OPEN PORTS --------------------
 echo "Opening ports for nginx and mqtt..."
 echo "Note: we do not open postgres ports due to security. If you need to access the db directly, you can use this server as a jump host. (Or you can use pgadmin.)"
@@ -202,6 +150,7 @@ sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
 # open ports for mqtt
 sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 1883 -j ACCEPT
+sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 1884 -j ACCEPT
 sudo netfilter-persistent save
 
 echo "Finished opening ports for nginx and mqtt."

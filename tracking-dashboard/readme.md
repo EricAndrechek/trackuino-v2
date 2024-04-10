@@ -17,9 +17,6 @@ This application is rather complicated. It has:
 - a Python Redis Queue worker to run the longer jobs
 - a PostgreSQL database to store position packets
 - a Mosquitto MQTT broker for pub/sub of position packets
-- Grafana for displaying server stats and telemetry and data from each client
-- Node Exporter for exposing OS metrics to Prometheus
-- Prometheus for sending OS metrics to Grafana
 
 # Setup
 
