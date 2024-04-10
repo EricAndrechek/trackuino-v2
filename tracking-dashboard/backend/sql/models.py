@@ -5,7 +5,6 @@ from sqlalchemy import CheckConstraint
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey, Boolean
 from sqlalchemy.dialects.postgresql import JSONB
-from geoalchemy2 import Geometry
 from sqlalchemy.sql import func
 
 from datetime import datetime
@@ -68,7 +67,8 @@ class Position(Base):
     symbol = Column(String(2), nullable=False)
     speed = Column(Float, nullable=True)
     course = Column(Float, nullable=True)
-    geo = Column(Geometry('POINT'), nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
     altitude = Column(Float, nullable=True)
     comment = Column(String, nullable=True)
     telemetry = Column(Integer, ForeignKey('telemetry.id'), nullable=True)
@@ -84,7 +84,7 @@ class Position(Base):
     )
 
     def __repr__(self):
-        return "<Position(id='%s', message='%s', callsign='%s', ssid='%s', symbol='%s', speed='%s', course='%s', geo='%s', altitude='%s', comment='%s', telemetry='%s')>" % (self.id, self.message, self.callsign, self.ssid, self.symbol, self.speed, self.course, self.geo, self.altitude, self.comment, self.telemetry)
+        return "<Position(id='%s', message='%s', callsign='%s', ssid='%s', symbol='%s', speed='%s', course='%s', latitude='%s', longitude='%s', altitude='%s', comment='%s', telemetry='%s')>" % (self.id, self.message, self.callsign, self.ssid, self.symbol, self.speed, self.course, self.latitude, self.longitude, self.altitude, self.comment, self.telemetry)
 
 class Items(Base):
     __tablename__ = 'items'

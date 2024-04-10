@@ -218,18 +218,13 @@ class Data:
             if 'lat' in self.data and 'lon' in self.data:
                 print("position exists")
 
-                # build Geometry POINT object for lat/lon
-                # format: 'POINT(-33.9034 152.73457)'
-                geo_point = f"POINT({self.data['lat']} {self.data['lon']})" if "lat" in self.data and self.data["lat"] is not None and "lon" in self.data and self.data["lon"] is not None else None
-
-                print(geo_point)
-
                 # add to position table
                 position = Position(
                     callsign=self.data["callsign"],
                     ssid=self.data["ssid"],
                     symbol=self.data["symbol"],
-                    geo=geo_point,
+                    latitude=self.data["lat"],
+                    longitude=self.data["lon"],
                     altitude=self.data["alt"],
                     course=self.data["course"],
                     speed=self.data["speed"],
