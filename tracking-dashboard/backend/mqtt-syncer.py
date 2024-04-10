@@ -185,7 +185,9 @@ def on_message(client, userdata, message):
                             print("No change in lat, lon, or alt")
                             # send telemetry data to mqtt
                             if 'telemetry' in src['data']:
-                                client.publish("TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid']), json.dumps(src['data']['telemetry']), retain=True, qos=0)
+                                topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
+                                for key in src['data']['telemetry']:
+                                    client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
                                 print("Telemetry sent")
                             else:
                                 print("No telemetry data")

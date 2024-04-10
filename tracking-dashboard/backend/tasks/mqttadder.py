@@ -14,7 +14,8 @@ def add_data_task(data_type, data):
     if data_type == "position":
         client.publish("POSITION/" + data["name"], json.dumps(data), retain=True, qos=0, properties=properties)
     elif data_type == "telemetry":
-        client.publish("TELEMETRY/" + data["name"], json.dumps(data), retain=True, qos=0, properties=properties)
+        for key in data:
+            client.publish("TELEMETRY/" + key, json.dumps(data[key]), retain=True, qos=0, properties=properties)
     
     client.disconnect()
     
