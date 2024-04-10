@@ -164,6 +164,7 @@ def on_message(client, userdata, message):
             try:
                 print("Uploading data: ", src)
                 data_obj.upload(src)
+                data_obj.info['ip'] = src['ip']
             except Exception as e:
                 print("Error uploading data: ", e)
                 return
