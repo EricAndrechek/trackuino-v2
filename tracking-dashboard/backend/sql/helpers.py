@@ -20,6 +20,7 @@ def add_datum(name, data):
         longitude = None
         # convert geometry to lat/lon
         if data.geo is not None:
+            print("geo: ", data.geo)
             latitude = data.geo.split(" ")[0].split("(")[1]
             longitude = data.geo.split(" ")[1].split(")")[0]
         mqtt_data = {

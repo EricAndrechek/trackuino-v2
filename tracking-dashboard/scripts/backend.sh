@@ -52,6 +52,22 @@ Restart=always
 WantedBy=api-tasks.target
 EOT
 
+# setup mqtt to pg service
+sudo tee /etc/systemd/system/mqttsync.service > /dev/null <<EOT
+[Unit]
+Description=mqttsync
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=$DIR/backend
+ExecStart=$DIR/backend/venv/bin/python -u $DIR/backend/mqtt-syncer.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOT
+
 # enable api service
 # TODO: tweak number of workers
 # https://docs.gunicorn.org/en/stable/design.html#how-many-workers
@@ -60,6 +76,8 @@ sudo systemctl enable api
 sudo systemctl enable api-tasks@{1..4}
 sudo systemctl start api
 sudo systemctl start api-tasks@{1..4}
+sudo systemctl enable mqttsync
+sudo systemctl start mqttsync
 
 
 # all info from: https://blog.miguelgrinberg.com/post/running-a-flask-application-as-a-service-with-systemd

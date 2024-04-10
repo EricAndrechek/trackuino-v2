@@ -217,11 +217,11 @@ void publishTopics() {
     }
     if (S_alt != last_alt) {
         publishTopic("alt", S_alt, true);
-        last_alt = alt;
+        last_alt = S_alt;
     }
     if (S_cse != last_cse) {
         publishTopic("cse", S_cse, true);
-        last_cse = cse;
+        last_cse = S_cse;
     }
     if (S_bat != last_bat) {
         publishTopic("b%", S_bat, true);
@@ -635,7 +635,6 @@ void loop() {
         delay(100);
         return;
     }
-    show("PLZ?");
 
     mqtt.loop();
 }
