@@ -190,11 +190,11 @@ void publishTopics() {
 
     // check if data has changed
     String S_csq = String(modem.getSignalQuality());
-    String S_lat = String(lat);
-    String S_lon = String(lon);
-    String S_spd = String(spd);
-    String S_alt = String(alt);
-    String S_cse = String(cse);
+    String S_lat = String(lat, 6);
+    String S_lon = String(lon, 6);
+    String S_spd = String(spd, 3);
+    String S_alt = String(alt, 3);
+    String S_cse = String(cse, 2);
     String S_bat = String(percent);
     String S_bmv = String(milliVolts);
     String S_bcs = String(chargeState);

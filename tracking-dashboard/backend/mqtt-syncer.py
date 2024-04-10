@@ -165,7 +165,6 @@ def on_message(client, userdata, message):
             message_building[id]['ss'] = timestamp
 
             try:
-                print("Uploading data: ", src)
                 data_obj.upload(src)
                 data_obj.info['ip'] = src['ip']
             except Exception as e:
@@ -182,16 +181,11 @@ def on_message(client, userdata, message):
                 if id in old_messages:
                     if 'lat' in old_messages[id] and 'lon' in old_messages[id] and 'alt' in old_messages[id]:
                         if message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon'] and message_building[id]['alt'] == old_messages[id]['alt']:
-                            print("No change in lat, lon, or alt")
                             # send telemetry data to mqtt
                             if 'telemetry' in src['data']:
                                 topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
                                 for key in src['data']['telemetry']:
                                     client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
-                                print("Telemetry sent")
-                            else:
-                                print("No telemetry data")
-                                print(message_building[id])
                             return
             
             try:
