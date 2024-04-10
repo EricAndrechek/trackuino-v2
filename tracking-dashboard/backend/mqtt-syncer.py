@@ -200,14 +200,14 @@ def on_message(client, userdata, message):
                                     client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
                             return
             
-            try:
-                status_code = data_obj.save()
-                if status_code == 201 or status_code == 202:
-                    print("New data saved")
-                elif status_code == 208:
-                    print("Data already exists")
-            except Exception as e:
-                print("save error: ", e)
+                try:
+                    status_code = data_obj.save()
+                    if status_code == 201 or status_code == 202:
+                        print("New data saved")
+                    elif status_code == 208:
+                        print("Data already exists")
+                except Exception as e:
+                    print("save error: ", e)
             
             old_messages[id] = message_building[id]
             return
