@@ -82,6 +82,10 @@ class Data:
         try:
             callsign = self.raw["data"]["callsign"]
             ssid = self.raw["data"]["ssid"]
+            try:
+                ssid = int(ssid)
+            except ValueError:
+                raise Exception("Invalid ssid")
             symbol = self.raw["data"]["symbol"]
             if callsign is None or ssid is None or symbol is None:
                 raise KeyError
@@ -97,6 +101,10 @@ class Data:
         lat = None
         try:
             lat = self.raw["data"]["lat"]
+            try:
+                lat = float(lat)
+            except ValueError:
+                raise Exception("Invalid latitude")
             if lat < -90 or lat > 90:
                 raise Exception("Invalid latitude")
         except KeyError:
@@ -105,6 +113,10 @@ class Data:
         lon = None
         try:
             lon = self.raw["data"]["lon"]
+            try:
+                lon = float(lon)
+            except ValueError:
+                raise Exception("Invalid longitude")
             if lon < -180 or lon > 180:
                 raise Exception("Invalid longitude")
         except KeyError:
@@ -119,6 +131,10 @@ class Data:
         course = None
         try:
             course = self.raw["data"]["course"]
+            try:
+                course = float(course)
+            except ValueError:
+                raise Exception("Invalid course")
             if course < 0 or course > 360:
                 raise Exception("Invalid course")
         except KeyError:

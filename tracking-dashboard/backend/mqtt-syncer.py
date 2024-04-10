@@ -76,7 +76,7 @@ def build_json_message(id):
 # build a source packet of the type the API likes from a message
 def build_source_packet(message):
     source = {}
-    source['timestamp'] = datetime.now().isoformat()
+    source['timestamp'] = str(datetime.now().isoformat())
     source['callsign'] = "UMSERV"
     source['ssid'] = 0
     source['ip'] = "127.0.0.1"
@@ -90,7 +90,7 @@ def build_source_packet(message):
 def on_message(client, userdata, message):
     topic = message.topic
     payload = message.payload.decode()
-    timestamp = datetime.now().isoformat()
+    timestamp = str(datetime.now().isoformat())
     
     # split topic
     topics = topic.split("/")
