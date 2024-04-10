@@ -197,9 +197,6 @@ class Data:
             telemetry_success, telemetry_id = (False, None)
             if "telemetry" in self.data:
                 print("telemetry exists")
-                print(self.data)
-                print(self.data["raw"])
-                print(self.data["telemetry"])
 
                 # add to telemetry table if telemetry data exists
 
@@ -219,6 +216,7 @@ class Data:
             
             # if position data exists, add to positions table
             if 'lat' in self.data and 'lon' in self.data:
+                print("position exists")
 
                 # build Geometry POINT object for lat/lon
                 # format: 'POINT(-33.9034 152.73457)'

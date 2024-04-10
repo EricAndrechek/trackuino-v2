@@ -32,12 +32,14 @@ def add_datum(name, data):
             "cmnt": data.comment,
             "sym": data.symbol
         }
+        print("adding position to mqtt")
         add_data("position", mqtt_data)
     elif isinstance(data, Telemetry):
         mqtt_data = {
             "name": name,
             "telemetry": data.parsed
         }
+        print("adding telemetry to mqtt")
         add_data("telemetry", mqtt_data)
 
 
