@@ -10,7 +10,7 @@ from re import L
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation
 from sqlalchemy import cast, func
-from tasks.mqttadder import add_data
+from tasks.mqttadder import add_data_task
 
 # add new datum to mqtt (position or telemetry)
 def add_datum(name, data):
@@ -27,14 +27,14 @@ def add_datum(name, data):
             "sym": data.symbol
         }
         print("adding position to mqtt")
-        add_data("position", mqtt_data)
+        add_data_task("position", mqtt_data)
     elif isinstance(data, Telemetry):
         mqtt_data = {
             "name": name,
             "telemetry": data.parsed
         }
         print("adding telemetry to mqtt")
-        add_data("telemetry", mqtt_data)
+        add_data_task("telemetry", mqtt_data)
 
 
 # takes a message object and adds it to the database

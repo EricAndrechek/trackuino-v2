@@ -196,6 +196,7 @@ def on_message(client, userdata, message):
                                 for key in src['data']['telemetry']:
                                     # check if last value is the same
                                     if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
+                                        print("Skipping telemetry key: ", key)
                                         continue
                                     client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
                             return
