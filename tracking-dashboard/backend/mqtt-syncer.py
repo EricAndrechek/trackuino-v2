@@ -162,6 +162,7 @@ def on_message(client, userdata, message):
             data_obj = Data()
             message_building[id]['ss'] = timestamp
             try:
+                print("Uploading data: ", src)
                 data_obj.upload(src)
             except Exception as e:
                 print("Error uploading data: ", e)
@@ -171,6 +172,14 @@ def on_message(client, userdata, message):
             except Exception as e:
                 print("Error parsing data: ", e)
                 return
+            try:
+                status_code = data_obj.save()
+                if status_code == 201:
+                    print("New data saved")
+                elif status_code == 208:
+                    print("Data already exists")
+            except Exception as e:
+                print("save error: ", e)
             return
         else:
             # add key and payload to message_building
