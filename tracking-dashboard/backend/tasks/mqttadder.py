@@ -25,4 +25,4 @@ def add_data_task(data_type, data):
 
 def add_data(data_type, data):
     q = Queue(connection=Redis())
-    q.enqueue(add_data, data_type, data)
+    q.enqueue(add_data_task, data_type, data)
