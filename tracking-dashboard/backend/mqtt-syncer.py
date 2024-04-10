@@ -2,8 +2,8 @@
 
 import paho.mqtt.client as mqtt
 from datetime import datetime
-from utils.api import Data
 from sql.helpers import check_item_id, add_item_id
+from utils.api import Data
 
 # open mqtt connection
 client = mqtt.Client()
@@ -159,10 +159,10 @@ def on_message(client, userdata, message):
             if msg is None:
                 return
             src = build_source_packet(msg)
-            data_obj = Data(src)
+            data_obj = Data()
             message_building[id]['ss'] = timestamp
             try:
-                data_obj.upload()
+                data_obj.upload(src)
             except Exception as e:
                 print("Error uploading data: ", e)
                 return
