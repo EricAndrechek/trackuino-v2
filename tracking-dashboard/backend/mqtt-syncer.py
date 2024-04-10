@@ -124,7 +124,7 @@ def on_message(client, userdata, message):
                     symbol = "/>"
                     if "name" in message_building[id]:
                         callsign = message_building[id]["name"]
-                    if "ssis" in message_building[id]:
+                    if "ssid" in message_building[id]:
                         ssid = message_building[id]["ssid"]
                     if "sym" in message_building[id]:
                         symbol = message_building[id]["sym"]
@@ -152,6 +152,15 @@ def on_message(client, userdata, message):
             else:
                 print("Item not found in items table: ", id)
                 return
+        
+        # if key is lwt, modify telemetry data to show changed lwt
+        if key == "lwt":
+            if id in message_building:
+                if 'telemetry' in message_building[id]:
+                    message_building[id]['telemetry']['lwt'] = payload
+                    # send telemetry data to mqtt
+                    topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
+                    client.publish(topic + "/lwt", json.dumps(payload), retain=True, qos=0)
 
 
         # if key is "ss" (seconds), add message to db
@@ -162,7 +171,7 @@ def on_message(client, userdata, message):
                 return
             src = build_source_packet(msg)
             data_obj = Data()
-            message_building[id]['ss'] = timestamp
+            message_building[id]['ss'] = payload
 
             try:
                 data_obj.upload(src)
@@ -185,6 +194,9 @@ def on_message(client, userdata, message):
                             if 'telemetry' in src['data']:
                                 topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
                                 for key in src['data']['telemetry']:
+                                    # check if last value is the same
+                                    if key in old_messages[id]['telemetry'] and src['data']['telemetry'][key] == old_messages[id]['telemetry'][key]:
+                                        continue
                                     client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
                             return
             
