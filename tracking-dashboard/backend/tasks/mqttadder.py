@@ -6,6 +6,7 @@ from paho.mqtt.properties import Properties
 import json
 
 def add_data_task(data_type, data):
+    print("adding data to mqtt")
     client = mqtt.Client()
     client.connect("localhost", 1883, 60)
     properties=Properties(PacketTypes.PUBLISH)
@@ -16,6 +17,8 @@ def add_data_task(data_type, data):
     elif data_type == "telemetry":
         for key in data:
             client.publish("TELEMETRY/" + key, json.dumps(data[key]), retain=True, qos=0, properties=properties)
+    else:
+        print("Invalid data type")
     
     client.disconnect()
     
