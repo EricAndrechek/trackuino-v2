@@ -72,7 +72,6 @@ def build_json_message(id):
     if len(telemetry) > 0:
         message['telemetry'] = telemetry
     
-    print(message)
     return message
     
 
@@ -185,10 +184,10 @@ def on_message(client, userdata, message):
                         if message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon'] and message_building[id]['alt'] == old_messages[id]['alt']:
                             print("No change in lat, lon, or alt")
                             # send telemetry data to mqtt
-                            if 'telemetry' in message_building[id]:
+                            if 'telemetry' in src['data']:
                                 properties = mqtt.Properties(mqtt.PacketTypes.PUBLISH)
                                 properties.MessageExpiryInterval = 60
-                                client.publish("TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid']), json.dumps(message_building[id]['telemetry']), retain=True, qos=0, properties=properties)
+                                client.publish("TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid']), json.dumps(src['data']['telemetry']), retain=True, qos=0, properties=properties)
                                 print("Telemetry sent")
                             else:
                                 print("No telemetry data")
