@@ -222,6 +222,8 @@ class Data:
                 # format: 'POINT(-33.9034 152.73457)'
                 geo_point = f"POINT({self.data['lat']} {self.data['lon']})" if "lat" in self.data and self.data["lat"] is not None and "lon" in self.data and self.data["lon"] is not None else None
 
+                print(geo_point)
+
                 # add to position table
                 position = Position(
                     callsign=self.data["callsign"],
@@ -235,6 +237,9 @@ class Data:
                     telemetry=telemetry_id if telemetry_success else None,
                     message=message_id,
                 )
+
+                print(position)
+
                 position_success, position_id = add_position(position)
 
                 # add to mqtt
