@@ -242,11 +242,11 @@ class Data:
 
                 position_success, position_id = add_position(position)
 
+                print(position_success, position_id)
+
                 # add to mqtt
                 name = self.data["callsign"] + "-" + str(self.data["ssid"])
                 add_datum(name, position)
-
-                print(position_success, position_id)
 
                 to_return = 201
             else:
