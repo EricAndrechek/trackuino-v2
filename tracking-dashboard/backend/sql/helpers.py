@@ -73,7 +73,6 @@ def add_position(position):
     Session.add(position)
     try:
         Session.commit()
-        add_datum(position)
         return (True, position.id)
     except IntegrityError as e:
         print(e)
