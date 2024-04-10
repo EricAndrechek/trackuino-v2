@@ -209,13 +209,13 @@ class Data:
                     raw=self.data["raw"],
                     parsed=self.data["telemetry"],
                 )
-                telemetry_success, telemetry_id = add_telemetry(telemetry)
+                # telemetry_success, telemetry_id = add_telemetry(telemetry)
 
                 # add to mqtt
                 name = self.data["callsign"] + "-" + str(self.data["ssid"])
                 add_datum(name, telemetry)
 
-                print(telemetry_success, telemetry_id)
+                # print(telemetry_success, telemetry_id)
             
             # if position data exists, add to positions table
             if 'lat' in self.data and 'lon' in self.data:

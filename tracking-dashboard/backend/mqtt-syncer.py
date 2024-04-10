@@ -4,6 +4,7 @@ import paho.mqtt.client as mqtt
 from datetime import datetime
 from sql.helpers import check_item_id, add_item_id
 from utils.api import Data
+import json
 
 # open mqtt connection
 client = mqtt.Client()
@@ -12,6 +13,7 @@ client.connect("localhost", 1883, 60)
 # subscribe to all trackers
 client.subscribe("T/#")
 
+old_messages = {}
 message_building = {}
 
 def build_json_message(id):
@@ -161,6 +163,7 @@ def on_message(client, userdata, message):
             src = build_source_packet(msg)
             data_obj = Data()
             message_building[id]['ss'] = timestamp
+
             try:
                 print("Uploading data: ", src)
                 data_obj.upload(src)
@@ -173,6 +176,21 @@ def on_message(client, userdata, message):
             except Exception as e:
                 print("Error parsing data: ", e)
                 return
+            
+            # check if lat, lon, or alt changed
+            if 'lat' in message_building[id] and 'lon' in message_building[id] and 'alt' in message_building[id]:
+                if id in old_messages:
+                    if 'lat' in old_messages[id] and 'lon' in old_messages[id] and 'alt' in old_messages[id]:
+                        if message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon'] and message_building[id]['alt'] == old_messages[id]['alt']:
+                            print("No change in lat, lon, or alt")
+                            # send telemetry data to mqtt
+                            if 'telemetry' in message_building[id]:
+                                properties = mqtt.Properties(mqtt.PacketTypes.PUBLISH)
+                                properties.MessageExpiryInterval = 60
+                                client.publish("TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid']), json.dumps(message_building[id]['telemetry']), retain=True, qos=0, properties=properties)
+                                print("Telemetry sent")
+                            return
+            
             try:
                 status_code = data_obj.save()
                 if status_code == 201 or status_code == 202:
@@ -181,6 +199,8 @@ def on_message(client, userdata, message):
                     print("Data already exists")
             except Exception as e:
                 print("save error: ", e)
+            
+            old_messages[id] = message_building[id]
             return
         else:
             # add key and payload to message_building
