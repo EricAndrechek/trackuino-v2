@@ -72,6 +72,7 @@ def build_json_message(id):
     if len(telemetry) > 0:
         message['telemetry'] = telemetry
     
+    print(message)
     return message
     
 
@@ -189,6 +190,9 @@ def on_message(client, userdata, message):
                                 properties.MessageExpiryInterval = 60
                                 client.publish("TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid']), json.dumps(message_building[id]['telemetry']), retain=True, qos=0, properties=properties)
                                 print("Telemetry sent")
+                            else:
+                                print("No telemetry data")
+                                print(message_building[id])
                             return
             
             try:

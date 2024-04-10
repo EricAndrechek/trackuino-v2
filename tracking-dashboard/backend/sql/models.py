@@ -91,7 +91,7 @@ class Items(Base):
 
     # list of all unique callsigns found in the positions table
     id = Column(String, primary_key=True)
-    callsign = Column(String(6), nullable=False, unique=True)
+    callsign = Column(String(6), nullable=False)
     ssid = Column(Integer, nullable=False)
     symbol = Column(String(2), nullable=False)
     last_updated = Column(DateTime, nullable=False, default=datetime.utcnow)
