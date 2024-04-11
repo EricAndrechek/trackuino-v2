@@ -2,7 +2,9 @@ import stat
 from flask import Blueprint, request
 import json
 
+import symbol
 from utils.api import Data
+from sql.helpers import check_item_id, add_item_id
 
 data_app = Blueprint('data_app', __name__)
 
@@ -81,13 +83,25 @@ def api_rock7_upload():
     source['timestamp'] = data['transmit_time']
     source['type'] = 'json'
 
-    data = decoded_data
+    # check if id exists for callsign-ssid
+    cs = data['callsign']
+    ssid = data['ssid']
+    symbol = "/O"
+    rock7_id = data['serial']
+    item = check_item_id(rock7_id)
+    if item is None:
+        add_item_id(rock7_id, cs, ssid, "\O")
+    else:
+        cs = item.callsign
+        ssid = item.ssid
+        symbol = item.symbol
 
+    data = decoded_data
     source['data'] = data['data']
-    source['data']['callsign'] = decoded_data['callsign']
-    source['data']['ssid'] = decoded_data['ssid']
-    source['data']['symbol'] = "/O"
     source['data']['timestamp'] = decoded_data['timestamp']
+    source['data']['callsign'] = cs
+    source['data']['ssid'] = ssid
+    source['data']['symbol'] = symbol
 
     
     # accept upload data
