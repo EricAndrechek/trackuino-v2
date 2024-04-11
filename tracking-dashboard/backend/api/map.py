@@ -43,7 +43,7 @@ def getTails():
     # return the data as a json object
     data = {}
     for item in items:
-        name = f"{data.callsign}-{data.ssid}"
+        name = f"{item.callsign}-{item.ssid}"
         data[name] = {
             "name": name,
             "symbol": item.symbol,
