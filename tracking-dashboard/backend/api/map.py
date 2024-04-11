@@ -48,7 +48,8 @@ def getTails():
         data[name] = {
             "name": name,
             "symbol": item.symbol,
-            "positions": []
+            "positions": [],
+            "last_updated": item.last_updated
         }
         for position in positions:
             if position["callsign"] == item.callsign and position["ssid"] == item.ssid:
@@ -59,7 +60,7 @@ def getTails():
                     "cse": position["course"],
                     "cpd": position["speed"],
                     "cmnt": position["comment"],
-                    "timestamp": position["timestamp"]
+                    "dt": position["timestamp"]
                 })
 
     return jsonify(data)
