@@ -193,12 +193,10 @@ def on_message(client, userdata, message):
                             # send telemetry data to mqtt
                             if 'telemetry' in src['data']:
                                 topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
-                                print("Sending telemetry data to mqtt")
                                 for key in src['data']['telemetry']:
                                     # check if last value is the same
                                     if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
                                         continue
-                                    print("Sending telemetry data to mqtt: ", key, src['data']['telemetry'][key])
                                     client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
                             return
             
@@ -211,7 +209,7 @@ def on_message(client, userdata, message):
                 except Exception as e:
                     print("save error: ", e)
             
-            old_messages[id] = message_building[id]
+                old_messages[id] = message_building[id]
             return
         else:
             # add key and payload to message_building
