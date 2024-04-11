@@ -22,5 +22,5 @@ def add_data_task(data_type, data):
     
 
 def add_data(data_type, data):
-    q = Queue(connection=Redis())
+    q = Queue('api-tasks', connection=Redis())
     q.enqueue(add_data_task, data_type, data)
