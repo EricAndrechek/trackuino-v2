@@ -78,10 +78,11 @@ def api_rock7_upload():
     source = {}
     source['callsign'] = "ROCK"
     source['ssid'] = 7
+    source['symbol'] = "/O"
     source['timestamp'] = data['transmit_time']
     source['type'] = 'json'
     data = decoded_data
-    source['data'] = data
+    source['data'] = data['data']
     
     # accept upload data
     try:
