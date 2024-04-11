@@ -216,6 +216,17 @@ def on_message(client, userdata, message):
         else:
             # add key and payload to message_building
             message_building[id][key] = payload
+            # if telemetry data, send to mqtt
+            nonTelemKeys = ['name', 'ssid', 'sym', 'lat', 'lon', 'alt', 'cse', 'spd', 'hh', 'mm', 'ss', 'YY', 'MM', 'DD']
+            if key not in nonTelemKeys:
+                # check if value is the same as last value
+                if id in old_messages:
+                    if key in old_messages[id] and payload == old_messages[id][key]:
+                        return
+                # send telemetry data to mqtt
+                topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
+                client.publish(topic + "/" + key, json.dumps(payload), retain=True, qos=0)
+                old_messages[id][key] = payload
     else:
         print("Unknown topic: ", topic)
 
