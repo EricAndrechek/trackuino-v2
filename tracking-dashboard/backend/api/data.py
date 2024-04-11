@@ -82,8 +82,8 @@ def api_rock7_upload():
     source['type'] = 'json'
 
     # check if id exists for callsign-ssid
-    cs = data['data']['callsign']
-    ssid = data['data']['ssid']
+    cs = decoded_data['callsign']
+    ssid = decoded_data['ssid']
     symbol = "/O"
     rock7_id = data['serial']
     item = check_item_id(rock7_id)
