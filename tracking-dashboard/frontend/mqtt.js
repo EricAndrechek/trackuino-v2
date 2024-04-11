@@ -2,58 +2,149 @@ const clientId = "mqttjs_" + Math.random().toString(16).substr(2, 8);
 
 const host = "wss://mqtt.umich-balloons.com:1884/mqtt";
 
-// topics: T (track), A (alert), P (prediction), S (server), B (balloon)
-// balloon is used to track a balloon assigned to a specific track id, not for our usage
+// topics: TELEMETRY, POSITION, ALERT, PREDICTION, SERVER
 
-const trackHandler = (topic, payload) => {
-    // topic is T/<track_id>/<key>
-    // key/value pairs:
+
+const parseAPRSSymbol = (symbol) => {
+    // take symbol like "/O" and return a string like "Balloon"
+    let symbol_table = symbol[0];
+    let symbol_code = symbol[1];
+    let symbol_string = "";
+
+    if (symbol_table === "/") {
+        switch (symbol_code) {
+            case "O":
+                symbol_string = "balloon";
+                break;
+            case ">":
+                symbol_string = "car";
+                break;
+            default:
+                console.log("Unknown symbol: ", symbol);
+                symbol_string = "question-mark";
+                break;
+        }
+    } else {
+        console.log("Unknown symbol table: ", symbol_table);
+        symbol_string = "question-mark";
+    }
+    return symbol_string;
+};
+
+const positionHandler = (topic, payload) => {
+    // topic is POSITION/<name>
+    // payload is a stringified JSON object with the following keys:
     /*
-    lwt: 0 or 1 (designates if device being tracked is online)
-    csq: 0-99 (designates signal strength of the device)
+    name: name of tracked device
     lat: current latitude of tracked device
     lon: current longitude of tracked device
     spd: current speed of device, kmph
     alt: altitude of device, meters
     cse: course/heading of device, degrees
-    b%: battery percentage
-    bmV: battery millivolts
-    bCS: battery charge status
-    hh: hours
-    mm: minutes
-    ss: seconds
-    MM: months
-    DD: days
-    YY: years
+    cmnt: comment about device
+    sym: symbol of device
     */
 
-    let track_id = topic.split("/")[1];
-    let key = topic.split("/")[2];
-    let value = payload.toString();
+    let name = topic.split("/")[1];
+    let data = JSON.parse(payload.toString());
 
-    // check if track_id exists in tracks
-    if (!(track_id in tracks)) {
-        // check if track_id exists in id_map
-        if (!(track_id in id_map)) {
-            console.log("Unknown track id ", track_id, " received");
-            id_map[track_id] = {
-                name: "Unknown",
-                type: "Unknown",
-            };
-        }
-        // add track_id to tracks
-        tracks[track_id] = {
-            id: track_id,
-            name: id_map[track_id].name,
-            type: id_map[track_id].type,
-            lat: 0,
-            lon: 0,
-            alt: 0,
-            spd: 0,
-            cse: 0,
+    // check if name exists in positions
+    if (!(name in positions)) {
+        positions[name] = {
+            name: name,
+            symbol: parseAPRSSymbol(data.sym),
+            last_update: "",
+            current: {
+                latitude: 0,
+                longitude: 0,
+                altitude: 0,
+                speed: 0,
+                course: 0,
+                comment: "",
+                datetime: "",
+            },
+            previous_coordinates: [],
+        };
+    } else {
+        // add previous coordinates to previous_coordinates
+        positions[name].previous_coordinates.push({
+            latitude: positions[name].current.latitude,
+            longitude: positions[name].current.longitude,
+            altitude: positions[name].current.altitude,
+            speed: positions[name].current.speed,
+            course: positions[name].current.course,
+            comment: positions[name].current.comment,
+            datetime: positions[name].current.datetime,
+        });
+    }
+
+    // update the position data
+    positions[name].current.latitude = parseFloat(data.lat);
+    positions[name].current.longitude = parseFloat(data.lon);
+    positions[name].current.altitude = parseFloat(data.alt);
+    positions[name].current.speed = parseFloat(data.spd);
+    positions[name].current.course = parseFloat(data.cse);
+    positions[name].current.comment = data.cmnt;
+    positions[name].current.datetime = new Date().toISOString();
+
+    // check if has telemetry data
+    if (name in telemetry) {
+        // update last_update in telemetry
+        telemetry[name].last_update = new Date().toISOString();
+        // update altitude, speed, course in telemetry
+        telemetry[name].altitude = data.alt;
+        telemetry[name].speed = data.spd;
+        telemetry[name].course = data.cse;
+    } else {
+        // add telemetry data
+        telemetry[name] = {
+            name: name,
+            lwt: 0,
+            csq: 0,
             battery: 0,
             battery_mv: 0,
             battery_cs: 0,
+            speed: data.spd,
+            course: data.cse,
+            altitude: data.alt,
+            last_update: new Date().toISOString(),
+        };
+    }
+
+    positions[name].last_update = new Date().toISOString();
+    console.log("Position for ", name, " updated");
+};
+
+const telemetryHandler = (topic, payload) => {
+    // topic is TELEMETRY/<name>/<key>
+    // key/value pairs:
+    /*
+    name: name of tracked device
+    telemetry: telemetry data
+        lwt: 0 or 1 (designates if device being tracked is online)
+        csq: 0-99 (designates signal strength of the device)
+        b%: battery percentage
+        bmV: battery millivolts
+        bCS: battery charge status
+    */
+
+    let name = topic.split("/")[1];
+    let key = topic.split("/")[2];
+    let value = payload.toString();
+
+    // check if track_id exists in telemetry
+    if (!(name in telemetry)) {
+        // add track_id to telemetry
+        telemetry[name] = {
+            name: name,
+            lwt: 0,
+            csq: 0,
+            battery: 0,
+            battery_mv: 0,
+            battery_cs: 0,
+            speed: 0,
+            course: 0,
+            altitude: 0,
             last_update: {
                 hh: 0,
                 mm: 0,
@@ -62,73 +153,29 @@ const trackHandler = (topic, payload) => {
                 DD: 0,
                 YY: 0,
             },
-            geojson: {
-                type: "Feature",
-                geometry: {
-                    type: "LineString",
-                    coordinates: [],
-                },
-                properties: {
-                    name: "",
-                    id: track_id,
-                    last_update: {
-                        hh: 0,
-                        mm: 0,
-                        ss: 0,
-                        MM: 0,
-                        DD: 0,
-                        YY: 0,
-                    },
-                },
-            },
         };
     }
 
-    // if lat, lon, or alt, add to geojson coordinates
-    if (key === "lat" || key === "lon" || key === "alt") {
-        tracks[track_id].geojson.geometry.coordinates.push([
-            parseFloat(tracks[track_id].lon),
-            parseFloat(tracks[track_id].lat),
-            parseFloat(tracks[track_id].alt),
-        ]);
-        console.log("Track id ", track_id, " updated with new coordinates");
-    }
-
-    // update the track data
+    // update telemetry data
     if (key === "lwt") {
-        tracks[track_id].lwt = value;
+        telemetry[name].lwt = parseInt(value);
     } else if (key === "csq") {
-        tracks[track_id].csq = value;
-    } else if (key === "lat") {
-        tracks[track_id].lat = value;
-    } else if (key === "lon") {
-        tracks[track_id].lon = value;
-    } else if (key === "spd") {
-        tracks[track_id].spd = value;
-    } else if (key === "alt") {
-        tracks[track_id].alt = value;
-    } else if (key === "cse") {
-        tracks[track_id].cse = value;
+        telemetry[name].csq = parseInt(value);
     } else if (key === "b%") {
-        tracks[track_id].battery = value;
+        telemetry[name].battery = parseInt(value);
     } else if (key === "bmV") {
-        tracks[track_id].battery_mv = value;
+        telemetry[name].battery_mv = parseInt(value);
     } else if (key === "bCS") {
-        tracks[track_id].battery_cs = value;
-    } else if (key === "hh") {
-        tracks[track_id].last_update.hh = value;
-    } else if (key === "mm") {
-        tracks[track_id].last_update.mm = value;
-    } else if (key === "ss") {
-        tracks[track_id].last_update.ss = value;
-    } else if (key === "MM") {
-        tracks[track_id].last_update.MM = value;
-    } else if (key === "DD") {
-        tracks[track_id].last_update.DD = value;
-    } else if (key === "YY") {
-        tracks[track_id].last_update.YY = value;
+        telemetry[name].battery_cs = parseInt(value);
     } else {
-        console.log("Unknown key ", key, " received for track id ", track_id);
+        // add key/value pair to telemetry
+        telemetry[name][key] = value;
+        // try to parse to float
+        try {
+            telemetry[name][key] = parseFloat(value);
+        } catch (err) {
+            console.log("Error parsing telemetry value: ", err);
+        }
     }
 };
 
@@ -191,8 +238,7 @@ client.on("reconnect", () => {
 client.on("connect", () => {
     notificationBanner("Online and connected to server", 5000);
     console.log("Client connected:" + clientId);
-    // Subscribe to topics T, A, P, S
-    const topics = ["T", "A", "P", "S"];
+    const topics = ["TELEMETRY", "POSITION", "ALERT", "PREDICTION", "SERVER"];
     topics.forEach((topic) => {
         let topic_string = topic + "/#";
         client.subscribe(topic_string, { qos: 1 }, (err) => {
@@ -206,23 +252,17 @@ client.on("connect", () => {
 });
 
 client.on("message", (topic, payload) => {
-    // establish if topic is T (track), A (alert), P (prediction), S (server)
-    // and get the id (if any) from the topic
-    let topic_type = topic[0];
-    if (topic_type === "T") {
-        trackHandler(topic, payload);
-    } else if (topic_type === "A") {
+    if (topic.includes("POSITION")) {
+        positionHandler(topic, payload);
+    } else if (topic.includes("TELEMETRY")) {
+        telemetryHandler(topic, payload);
+    } else if (topic.includes("ALERT")) {
         alertHandler(topic, payload);
-    } else if (topic_type === "P") {
+    } else if (topic.includes("PREDICTION")) {
         predictionHandler(topic, payload);
-    } else if (topic_type === "S") {
+    } else if (topic.includes("SERVER")) {
         serverHandler(topic, payload);
     } else {
-        console.log(
-            "Unknown message topic ",
-            topic,
-            " received: ",
-            payload.toString()
-        );
+        console.log("Unknown topic: ", topic);
     }
 });

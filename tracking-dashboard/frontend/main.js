@@ -1,53 +1,65 @@
-// id to name and type mapping
-let id_map = {};
+// position storage object
+let positions = {};
+// format:
+// key = name
+// value = {
+/*
+    name: name,
+    symbol: symbol,
+    last_update: datetime,
+    current: {
+        latitude: latitude,
+        longitude: longitude,
+        altitude: altitude,
+        speed: speed,
+        course: course,
+        comment: comment,
+        datetime: datetime,
+    },
+    previous_coordinates: [
+        {
+            latitude: latitude,
+            longitude: longitude,
+            altitude: altitude,
+            speed: speed,
+            course: course,
+            comment: comment,
+            datetime: datetime,
+        },
+        ...
+    ],
+*/
 
-// track storage object
-let tracks = {};
-// track data:
-// key: id
-// value: {
-//     id: id,
-//     name: name,
-//     type: type,
-//     lat: lat,
-//     lon: lon,
-//     alt: alt,
-//     spd: spd,
-//     cse: cse,
-//     battery: b%,
-//     battery_mv: bmV,
-//     battery_cs: bCS,
-//     last_update: {
-//         hh: hh,
-//         mm: mm,
-//         ss: ss,
-//         MM: MM,
-//         DD: DD,
-//         YY: YY,
-//     },
-//     geojson: {
-//         type: "Feature",
-//         geometry: {
-//             type: "LineString",
-//             coordinates: [],
-//         },
-//         properties: {
-//             name: name,
-//             id: id,
-//             last_update: {
-//                 hh: hh,
-//                 mm: mm,
-//                 ss: ss,
-//                 MM: MM,
-//                 DD: DD,
-//                 YY: YY,
-//             },
-//         },
-//     },
-// };
+// telemetry storage object
+let telemetry = {};
 
 // prediction storage object
 let predictions = {};
+
+const getHistoricalGeoJSON = (name) => {
+    let coordinates = [];
+    if (name in positions) {
+        for (let i = 0; i < positions[name].previous_coordinates.length; i++) {
+            coordinates.push([
+                positions[name].previous_coordinates[i].longitude,
+                positions[name].previous_coordinates[i].latitude,
+                positions[name].previous_coordinates[i].altitude,
+            ]);
+        }
+    }
+    return {
+        type: "Feature",
+        properties: {
+            name: name,
+            symbol: positions[name].symbol,
+            last_update: positions[name].last_update,
+        },
+        geometry: {
+            type: "LineString",
+            coordinates: coordinates,
+        },
+    };
+};
 
 // display a message as a banner notification for timeout milliseconds
 const notificationBanner = (message, timeout = 5000) => {
@@ -60,20 +72,7 @@ const notificationBanner = (message, timeout = 5000) => {
 };
 
 // main function
-const main = () => {
-    // get api.umich-balloons.com/api/liveTracks
-    fetch("https://api.umich-balloons.com/api/liveTracks")
-        .then((response) => response.json())
-        .then((data) => {
-            // data will be an array of objects with key as id and value as object with name and type
-            id_map = data;
-        })
-        .catch((error) => {
-            console.error("Error loading tracks data: ", error);
-        });
-};
+const main = () => {};
 
 // wait for the DOM to load before running the main function
 document.addEventListener("DOMContentLoaded", main);
-
-console.log("Main script loaded");

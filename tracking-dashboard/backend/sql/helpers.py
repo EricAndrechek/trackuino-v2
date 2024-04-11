@@ -6,6 +6,7 @@ except ImportError:
     sys.path.append("..")
     from sql.db import Session
     from sql.models import *
+from datetime import timedelta
 from re import L
 from sqlalchemy.exc import IntegrityError
 from psycopg2.errors import UniqueViolation
@@ -158,14 +159,29 @@ def get_last_ip_addition(ip):
     return time
 
 # get all items in the items table that have been updated in the last n minutes
-def get_items_last_n_minutes(n):
-    time = datetime.utcnow() - datetime.timedelta(minutes=n)
+# should match all names (callsign-ssid) in table, or all names in a list of names - if names is none, return all items
+def get_items_last_n_minutes(n, name):
     items = []
     try:
-        items = Session.query(Items).filter(Items.last_updated > time).all()
+        if name is None:
+            items = Session.query(Items).filter(Items.last_updated > datetime.utcnow() - timedelta(minutes=n)).all()
+        else:
+            items = Session.query(Items).filter(Items.last_updated > datetime.utcnow() - timedelta(minutes=n)).filter(Items.callsign.in_(name)).all()
     except Exception as e:
         print(e)
     return items
+
+# get position data over the last n minutes for all given callsigns+ssid pairs
+def get_positions_last_n_minutes(n, names):
+    positions = []
+    try:
+        if names is None:
+            positions = Session.query(Position).filter(Position.timestamp > datetime.utcnow() - timedelta(minutes=n)).all()
+        else:
+            positions = Session.query(Position).filter(Position.timestamp > datetime.utcnow() - timedelta(minutes=n)).filter(Position.callsign.in_(names)).all()
+    except Exception as e:
+        print(e)
+    return positions
 
 # check if an id is in the items table, returning the callsign, ssid, and symbol if it is - and updating the last_updated time to now
 def check_item_id(id):

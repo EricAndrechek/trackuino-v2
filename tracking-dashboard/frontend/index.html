@@ -36,7 +36,8 @@
             var map = new mapboxgl.Map({
                 container: "map",
                 style: "mapbox://styles/mapbox/streets-v12",
-                center: [-83.743, 42.2808],
+                sprite: "https://example.com/sprite",
+                center: [-83.710993, 42.294517],
                 zoom: 13,
             });
 
@@ -67,61 +68,75 @@
                 // loop to update map with new data
                 const timer = setInterval(() => {
                     // get tracks and update map with all tracks and their linestrings
-                    for (const track_id in tracks) {
-                        if (track_id === "undefined") {
+                    for (const name in positions) {
+                        if (name === "undefined") {
                             continue;
                         }
-                        const track = tracks[track_id];
-                        if (!track || !track.id || track.id === "undefined" || track.id == undefined) {
-                            console.log('Invalid track', track)
+                        const position = positions[name];
+                        if (!position || !position.name || position.name === "undefined" || position.name == undefined) {
+                            console.log('Invalid position', position)
                             continue;
                         }
                         // check if source already exists
-                        if (map.getSource(track.id)) {
+                        if (map.getSource(name)) {
                             // update source with new data
-                            map.getSource(track.id).setData({
+                            map.getSource(name).setData({
                                 type: "Feature",
-                                properties: {},
+                                properties: {
+                                    name: position.name,
+                                    symbol: position.symbol,
+                                    altitude: position.current.altitude,
+                                    speed: position.current.speed,
+                                    heading: position.current.heading,
+                                    last_update: position.current.last_update,
+                                },
                                 geometry: {
                                     type: "Point",
-                                    coordinates: [track.lat, track.lon, track.alt]
+                                    coordinates: [position.current.latitude, position.current.longitude, position.current.altitude]
                                 },
                             });
-                            map.getSource(track.id + "-line").setData(track.geojson);
+                            map.getSource(name + "-line").setData(getHistoricalGeoJSON(name));
                         } else {
-                            console.log('Adding new track', track.id);
                             // create a new GeoJSON source and add it to the map
-                            map.addSource(track.id, {
-                                type: "geojson",
-                                data: {
-                                    type: "Feature",
-                                    properties: {},
-                                    geometry: {
-                                        type: "Point",
-                                        coordinates: [track.lat, track.lon, track.alt]
-                                    },
+                            const geojson = {
+                                type: "Feature",
+                                properties: {
+                                    name: position.name,
+                                    symbol: position.symbol,
+                                    altitude: position.current.altitude,
+                                    speed: position.current.speed,
+                                    heading: position.current.heading,
+                                    last_update: position.current.last_update,
                                 },
+                                geometry: {
+                                    type: "Point",
+                                    coordinates: [position.current.latitude, position.current.longitude, position.current.altitude]
+                                },
+                            };
+                            console.log('Adding new source', name, geojson)
+                            map.addSource(name, {
+                                type: "geojson",
+                                data: geojson,
                             });
                             map.addLayer({
-                                id: track.id,
-                                source: track.id,
+                                id: name,
+                                source: name,
                                 type: 'symbol',
                                 layout: {
-                                    'icon-image': 'car',
+                                    'icon-image': ['get', 'symbol'],
                                     'icon-allow-overlap': true,
                                     'icon-size': 2,
                                 },
                             });
 
-
-                            map.addSource(track.id + "-line", {
+                            map.addSource(name + "-line", {
                                 type: "geojson",
-                                data: track.geojson,
+                                data: getHistoricalGeoJSON(name),
                             });
 
                             map.addLayer({
-                                id: track.id + "-line",
-                                source: track.id + "-line",
+                                id: name + "-line",
+                                source: name + "-line",
                                 type: "line",
                                 paint: {
                                     "line-color": "#888",
