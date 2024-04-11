@@ -53,9 +53,9 @@ def getTails():
         for position in positions:
             if position["callsign"] == item.callsign and position["ssid"] == item.ssid:
                 data[name]["positions"].append({
-                    "lat": position["lat"],
-                    "lon": position["lon"],
-                    "alt": position["alt"],
+                    "lat": position["latitude"],
+                    "lon": position["longitude"],
+                    "alt": position["altitude"],
                     "cse": position["course"],
                     "cpd": position["speed"],
                     "cmnt": position["comment"],
