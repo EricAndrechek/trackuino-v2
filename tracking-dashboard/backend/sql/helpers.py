@@ -14,7 +14,7 @@ from sqlalchemy import cast, func
 from tasks.mqttadder import add_data
 
 # add new datum to mqtt (position or telemetry)
-def add_datum(name, data):
+def add_datum(name, data, timestamp=None):
     # add to redis queue for adding to mqtt by worker
     if isinstance(data, Position):
         mqtt_data = {
@@ -25,7 +25,8 @@ def add_datum(name, data):
             "cse": data.course,
             "spd": data.speed,
             "cmnt": data.comment,
-            "sym": data.symbol
+            "sym": data.symbol,
+            "dt": timestamp
         }
         print("adding position to mqtt")
         add_data("position", mqtt_data)
@@ -178,20 +179,30 @@ def get_positions_last_n_minutes(n, names):
     try:
         if names is None:
             messages = Session.query(Message).filter(Message.timestamp > datetime.utcnow() - timedelta(minutes=n)).all()
-            # just add message ids to list
-            messages = [message.id for message in messages]
         else:
             messages = Session.query(Message).filter(Message.timestamp > datetime.utcnow() - timedelta(minutes=n)).filter(Message.callsign.in_(names)).all()
-            # just add message ids to list
-            messages = [message.id for message in messages]
     except Exception as e:
         print(e)
         return []
     
     positions = []
-    # get all positions for the given message ids
+    # get all positions for the given message ids and add their message timestamp
     try:
-        positions = Session.query(Position).filter(Position.message.in_(messages)).all()
+        for message in messages:
+            new_positions = Session.query(Position).filter_by(message=message.id).all()
+            for position in new_positions:
+                positions.append({
+                    "timestamp": message.timestamp,
+                    "callsign": position.callsign,
+                    "ssid": position.ssid,
+                    "symbol": position.symbol,
+                    "speed": position.speed,
+                    "course": position.course,
+                    "latitude": position.latitude,
+                    "longitude": position.longitude,
+                    "altitude": position.altitude,
+                    "comment": position.comment
+                })
     except Exception as e:
         print(e)
     return positions

@@ -58,7 +58,8 @@ def getTails():
                     "spd": position.speed,
                     "cse": position.course,
                     "alt": position.altitude,
-                    "cmnt": position.comment
+                    "cmnt": position.comment,
+                    "dt": position.timestamp
                 })
 
     return jsonify(data)

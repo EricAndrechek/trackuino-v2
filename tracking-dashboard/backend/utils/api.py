@@ -241,7 +241,7 @@ class Data:
 
                 # add to mqtt
                 name = self.data["callsign"] + "-" + str(self.data["ssid"])
-                add_datum(name, position)
+                add_datum(name, position, message.timestamp)
 
                 to_return = 201
             else:
