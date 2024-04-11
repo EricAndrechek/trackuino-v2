@@ -191,6 +191,8 @@ def on_message(client, userdata, message):
                         # send telemetry data to mqtt
                         if 'telemetry' in src['data']:
                             topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
+                            print(old_messages[id])
+                            print(src['data']['telemetry'])
                             for key in src['data']['telemetry']:
                                 # check if last value is the same
                                 if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
@@ -220,6 +222,7 @@ def on_message(client, userdata, message):
                 # check if value is the same as last value
                 if id in old_messages:
                     if key in old_messages[id] and payload == old_messages[id][key]:
+                        print("No change in value from anykey: ", key, payload)
                         return
                 # send telemetry data to mqtt
                 topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
