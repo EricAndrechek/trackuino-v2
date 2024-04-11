@@ -191,14 +191,11 @@ def on_message(client, userdata, message):
                         # send telemetry data to mqtt
                         if 'telemetry' in src['data']:
                             topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
-                            print(old_messages[id])
-                            print(src['data']['telemetry'])
                             for key in src['data']['telemetry']:
                                 # check if last value is the same
                                 if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
                                     continue
                                 client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
-                                print("Sent telemetry data to mqtt: ", topic + "/" + key, src['data']['telemetry'][key])
                         message_building[id]['ss'] = payload
                         return
             
@@ -211,7 +208,8 @@ def on_message(client, userdata, message):
                 except Exception as e:
                     print("save error: ", e)
             
-                old_messages[id] = message_building[id]
+                # copy values to old_messages
+                old_messages[id] = message_building[id].copy()
                 message_building[id]['ss'] = payload
             return
         else:
@@ -223,12 +221,10 @@ def on_message(client, userdata, message):
                 # check if value is the same as last value
                 if id in old_messages:
                     if key in old_messages[id] and payload == old_messages[id][key]:
-                        print("No change in value from anykey: ", key, payload)
                         return
                 # send telemetry data to mqtt
                 topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
                 client.publish(topic + "/" + key, json.dumps(payload), retain=True, qos=0)
-                print("Sent telemetry data to mqtt: ", topic + "/" + key, payload)
                 try:
                     old_messages[id][key] = payload
                 except:
