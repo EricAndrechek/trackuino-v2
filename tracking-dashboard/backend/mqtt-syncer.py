@@ -198,6 +198,7 @@ def on_message(client, userdata, message):
                                 if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
                                     continue
                                 client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
+                                print("Sent telemetry data to mqtt: ", topic + "/" + key, src['data']['telemetry'][key])
                         message_building[id]['ss'] = payload
                         return
             
@@ -227,6 +228,7 @@ def on_message(client, userdata, message):
                 # send telemetry data to mqtt
                 topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
                 client.publish(topic + "/" + key, json.dumps(payload), retain=True, qos=0)
+                print("Sent telemetry data to mqtt: ", topic + "/" + key, payload)
                 try:
                     old_messages[id][key] = payload
                 except:
