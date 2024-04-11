@@ -195,6 +195,8 @@ def on_message(client, userdata, message):
                                 topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
                                 for key in src['data']['telemetry']:
                                     # check if last value is the same
+                                    print(key, src['data']['telemetry'][key])
+                                    print(key, old_messages[id][key])
                                     if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
                                         continue
                                     client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
