@@ -86,9 +86,9 @@ def api_rock7_upload():
     ssid = decoded_data['ssid']
     symbol = "/O"
     rock7_id = data['serial']
-    item = check_item_id(rock7_id)
+    item = check_item_id(cs)
     if item is None:
-        add_item_id(rock7_id, cs, ssid, "\O")
+        add_item_id(cs, cs, ssid, "\O")
     else:
         cs = item.callsign
         ssid = item.ssid
