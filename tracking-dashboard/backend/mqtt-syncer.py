@@ -171,7 +171,6 @@ def on_message(client, userdata, message):
                 return
             src = build_source_packet(msg)
             data_obj = Data()
-            message_building[id]['ss'] = payload
 
             try:
                 data_obj.upload(src)
@@ -188,19 +187,19 @@ def on_message(client, userdata, message):
             # check if lat, lon, or alt changed
             if 'lat' in message_building[id] and 'lon' in message_building[id] and 'alt' in message_building[id]:
                 if id in old_messages:
-                    if 'lat' in old_messages[id] and 'lon' in old_messages[id] and 'alt' in old_messages[id]:
-                        if message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon'] and message_building[id]['alt'] == old_messages[id]['alt']:
-                            # send telemetry data to mqtt
-                            if 'telemetry' in src['data']:
-                                topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
-                                for key in src['data']['telemetry']:
-                                    # check if last value is the same
-                                    print(key, src['data']['telemetry'][key])
-                                    print(key, old_messages[id][key])
-                                    if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
-                                        continue
-                                    client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
-                            return
+                    if message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon'] and message_building[id]['alt'] == old_messages[id]['alt']:
+                        # send telemetry data to mqtt
+                        if 'telemetry' in src['data']:
+                            topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
+                            for key in src['data']['telemetry']:
+                                # check if last value is the same
+                                print(key, src['data']['telemetry'][key])
+                                print(key, old_messages[id][key])
+                                if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
+                                    continue
+                                client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
+                        message_building[id]['ss'] = payload
+                        return
             
                 try:
                     status_code = data_obj.save()
@@ -212,6 +211,7 @@ def on_message(client, userdata, message):
                     print("save error: ", e)
             
                 old_messages[id] = message_building[id]
+                message_building[id]['ss'] = payload
             return
         else:
             # add key and payload to message_building
@@ -226,7 +226,6 @@ def on_message(client, userdata, message):
                 # send telemetry data to mqtt
                 topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
                 client.publish(topic + "/" + key, json.dumps(payload), retain=True, qos=0)
-                old_messages[id][key] = payload
     else:
         print("Unknown topic: ", topic)
 
