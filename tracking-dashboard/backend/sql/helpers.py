@@ -173,12 +173,25 @@ def get_items_last_n_minutes(n, name):
 
 # get position data over the last n minutes for all given callsigns+ssid pairs
 def get_positions_last_n_minutes(n, names):
-    positions = []
+    messages = []
+    # start by getting all message ids for the given callsigns and ssids within the last n minutes from the Message table
     try:
         if names is None:
-            positions = Session.query(Position).filter(Position.timestamp > datetime.utcnow() - timedelta(minutes=n)).all()
+            messages = Session.query(Message).filter(Message.timestamp > datetime.utcnow() - timedelta(minutes=n)).all()
+            # just add message ids to list
+            messages = [message.id for message in messages]
         else:
-            positions = Session.query(Position).filter(Position.timestamp > datetime.utcnow() - timedelta(minutes=n)).filter(Position.callsign.in_(names)).all()
+            messages = Session.query(Message).filter(Message.timestamp > datetime.utcnow() - timedelta(minutes=n)).filter(Message.callsign.in_(names)).all()
+            # just add message ids to list
+            messages = [message.id for message in messages]
+    except Exception as e:
+        print(e)
+        return []
+    
+    positions = []
+    # get all positions for the given message ids
+    try:
+        positions = Session.query(Position).filter(Position.message.in_(messages)).all()
     except Exception as e:
         print(e)
     return positions

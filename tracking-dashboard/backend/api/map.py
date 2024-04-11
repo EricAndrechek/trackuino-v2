@@ -39,6 +39,7 @@ def getTails():
     # now we have all active callsigns, we can get their locations over the last <age> minutes
     # and return them as a list of dictionaries
     positions = get_positions_last_n_minutes(age, name)
+    print(positions)
 
     # return the data as a json object
     data = {}
@@ -56,7 +57,7 @@ def getTails():
                     "lon": position.longitude,
                     "spd": position.speed,
                     "cse": position.course,
-                    "alt": position.alt,
+                    "alt": position.altitude,
                     "cmnt": position.comment
                 })
 
