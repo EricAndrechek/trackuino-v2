@@ -1,8 +1,6 @@
-import stat
 from flask import Blueprint, request
 import json
 
-import symbol
 from utils.api import Data
 from sql.helpers import check_item_id, add_item_id
 
