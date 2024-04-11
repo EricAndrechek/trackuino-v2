@@ -13,10 +13,10 @@ def add_data_task(data_type, data):
         client.publish(topic, json.dumps(data), retain=True, qos=0)
     elif data_type == "telemetry":
         if "telemetry" in data:
-            data = data["telemetry"]
-        for key in data:
+            t_data = data["telemetry"]
+        for key in t_data:
             topic = "TELEMETRY/" + data["name"] + "/" + key
-            client.publish(topic, json.dumps(data[key]), retain=True, qos=0)
+            client.publish(topic, json.dumps(t_data[key]), retain=True, qos=0)
 
     else:
         print("Invalid data type")
