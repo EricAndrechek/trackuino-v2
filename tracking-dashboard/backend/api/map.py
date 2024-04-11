@@ -51,15 +51,15 @@ def getTails():
             "positions": []
         }
         for position in positions:
-            if position.callsign == item.callsign and position.ssid == item.ssid:
+            if position["callsign"] == item.callsign and position["ssid"] == item.ssid:
                 data[name]["positions"].append({
-                    "lat": position.latitude,
-                    "lon": position.longitude,
-                    "spd": position.speed,
-                    "cse": position.course,
-                    "alt": position.altitude,
-                    "cmnt": position.comment,
-                    "dt": position.timestamp
+                    "lat": position["lat"],
+                    "lon": position["lon"],
+                    "alt": position["alt"],
+                    "cse": position["course"],
+                    "cpd": position["speed"],
+                    "cmnt": position["comment"],
+                    "timestamp": position["timestamp"]
                 })
 
     return jsonify(data)
