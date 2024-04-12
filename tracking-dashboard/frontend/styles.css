@@ -18,17 +18,10 @@ body {
     position: absolute;
 }
 
-.map-overlay {
-    position: absolute;
-    background: rgba(255,255,255,0.8);
-    border-radius: 3px;
-    padding: 10px;
-    font-family: Arial, sans-serif;
-}
-
-#layer-selector {
-    top: 10px;
-    left: 10px;
+#style-selector {
+    height: 29px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 #notification {

@@ -4,8 +4,9 @@ const urlsToCache = [
     "/main.js",
     "/styles.css",
     "/mqtt.js",
-    "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
-    "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
+    "/manifest.json",
+    "https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css",
+    "https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js",
     "https://unpkg.com/mqtt/dist/mqtt.min.js",
 ];
 

@@ -14,10 +14,11 @@ const parseAPRSSymbol = (symbol) => {
     if (symbol_table === "/") {
         switch (symbol_code) {
             case "O":
-                symbol_string = "balloon";
+                // should be balloon
+                symbol_string = "custom-balloon";
                 break;
             case ">":
-                symbol_string = "car";
+                symbol_string = "custom-car";
                 break;
             default:
                 console.log("Unknown symbol: ", symbol);
@@ -78,14 +79,30 @@ const positionHandler = (topic, payload) => {
         });
     }
 
+    const heading = parseFloat(data.cse);
+    // update image rotation
+    if (heading > 180) {
+        positions[name].symbol = parseAPRSSymbol(data.sym) + "-flip";
+    } else {
+        positions[name].symbol = parseAPRSSymbol(data.sym);
+    }
+
     // update the position data
     positions[name].current.latitude = parseFloat(data.lat);
     positions[name].current.longitude = parseFloat(data.lon);
     positions[name].current.altitude = parseFloat(data.alt);
     positions[name].current.speed = parseFloat(data.spd);
-    positions[name].current.course = parseFloat(data.cse);
+    positions[name].current.course = heading;
     positions[name].current.comment = data.cmnt;
-    positions[name].current.datetime = new Date().toISOString();
+    try {
+        positions[name].current.datetime = new Date(
+            Date.parse(data.dt),
+            "UTC"
+        ).toISOString();
+    } catch (err) {
+        // default to now
+        positions[name].current.datetime = new Date().toISOString();
+    }
 
     // check if has telemetry data
     if (name in telemetry) {
@@ -111,7 +128,15 @@ const positionHandler = (topic, payload) => {
         };
     }
 
-    positions[name].last_update = new Date().toISOString();
+    try {
+        positions[name].last_update = new Date(
+            Date.parse(data.dt),
+            "UTC"
+        ).toISOString();
+    } catch (err) {
+        // default to now
+        positions[name].last_update = new Date().toISOString();
+    }
     console.log("Position for ", name, " updated");
 };
 
@@ -216,19 +241,23 @@ client.on("error", (err) => {
 
 client.on("close", () => {
     console.log("Client closed");
+    needData = true;
 });
 
 client.on("disconnect", () => {
     console.log("Client disconnected");
+    needData = true;
 });
 
 client.on("offline", () => {
     console.log("Client offline");
     notificationBanner("Device offline", 15000);
+    needData = true;
 });
 
 client.on("end", () => {
     console.log("Client ended");
+    needData = true;
 });
 
 client.on("reconnect", () => {
@@ -237,6 +266,12 @@ client.on("reconnect", () => {
 
 client.on("connect", () => {
     notificationBanner("Online and connected to server", 5000);
+
+    // we know we are online now and can request old data
+    if (needData) {
+        requestOldData();
+    }
+
     console.log("Client connected:" + clientId);
     const topics = ["TELEMETRY", "POSITION", "ALERT", "PREDICTION", "SERVER"];
     topics.forEach((topic) => {

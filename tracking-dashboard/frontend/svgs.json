@@ -1,0 +1,13 @@
+[
+    {
+        "symbol": "/>",
+        "name": "custom-car",
+        "url": "/assets/car.png",
+        "url2": "/assets/car-flip.png"
+    },
+    {
+        "symbol": "/O",
+        "name": "custom-balloon",
+        "url": "/assets/balloon.png"
+    }
+]

@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Balloon Tracking Map</title>
     <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#00274c">
+    <meta name="msapplication-TileColor" content="#2b5797">
+    <meta name="theme-color" content="#ffffff">
 
     <script src="/main.js"></script>
 
-    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.js'></script>
-    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css' rel='stylesheet' />
 
     <link rel="stylesheet" href="/styles.css">
 
@@ -17,14 +24,10 @@
 </head>
 <body>
     <div id="map"></div>
-    <div class="map-overlay" id="layer-selector">
+    <div style="display: none" id="layer-selector1" class="mapboxgl-ctrl mapboxgl-ctrl-group">
         <select id="style-selector">
-            <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
-            <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
-            <option value="mapbox://styles/mapbox/light-v11">Light</option>
-            <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
-            <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
-            <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
+            <option value="mapbox://styles/ericandr/cluvydoes006n01pk7a9z9hwv/draft">Streets</option>
+            <option value="mapbox://styles/ericandr/cluvy4r03005g01nrdfgg89ea/draft">Satellite Streets</option>
         </select>
     </div>
     <div id="notification"></div>
@@ -34,12 +37,62 @@
                 "pk.eyJ1IjoiZXJpY2FuZHIiLCJhIjoiY2x1cnp3Z2tpMDcybTJycGVwN2czNTk3OCJ9.Ccv9oGIfUewgj2Iw-CqOyw";
 
             var map = new mapboxgl.Map({
+                accessToken: mapboxgl.accessToken,
                 container: "map",
-                style: "mapbox://styles/mapbox/streets-v12",
-                sprite: "https://example.com/sprite",
+                attributionControl: false,
+                style: "mapbox://styles/ericandr/cluvydoes006n01pk7a9z9hwv/draft",
                 center: [-83.710993, 42.294517],
-                zoom: 13,
+                zoom: 9,
             });
+
+            map.on('style.load', () => {
+                // Can't figure out why this isn't working, but it's not a priority
+                // console.log('Changing light preset');
+                // map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+
+                console.log('Map loaded');
+                // delay 2 seconds to allow map to load before adding data
+                setTimeout(() => {
+                    // get class mapboxgl-ctrl-attrib-inner
+                    let attrib = document.getElementsByClassName(
+                        "mapboxgl-ctrl-attrib-inner"
+                    )[0];
+                    // edit innerHTML of attrib
+                    attrib.innerHTML =
+                        "UMich Balloon Map | Made by <a href='https://github.com/EricAndrechek'>Eric</a>";
+                    
+                    // get class mapboxgl-ctrl-top-left
+                    let top_left = document.getElementsByClassName(
+                        "mapboxgl-ctrl-top-left"
+                    )[0];
+                    // copy layer-selector1 to top_left
+                    let layer_selector1 = document.getElementById("layer-selector1");
+                    // change id of layer_selector1 to layer-selector
+                    layer_selector1.id = "layer-selector";
+                    // add layer_selector1 to top_left
+                    top_left.appendChild(layer_selector1);
+                    // show layer-selector1
+                    layer_selector1.style.display = "block";
+
+                    // get class mapboxgl-ctrl-top-right
+                    let top_right = document.getElementsByClassName(
+                        "mapboxgl-ctrl-top-right"
+                    )[0];
+                    // create new div
+                    let new_div = document.createElement("div");
+                    // set class of new div
+                    new_div.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
+                    // add div to new_div
+                    new_div.innerHTML = `
+                        <button class="mapboxgl-ctrl-icon" aria-label="Settings"  style="padding: 2px;" onclick="settings()">
+                            <img src="/assets/settings.svg" alt="Settings">
+                        </button>
+                    `;
+                    // add new_div to top_right
+                    top_right.appendChild(new_div);
+                }, 2000);
+            });
+
 
             const geolocate = new mapboxgl.GeolocateControl({
                 positionOptions: {
@@ -52,6 +105,14 @@
             })
 
             map.addControl(geolocate);
+            map.addControl(new mapboxgl.NavigationControl());
+            map.addControl(new mapboxgl.AttributionControl(
+                {
+                    compact: true,
+                    customAttribution: "UMich Balloon Tracking Map | <a href='https://github.com/EricAndrechek' target='_blank'>Made by Eric</a>"
+                }
+            ));
+            map.addControl(new mapboxgl.ScaleControl());
 
             // When a new style is selected, update the map style
             document
@@ -63,10 +124,36 @@
             map.on("load", async () => {
                 geolocate.trigger();
 
-                
+                // load svgs
+                const response = await fetch("/svgs.json");
+                const svgs = await response.json();
+                console.log('Loaded svgs', svgs);
+                for (const svg of svgs) {
+                    console.log('Loading image', svg);
+                    map.loadImage(svg.url, (error, image) => {
+                        if (error) {
+                            console.error('Error loading image: ', svg, ' with error: ', error);
+                            return;
+                        }
+                        map.addImage(svg.name, image, { sdf: true });
+                    });
+                    // load flipped image if it exists
+                    if (!svg.url2) {
+                        // make image with flip url the same as the original
+                        svg.url2 = svg.url;
+                    }
+                    map.loadImage(svg.url2, (error, image) => {
+                        if (error) {
+                            console.error('Error loading image', error);
+                            return;
+                        }
+                        map.addImage(svg.name + "-flip", image, { sdf: true });
+                    });
+                }
 
                 // loop to update map with new data
                 const timer = setInterval(() => {
+
                     // get tracks and update map with all tracks and their linestrings
                     for (const name in positions) {
                         if (name === "undefined") {
@@ -79,6 +166,27 @@
                         }
                         // check if source already exists
                         if (map.getSource(name)) {
+                            // check when the source was last updated
+                            const last_update = new Date(position.last_update);
+                            const now = new Date();
+                            const diff = now - last_update;
+                            // if the source was last updated more than 180 minutes ago, remove it
+                            if (diff > 180 * 60 * 1000 || (position.current.latitude === 0 && position.current.longitude === 0)) {
+                                console.log('Removing source', name)
+                                map.removeLayer(name);
+                                map.removeSource(name);
+                                map.removeLayer(name + "-line");
+                                map.removeSource(name + "-line");
+
+                                // also remove the position from the positions object
+                                delete positions[name];
+                                // and from telemetry object if it exists
+                                if (telemetry[name]) {
+                                    delete telemetry[name];
+                                }
+                                continue;
+                            }
+
                             // update source with new data
                             map.getSource(name).setData({
                                 type: "Feature",
@@ -87,12 +195,12 @@
                                     symbol: position.symbol,
                                     altitude: position.current.altitude,
                                     speed: position.current.speed,
-                                    heading: position.current.heading,
-                                    last_update: position.current.last_update,
+                                    heading: position.current.course,
+                                    last_update: position.current.datetime,
                                 },
                                 geometry: {
                                     type: "Point",
-                                    coordinates: [position.current.latitude, position.current.longitude, position.current.altitude]
+                                    coordinates: [position.current.longitude, position.current.latitude, position.current.altitude]
                                 },
                             });
                             map.getSource(name + "-line").setData(getHistoricalGeoJSON(name));
@@ -105,15 +213,15 @@
                                     symbol: position.symbol,
                                     altitude: position.current.altitude,
                                     speed: position.current.speed,
-                                    heading: position.current.heading,
+                                    heading: position.current.course,
                                     last_update: position.current.last_update,
                                 },
                                 geometry: {
                                     type: "Point",
-                                    coordinates: [position.current.latitude, position.current.longitude, position.current.altitude]
+                                    coordinates: [position.current.longitude,position.current.latitude, position.current.altitude]
                                 },
                             };
-                            console.log('Adding new source', name, geojson)
+                            console.log('Adding new source', name, geojson, getHistoricalGeoJSON(name));
                             map.addSource(name, {
                                 type: "geojson",
                                 data: geojson,
@@ -125,8 +233,15 @@
                                 layout: {
                                     'icon-image': ['get', 'symbol'],
                                     'icon-allow-overlap': true,
-                                    'icon-size': 2,
+                                    'icon-size': 0.1,
+                                    'icon-rotate': ['get', 'heading'],
+                                    'icon-rotation-alignment': 'map',
+                                    'symbol-placement': 'point',
+                                    'symbol-z-elevate': true
                                 },
+                                paint: {
+                                    'icon-color': nameToColor(name),
+                                }
                             });
 
                             map.addSource(name + "-line", {
@@ -138,8 +253,12 @@
                                 id: name + "-line",
                                 source: name + "-line",
                                 type: "line",
+                                layout: {
+                                    "line-join": "round",
+                                    "line-cap": "round"
+                                },
                                 paint: {
-                                    "line-color": "#888",
+                                    "line-color": nameToColor(name),
                                     "line-width": 4,
                                 },
                             });
@@ -147,8 +266,52 @@
                     }
                 }, 100);
             });
+
             geolocate.on('error', () => {
                 console.log('GeoLocation error');
+            });
+
+            map.on('error', (e) => {
+                console.log('Map error', e);
+            });
+
+            map.on('click', (e) => {
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: Object.keys(positions)
+                });
+                if (!features.length) {
+                    return;
+                }
+
+                const feature = features[0];
+                const coordinates = feature.geometry.coordinates.slice();
+                const name = feature.properties.name;
+                const altitude = feature.properties.altitude;
+                const speed = feature.properties.speed;
+                const heading = feature.properties.heading;
+                // time since last update to now in human readable format
+                const last_update = new Date(feature.properties.last_update).toLocaleString();
+
+                // fly to the point
+                let current_zoom = map.getZoom();
+                if (current_zoom < 10) {
+                    current_zoom = 10;
+                }
+                map.flyTo({
+                    center: coordinates,
+                    zoom: current_zoom,
+                });
+
+                const popup = new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(
+                        `<h3>${name}</h3>
+                        <p>Altitude: ${altitude} m</p>
+                        <p>Speed: ${speed} m/s</p>
+                        <p>Heading: ${heading}°</p>
+                        <p>Last Updated: ${last_update}</p>`
+                    )
+                    .addTo(map);
             });
         };
     </script>

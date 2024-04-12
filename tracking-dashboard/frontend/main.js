@@ -1,3 +1,6 @@
+// boolean to tell us if we've been offline and need to re-request old track data
+let needData = true;
+
 // position storage object
 let positions = {};
 // format:
@@ -36,6 +39,24 @@ let telemetry = {};
 // prediction storage object
 let predictions = {};
 
+const settings = () => {
+    // get the settings from the settings form
+    console.log("Settings");
+};
+
+const nameToColor = (name) => {
+    // given a name, return a unique color
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    let color = "#";
+    color += ((hash >> 24) & 0xff).toString(16).padStart(2, "0");
+    color += ((hash >> 16) & 0xff).toString(16).padStart(2, "0");
+    color += ((hash >> 8) & 0xff).toString(16).padStart(2, "0");
+    return color;
+};
+
 const getHistoricalGeoJSON = (name) => {
     let coordinates = [];
     if (name in positions) {
@@ -47,7 +68,7 @@ const getHistoricalGeoJSON = (name) => {
             ]);
         }
     }
-    return {
+    const geojson = {
         type: "Feature",
         properties: {
             name: name,
@@ -59,6 +80,8 @@ const getHistoricalGeoJSON = (name) => {
             coordinates: coordinates,
         },
     };
+    // console.log(JSON.stringify(positions[name]));
+    return geojson;
 };
 
 // display a message as a banner notification for timeout milliseconds
@@ -69,6 +92,70 @@ const notificationBanner = (message, timeout = 5000) => {
     setTimeout(() => {
         notification.classList.remove("show");
     }, timeout);
+};
+
+const requestOldData = (names = null, age = 180) => {
+    // fetch api.umich-balloons.com/api/getTail?name=NAME&age=AGE
+    let url = `https://api.umich-balloons.com/api/getTail?name=${names}&age=${age}`;
+    if (names === null) {
+        url = `https://api.umich-balloons.com/api/getTail?age=${age}`;
+    }
+    fetch(url)
+        .then((response) => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error("Failed to fetch data");
+            }
+        })
+        .then((data) => {
+            // for each name in data
+            for (let name in data) {
+                // check if name exists in positions
+                if (!(name in positions)) {
+                    positions[name] = {
+                        name: name,
+                        symbol: parseAPRSSymbol(data[name].symbol),
+                        last_update: "",
+                        current: {
+                            latitude: 0,
+                            longitude: 0,
+                            altitude: 0,
+                            speed: 0,
+                            course: 0,
+                            comment: "",
+                            datetime: "",
+                        },
+                        previous_coordinates: [],
+                    };
+                }
+                // for each position in data[name]
+                for (let i = 0; i < data[name]["positions"].length; i++) {
+                    // add previous coordinates to previous_coordinates
+                    const datetime = new Date(
+                        Date.parse(data[name]["positions"][i].dt)
+                    ).toISOString();
+                    positions[name].previous_coordinates.push({
+                        latitude: data[name]["positions"][i].lat,
+                        longitude: data[name]["positions"][i].lon,
+                        altitude: data[name]["positions"][i].alt,
+                        speed: data[name]["positions"][i].spd,
+                        course: data[name]["positions"][i].cse,
+                        comment: data[name]["positions"][i].cmnt,
+                        datetime: datetime,
+                    });
+                }
+                // update time of last update
+                positions[name].last_update = new Date(
+                    Date.parse(data[name]["last_updated"])
+                ).toISOString();
+            }
+            needData = false;
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            notificationBanner("Failed to fetch old data", 10000);
+        });
 };
 
 // main function

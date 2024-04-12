@@ -317,7 +317,7 @@ void disableGPS(void) {
 void getPos() {
 
     // GSM
-    modem.getGsmLocation(&lat, &lon, &acc, &year, &month, &day, &hour, &minute, &second);
+    modem.getGsmLocation(&lon, &lat, &acc, &year, &month, &day, &hour, &minute, &second);
 
 
     // GPS
