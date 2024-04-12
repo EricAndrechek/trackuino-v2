@@ -226,8 +226,11 @@ def on_message(client, userdata, message):
                     if key in old_messages[id] and payload == old_messages[id][key]:
                         return
                 # send telemetry data to mqtt
-                topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
-                client.publish(topic + "/" + key, json.dumps(payload), retain=True, qos=0)
+                try:
+                    topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
+                    client.publish(topic + "/" + key, json.dumps(payload), retain=True, qos=0)
+                except Exception as e:
+                    print("Error sending telemetry to mqtt: ", e)
                 try:
                     old_messages[id][key] = payload
                 except:
