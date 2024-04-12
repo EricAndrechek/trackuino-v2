@@ -66,3 +66,43 @@ body {
         transform: translateY(-100%);
     }
 }
+
+.popup {
+    margin: 0;
+}
+
+.popup p {
+    margin: 0;
+}
+
+.popup-header {
+    text-align: center;
+
+}
+
+.popup h3 {
+    margin: 0;
+    margin-bottom: 5px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.popup .more {
+    cursor: pointer;
+    /* center p horizontally across popup */
+    text-align: center;
+    display: block;
+    margin: 0 auto;
+    margin-top: 10px;
+    font: bold 14px Arial, sans-serif;
+    color: #1da1f2;
+}
+
+.popup img {
+    padding-left: 5px;
+    height: 20px;
+    rotate: 90deg;
+    display: inline-block;
+    vertical-align: text-bottom;
+}

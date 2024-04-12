@@ -159,8 +159,11 @@ def on_message(client, userdata, message):
                 if 'telemetry' in message_building[id]:
                     message_building[id]['telemetry']['lwt'] = payload
                     # send telemetry data to mqtt
-                    topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
-                    client.publish(topic + "/lwt", json.dumps(payload), retain=True, qos=0)
+                    try:
+                        topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
+                        client.publish(topic + "/lwt", json.dumps(payload), retain=True, qos=0)
+                    except Exception as e:
+                        print("Error sending lwt to mqtt: ", e)
 
 
         # if key is "ss" (seconds), add message to db

@@ -20,18 +20,18 @@
 
     <link rel="stylesheet" href="/styles.css">
 
-    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://unpkg.com/mqtt@5.5.1/dist/mqtt.min.js"></script>
 </head>
 <body>
     <div id="map"></div>
     <div style="display: none" id="layer-selector1" class="mapboxgl-ctrl mapboxgl-ctrl-group">
-        <select id="style-selector">
-            <option value="mapbox://styles/ericandr/cluvydoes006n01pk7a9z9hwv/draft">Streets</option>
-            <option value="mapbox://styles/ericandr/cluvy4r03005g01nrdfgg89ea/draft">Satellite Streets</option>
+        <select id="style-selector1">
+            <option value="mapbox://styles/ericandr/cluvydoes006n01pk7a9z9hwv">Streets</option>
+            <option value="mapbox://styles/ericandr/cluvy4r03005g01nrdfgg89ea">Satellite Streets</option>
         </select>
     </div>
     <div id="notification"></div>
-    <script>
+    <script>        
         onload = () => {
             mapboxgl.accessToken =
                 "pk.eyJ1IjoiZXJpY2FuZHIiLCJhIjoiY2x1cnp3Z2tpMDcybTJycGVwN2czNTk3OCJ9.Ccv9oGIfUewgj2Iw-CqOyw";
@@ -40,90 +40,135 @@
                 accessToken: mapboxgl.accessToken,
                 container: "map",
                 attributionControl: false,
-                style: "mapbox://styles/ericandr/cluvydoes006n01pk7a9z9hwv/draft",
+                style: "mapbox://styles/ericandr/cluvydoes006n01pk7a9z9hwv",
                 center: [-83.710993, 42.294517],
                 zoom: 9,
             });
 
-            map.on('style.load', () => {
-                // Can't figure out why this isn't working, but it's not a priority
-                // console.log('Changing light preset');
-                // map.setConfigProperty('basemap', 'lightPreset', 'dusk');
+            let styleChange = false;
 
-                console.log('Map loaded');
-                // delay 2 seconds to allow map to load before adding data
-                setTimeout(() => {
-                    // get class mapboxgl-ctrl-attrib-inner
-                    let attrib = document.getElementsByClassName(
-                        "mapboxgl-ctrl-attrib-inner"
-                    )[0];
-                    // edit innerHTML of attrib
-                    attrib.innerHTML =
-                        "UMich Balloon Map | Made by <a href='https://github.com/EricAndrechek'>Eric</a>";
-                    
-                    // get class mapboxgl-ctrl-top-left
-                    let top_left = document.getElementsByClassName(
-                        "mapboxgl-ctrl-top-left"
-                    )[0];
-                    // copy layer-selector1 to top_left
-                    let layer_selector1 = document.getElementById("layer-selector1");
-                    // change id of layer_selector1 to layer-selector
-                    layer_selector1.id = "layer-selector";
-                    // add layer_selector1 to top_left
-                    top_left.appendChild(layer_selector1);
-                    // show layer-selector1
-                    layer_selector1.style.display = "block";
-
-                    // get class mapboxgl-ctrl-top-right
-                    let top_right = document.getElementsByClassName(
-                        "mapboxgl-ctrl-top-right"
-                    )[0];
-                    // create new div
-                    let new_div = document.createElement("div");
-                    // set class of new div
-                    new_div.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
-                    // add div to new_div
-                    new_div.innerHTML = `
-                        <button class="mapboxgl-ctrl-icon" aria-label="Settings"  style="padding: 2px;" onclick="settings()">
-                            <img src="/assets/settings.svg" alt="Settings">
-                        </button>
-                    `;
-                    // add new_div to top_right
-                    top_right.appendChild(new_div);
-                }, 2000);
-            });
-
-
-            const geolocate = new mapboxgl.GeolocateControl({
-                positionOptions: {
-                    enableHighAccuracy: true,
-                },
-                // When active the map will receive updates to the device's location as it changes.
-                trackUserLocation: true,
-                // Draw an arrow next to the location dot to indicate which direction the device is heading.
-                showUserHeading: true,
-            })
-
-            map.addControl(geolocate);
-            map.addControl(new mapboxgl.NavigationControl());
-            map.addControl(new mapboxgl.AttributionControl(
-                {
-                    compact: true,
-                    customAttribution: "UMich Balloon Tracking Map | <a href='https://github.com/EricAndrechek' target='_blank'>Made by Eric</a>"
+            const loopHandler = () => {
+                // loop to update map with new data
+                if (styleChange) {
+                    styleChange = false;
+                    return;
                 }
-            ));
-            map.addControl(new mapboxgl.ScaleControl());
 
-            // When a new style is selected, update the map style
-            document
-                .getElementById("style-selector")
-                .addEventListener("change", function (e) {
-                    map.setStyle(e.target.value);
-                });
+                // get tracks and update map with all tracks and their linestrings
+                for (const name in positions) {
+                    if (name === "undefined") {
+                        continue;
+                    }
+                    const position = positions[name];
+                    if (!position || !position.name || position.name === "undefined" || position.name == undefined) {
+                        console.log('Invalid position', position)
+                        continue;
+                    }
+                    // check if source already exists
+                    if (map.getSource(name)) {
+                        // check when the source was last updated
+                        const last_update = new Date(position.last_update);
+                        const now = new Date();
+                        const diff = now - last_update;
+                        // if the source was last updated more than 180 minutes ago, remove it
+                        if (diff > 180 * 60 * 1000 || (position.current.latitude === 0 && position.current.longitude === 0)) {
+                            console.log('Removing source', name)
+                            map.removeLayer(name);
+                            map.removeSource(name);
+                            map.removeLayer(name + "-line");
+                            map.removeSource(name + "-line");
 
-            map.on("load", async () => {
-                geolocate.trigger();
+                            // also remove the position from the positions object
+                            delete positions[name];
+                            // and from telemetry object if it exists
+                            if (telemetry[name]) {
+                                delete telemetry[name];
+                            }
+                            continue;
+                        }
 
+                        // update source with new data
+                        map.getSource(name).setData({
+                            type: "Feature",
+                            properties: {
+                                name: position.name,
+                                symbol: position.symbol,
+                                altitude: position.current.altitude,
+                                speed: position.current.speed,
+                                heading: position.current.course,
+                                last_update: position.current.datetime,
+                            },
+                            geometry: {
+                                type: "Point",
+                                coordinates: [position.current.longitude, position.current.latitude, position.current.altitude]
+                            },
+                        });
+                        map.getSource(name + "-line").setData(getHistoricalGeoJSON(name));
+                    } else {
+                        // create a new GeoJSON source and add it to the map
+                        const geojson = {
+                            type: "Feature",
+                            properties: {
+                                name: position.name,
+                                symbol: position.symbol,
+                                altitude: position.current.altitude,
+                                speed: position.current.speed,
+                                heading: position.current.course,
+                                last_update: position.current.datetime,
+                            },
+                            geometry: {
+                                type: "Point",
+                                coordinates: [position.current.longitude,position.current.latitude, position.current.altitude]
+                            },
+                        };
+                        console.log('Adding new source', name, geojson, getHistoricalGeoJSON(name));
+
+                        map.addSource(name, {
+                            type: "geojson",
+                            data: geojson,
+                        });
+                        map.addLayer({
+                            id: name,
+                            source: name,
+                            type: 'symbol',
+                            layout: {
+                                'icon-image': ['get', 'symbol'],
+                                'icon-allow-overlap': true,
+                                'icon-size': 0.1,
+                                'icon-rotate': ['get', 'heading'],
+                                'icon-rotation-alignment': 'map',
+                                'symbol-placement': 'point',
+                                'symbol-z-elevate': true
+                            },
+                            paint: {
+                                'icon-color': nameToColor(name),
+                            }
+                        });
+
+                        map.addSource(name + "-line", {
+                            type: "geojson",
+                            data: getHistoricalGeoJSON(name),
+                        });
+
+                        map.addLayer({
+                            id: name + "-line",
+                            source: name + "-line",
+                            type: "line",
+                            layout: {
+                                "line-join": "round",
+                                "line-cap": "round"
+                            },
+                            paint: {
+                                "line-color": nameToColor(name),
+                                "line-width": 4,
+                            },
+                        });
+                    }
+                }
+                setTimeout(loopHandler, 100);
+            }
+
+            const getCustomImages = async () => {
                 // load svgs
                 const response = await fetch("/svgs.json");
                 const svgs = await response.json();
@@ -150,121 +195,91 @@
                         map.addImage(svg.name + "-flip", image, { sdf: true });
                     });
                 }
+            }
 
-                // loop to update map with new data
-                const timer = setInterval(() => {
+            map.on('style.load', () => {
+                console.log('Style loaded');
+                getCustomImages();
 
-                    // get tracks and update map with all tracks and their linestrings
-                    for (const name in positions) {
-                        if (name === "undefined") {
-                            continue;
-                        }
-                        const position = positions[name];
-                        if (!position || !position.name || position.name === "undefined" || position.name == undefined) {
-                            console.log('Invalid position', position)
-                            continue;
-                        }
-                        // check if source already exists
-                        if (map.getSource(name)) {
-                            // check when the source was last updated
-                            const last_update = new Date(position.last_update);
-                            const now = new Date();
-                            const diff = now - last_update;
-                            // if the source was last updated more than 180 minutes ago, remove it
-                            if (diff > 180 * 60 * 1000 || (position.current.latitude === 0 && position.current.longitude === 0)) {
-                                console.log('Removing source', name)
-                                map.removeLayer(name);
-                                map.removeSource(name);
-                                map.removeLayer(name + "-line");
-                                map.removeSource(name + "-line");
+                // delay 1 seconds to allow map to load for sure before adding data
+                setTimeout(() => {
+                    console.log('Map loaded');
+                    // get class mapboxgl-ctrl-attrib-inner
+                    let attrib = document.getElementsByClassName(
+                        "mapboxgl-ctrl-attrib-inner"
+                    )[0];
+                    // edit innerHTML of attrib
+                    attrib.innerHTML =
+                        "UMich Balloon Map | Made by <a href='https://github.com/EricAndrechek'>Eric</a>";
 
-                                // also remove the position from the positions object
-                                delete positions[name];
-                                // and from telemetry object if it exists
-                                if (telemetry[name]) {
-                                    delete telemetry[name];
-                                }
-                                continue;
-                            }
+                    console.log('Adding data');
+                    loopHandler();
+                }, 1000);
+            });
 
-                            // update source with new data
-                            map.getSource(name).setData({
-                                type: "Feature",
-                                properties: {
-                                    name: position.name,
-                                    symbol: position.symbol,
-                                    altitude: position.current.altitude,
-                                    speed: position.current.speed,
-                                    heading: position.current.course,
-                                    last_update: position.current.datetime,
-                                },
-                                geometry: {
-                                    type: "Point",
-                                    coordinates: [position.current.longitude, position.current.latitude, position.current.altitude]
-                                },
-                            });
-                            map.getSource(name + "-line").setData(getHistoricalGeoJSON(name));
-                        } else {
-                            // create a new GeoJSON source and add it to the map
-                            const geojson = {
-                                type: "Feature",
-                                properties: {
-                                    name: position.name,
-                                    symbol: position.symbol,
-                                    altitude: position.current.altitude,
-                                    speed: position.current.speed,
-                                    heading: position.current.course,
-                                    last_update: position.current.last_update,
-                                },
-                                geometry: {
-                                    type: "Point",
-                                    coordinates: [position.current.longitude,position.current.latitude, position.current.altitude]
-                                },
-                            };
-                            console.log('Adding new source', name, geojson, getHistoricalGeoJSON(name));
-                            map.addSource(name, {
-                                type: "geojson",
-                                data: geojson,
-                            });
-                            map.addLayer({
-                                id: name,
-                                source: name,
-                                type: 'symbol',
-                                layout: {
-                                    'icon-image': ['get', 'symbol'],
-                                    'icon-allow-overlap': true,
-                                    'icon-size': 0.1,
-                                    'icon-rotate': ['get', 'heading'],
-                                    'icon-rotation-alignment': 'map',
-                                    'symbol-placement': 'point',
-                                    'symbol-z-elevate': true
-                                },
-                                paint: {
-                                    'icon-color': nameToColor(name),
-                                }
-                            });
 
-                            map.addSource(name + "-line", {
-                                type: "geojson",
-                                data: getHistoricalGeoJSON(name),
-                            });
+            const geolocate = new mapboxgl.GeolocateControl({
+                positionOptions: {
+                    enableHighAccuracy: true,
+                },
+                // When active the map will receive updates to the device's location as it changes.
+                trackUserLocation: true,
+                // Draw an arrow next to the location dot to indicate which direction the device is heading.
+                showUserHeading: true,
+            })
 
-                            map.addLayer({
-                                id: name + "-line",
-                                source: name + "-line",
-                                type: "line",
-                                layout: {
-                                    "line-join": "round",
-                                    "line-cap": "round"
-                                },
-                                paint: {
-                                    "line-color": nameToColor(name),
-                                    "line-width": 4,
-                                },
-                            });
-                        }
-                    }
-                }, 100);
+            map.addControl(geolocate);
+            map.addControl(new mapboxgl.NavigationControl());
+            map.addControl(new mapboxgl.AttributionControl(
+                {
+                    compact: true,
+                    customAttribution: "UMich Balloon Tracking Map | <a href='https://github.com/EricAndrechek' target='_blank'>Made by Eric</a>"
+                }
+            ));
+            map.addControl(new mapboxgl.ScaleControl());
+
+            map.on("load", async () => {
+                geolocate.trigger();
+
+                // get class mapboxgl-ctrl-top-left
+                let top_left = document.getElementsByClassName(
+                    "mapboxgl-ctrl-top-left"
+                )[0];
+                // copy clone of layer-selector1 to top_left
+                let layer_selector1 = document.getElementById("layer-selector1").cloneNode(true);
+                // change id of layer_selector1 to layer-selector
+                layer_selector1.id = "layer-selector";
+                // change style-selector1 to style-selector
+                layer_selector1.children[0].id = "style-selector";
+                // add layer_selector1 to top_left
+                top_left.appendChild(layer_selector1);
+                // show layer-selector1
+                layer_selector1.style.display = "block";
+
+                // When a new style is selected, update the map style
+                document
+                    .getElementById("style-selector")
+                    .addEventListener("change", function (e) {
+                        styleChange = true;
+                        map.setStyle(e.target.value);
+                    });
+
+                // get class mapboxgl-ctrl-top-right
+                let top_right = document.getElementsByClassName(
+                    "mapboxgl-ctrl-top-right"
+                )[0];
+                // create new div
+                let new_div = document.createElement("div");
+                // set class of new div
+                new_div.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
+                // add div to new_div
+                new_div.innerHTML = `
+                    <button class="mapboxgl-ctrl-icon" aria-label="Settings"  style="padding: 2px;" onclick="settings()">
+                        <img src="/assets/settings.svg" alt="Settings">
+                    </button>
+                `;
+                // add new_div to top_right
+                top_right.appendChild(new_div);
             });
 
             geolocate.on('error', () => {
@@ -302,14 +317,28 @@
                     zoom: current_zoom,
                 });
 
-                const popup = new mapboxgl.Popup()
+                const popup = new mapboxgl.Popup({
+                    closeButton: true,
+                    closeOnClick: true,
+                    anchor: 'bottom',
+                    offset: 20
+                })
                     .setLngLat(coordinates)
                     .setHTML(
-                        `<h3>${name}</h3>
-                        <p>Altitude: ${altitude} m</p>
-                        <p>Speed: ${speed} m/s</p>
-                        <p>Heading: ${heading}°</p>
-                        <p>Last Updated: ${last_update}</p>`
+                        `
+                        <div class="popup">
+                            <div class="popup-header">
+                                <h3>${name}</h3>
+                                <img src="/assets/car.png" alt="Car">
+                            </div>
+                            <p>Cordinates: ${coordinates[1].toFixed(6)}, ${coordinates[0].toFixed(6)}</p>
+                            <p>Altitude: ${altitude} m</p>
+                            <p>Speed: ${speed} m/s</p>
+                            <p>Heading: ${heading}°</p>
+                            <p>Last Update: ${last_update}</p>
+                            <span class="more" onclick="openTelemetry('${name}')">More</span>
+                        </div>
+                        `
                     )
                     .addTo(map);
             });

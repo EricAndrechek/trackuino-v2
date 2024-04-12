@@ -296,7 +296,14 @@ TinyGPSPlus gps;
 void enableGPS(void) {
     // Set Modem GPS Power Control Pin to HIGH ,turn on GPS power
     // Only in version 20200415 is there a function to control GPS power
+    // send AT+CGNSNMEA=237279
+    // wtf does this do??
+    modem.sendAT("+CGNSNMEA=237279");
+    // and this? - 10m accuracy I think?
+    modem.sendAT("+CGNSHOR=10");
+    // whats the difference between these:??
     modem.sendAT("+CGPIO=0,48,1,1");
+    modem.sendAT("+SGPIO=0,4,1,1");
     if (modem.waitResponse(10000L) != 1) {
         show("Set GPS Power HIGH Failed");
     }
