@@ -73,39 +73,9 @@ String years    = "";
 
 // ---------- DISPLAY FUNCTIONS ----------
 
-// if debugging is enabled, print to serial monitor as well
-#define DEBUG true
-
-// if display is enabled, print to display as well
-#define Display true
-
 void show(String message) {
-    #if Display
-        Wire.beginTransmission(0x3C);
-        Wire.write(message.c_str());
-        Wire.endTransmission();
-    #endif
-    #if DEBUG
-        SerialMon.println(message);
-    #endif
+    SerialMon.println(message);
 }
-
-void clearDisplay() {
-    #if Display
-        Wire.beginTransmission(0x3C);
-        Wire.write("*CLEAR*");
-        Wire.endTransmission();
-    #endif
-}
-
-void initCompass() {
-    #if Display
-        Wire.beginTransmission(0x3C);
-        Wire.write("*INIT*");
-        Wire.endTransmission();
-    #endif
-}
-
 
 // ---------- END DISPLAY FUNCTIONS ----------
 
@@ -134,19 +104,10 @@ char* sub_routes[] = {"cLa", "cLo", "alt", "eLa", "eLo"};
 // last will and testement message, 0 for offline, 1 for online
 String lwt_msg = "0"; // should auto set to 0 when offline
 
-// callback function for mqtt
-void mqttCallback(char *topic, byte *payload, unsigned int len) {
-    SerialMon.print("Message arrived [");
-    SerialMon.print(topic);
-    SerialMon.print("]: ");
-    SerialMon.write(payload, len);
-    SerialMon.println();
-}
-
 // publish content String to topic
 void publishTopic(String topic, String content, bool retain = false) {
   String topic2 = push_string + topic;
-  mqtt.publish(topic2.c_str(), content.c_str(), retain);
+  show("Publishing to topic: " + topic2 + " with content: " + content);
 }
 
 // publisher cache
@@ -267,30 +228,6 @@ void publishTopics() {
     }
 }
 
-boolean mqttConnect() {
-    SerialMon.print("Connecting to ");
-    SerialMon.print(broker);
-
-    // Connect to MQTT Broker
-    String lwt_path = push_string + "lwt";
-    boolean status = mqtt.connect(push_string.c_str(), lwt_path.c_str(), 0, true, lwt_msg.c_str());
-
-    if (status == false) {
-        SerialMon.println(" fail");
-        return false;
-    }
-    SerialMon.println(" success");
-
-    // Subscribe to topics
-    for (int i = 0; i < sizeof(sub_routes) / sizeof(sub_routes[0]); i++) {
-          String topic = sub_string + sub_routes[i];
-          mqtt.subscribe(topic.c_str());
-    }
-    publishTopics();
-
-    return mqtt.connected();
-}
-
 // ---------- END MQTT FUNCTIONS ----------
 
 
@@ -340,6 +277,16 @@ void getPos() {
 
 
     // GPS
+    for (int i = 0; i < 15; i++) {
+        if (modem.getGPS(&lat, &lon)) {
+            Serial.println("The location has been locked, the latitude and longitude are:");
+            Serial.print("latitude:"); Serial.println(lat);
+            Serial.print("longitude:"); Serial.println(lon);
+            break;
+        }
+        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+        delay(2000);
+    }
     String raw_gps = modem.getGPSraw();
     SerialMon.println("GPS Location:");
     SerialMon.println(raw_gps);
@@ -446,12 +393,6 @@ void setup() {
     // begin serial interface to modem
     SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
 
-    #if Display
-        // communicate with display over I2C
-        Wire.begin();
-        clearDisplay();
-    #endif
-
     // display startup message
     String bootmsg = "Vehicle Tracker v" + String(version) + " starting up...\n";
     show(bootmsg);
@@ -472,195 +413,16 @@ void setup() {
     }
     show("\nModem is online\n");
 
-    //test sim card is online ?
-    timeout = millis();
-    show("\nGetting SIM card status\n");
-    while (modem.getSimStatus() != SIM_READY) {
-        show(".");
-        if (millis() - timeout > 60000 ) {
-            show("\nSIM card not detected. Has it been inserted?\n");
-            show("If you have inserted the SIM card, please turn off and back on and try again!\n");
-            return;
-        }
-
-    }
-    show("\nSIM card exists\n");
-
-    // Unlock your SIM card with a PIN if needed
-    if ( GSM_PIN && modem.getSimStatus() != 3 ) {
-        modem.simUnlock(GSM_PIN);
-    }
-
-    modem.sendAT("+CFUN=0 ");
-    if (modem.waitResponse(10000L) != 1) {}
-    delay(200);
-
-    IMEI = modem.getIMEI();
-    show("IMEI: " + IMEI);
-
-    //Set mobile operation band
-    modem.sendAT("+CBAND=ALL_MODE");
-    modem.waitResponse();
-
-    // Args:
-    // 1 CAT-M
-    // 2 NB-IoT
-    // 3 CAT-M and NB-IoT
-    modem.setPreferredMode(3);
-
-    // Args:
-    // 2 Automatic
-    // 13 GSM only
-    // 38 LTE only
-    // 51 GSM and LTE only
-    modem.setNetworkMode(38);
-
-    delay(200);
-
-    modem.sendAT("+CFUN=1 ");
-    if (modem.waitResponse(10000L) != 1) {}
-    delay(200);
-
-    SerialAT.println("AT+CGDCONT?");
-    delay(500);
-    if (SerialAT.available()) {
-        input = SerialAT.readString();
-        for (int i = 0; i < input.length(); i++) {
-            if (input.substring(i, i + 1) == "\n") {
-                pieces[counter] = input.substring(lastIndex, i);
-                lastIndex = i + 1;
-                counter++;
-            }
-            if (i == input.length() - 1) {
-                pieces[counter] = input.substring(lastIndex, i);
-            }
-        }
-        // Reset for reuse
-        input = "";
-        counter = 0;
-        lastIndex = 0;
-
-        for ( int y = 0; y < numberOfPieces; y++) {
-            for ( int x = 0; x < pieces[y].length(); x++) {
-                char c = pieces[y][x];  //gets one byte from buffer
-                if (c == ',') {
-                    if (input.indexOf(": ") >= 0) {
-                        String data = input.substring((input.indexOf(": ") + 1));
-                        if ( data.toInt() > 0 && data.toInt() < 25) {
-                            modem.sendAT("+CGDCONT=" + String(data.toInt()) + ",\"IP\",\"" + String(apn) + "\",\"0.0.0.0\",0,0,0,0");
-                        }
-                        input = "";
-                        break;
-                    }
-                    // Reset for reuse
-                    input = "";
-                } else {
-                    input += c;
-                }
-            }
-        }
-    } else {
-        show("Failed to get PDP!\n");
-    }
-
-    show("\n\n\nWaiting for network...\n");
-    if (!modem.waitForNetwork()) {
-        delay(10000);
-        return;
-    }
-
-    if (modem.isNetworkConnected()) {
-        show("Network connected\n");
-    }
-
-    if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-        delay(10000);
-        return;
-    }
-
-    if (modem.isGprsConnected()) {
-        show("GPRS connected\n");
-    } else {
-        show("GPRS not connected\n");
-    }
-
-    show("Connecting to MQTT broker: " + broker + "\n");
-    mqtt.setServer(broker.c_str(), 1883);
-    mqtt.setCallback(mqttCallback);
-
     show("Enabling GPS\n");
     enableGPS();
 
-    delay(1000);
-
-    show("Setup complete\n");
-    delay(500);
-
-    ICCID = modem.getSimCCID();
-    // cut last digit off of ICCID (always shows "f") ?
-    ICCID = ICCID.substring(0, ICCID.length() - 1);
-    IMSI = modem.getIMSI();
-
-
-    // set mqtt topic root strings
-    // set "SIM" to last 5 digits of ICCID
-    String SIM = ICCID.substring(ICCID.length() - 5);
-    push_string = "T/" + SIM + "/";
-    sub_string = "B/" + SIM + "/";
+    delay(15000);
 
     show("Done SIM setup, starting...");
 
     delay(500);
-
-    initCompass();
 }
 
 void loop() {
-    // handle network and mqtt connections
-    if (!modem.isNetworkConnected()) {
-        show("Network disconnected\n");
-
-        if (!modem.waitForNetwork(180000L, true)) {
-            show(" fail\n");
-            delay(10000);
-            return;
-        }
-
-        if (modem.isNetworkConnected()) {
-            show("Network re-connected\n");
-        }
-
-        if (!modem.isGprsConnected()) {
-            show("GPRS disconnected!\n");
-            show("Connecting to " + String(apn) + "\n");
-
-            if (!modem.gprsConnect(apn, gprsUser, gprsPass)) {
-                show(" fail\n");
-                delay(10000);
-                return;
-            }
-
-            if (modem.isGprsConnected()) {
-                show("GPRS reconnected\n");
-            }
-        }
-    }
-
     doProcessing();
-
-    if (!mqtt.connected()) {
-        show("=== MQTT NOT CONNECTED ===\n");
-        // Reconnect every 10 seconds
-        uint32_t t = millis();
-        if (t - lastReconnectAttempt > 10000L) {
-            lastReconnectAttempt = t;
-            if (mqttConnect()) {
-                lastReconnectAttempt = 0;
-            }
-        }
-        delay(100);
-        return;
-    }
-
-    mqtt.loop();
 }
