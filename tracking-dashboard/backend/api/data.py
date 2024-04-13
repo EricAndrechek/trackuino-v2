@@ -101,6 +101,10 @@ def api_rock7_upload():
     source['data']['ssid'] = ssid
     source['data']['symbol'] = symbol
 
+    # if speed is in data, convert from m/s to mph
+    if 'speed' in source['data']:
+        source['data']['speed'] = source['data']['speed'] * 2.23694
+
     
     # accept upload data
     try:

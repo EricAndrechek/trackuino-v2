@@ -232,3 +232,12 @@ def add_item_id(id, callsign=None, ssid=None, symbol=None):
         Session.rollback()
         Session.flush()
     return False
+
+# get all callsigns in the items table
+def get_all_callsigns():
+    callsigns = []
+    try:
+        callsigns = Session.query(Items.callsign).distinct().all()
+    except Exception as e:
+        print(e)
+    return callsigns

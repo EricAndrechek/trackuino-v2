@@ -2,12 +2,16 @@
 
 import paho.mqtt.client as mqtt
 from datetime import datetime
-from sql.helpers import check_item_id, add_item_id
+from sql.helpers import check_item_id, add_item_id, get_all_callsigns
 from utils.api import Data
 import json
+import aprslib
+
+# ----- MQTT SETUP -----
 
 # open mqtt connection
 client = mqtt.Client()
+# client.connect("mqtt.umich-balloons.com", 1883, 60)
 client.connect("localhost", 1883, 60)
 
 # subscribe to all trackers
@@ -15,6 +19,61 @@ client.subscribe("T/#")
 
 old_messages = {}
 message_building = {}
+
+# ----- APRS SETUP -----
+
+# get all callsigns in items database
+callsigns = get_all_callsigns()
+# get just first item from each tuple
+callsigns = [callsign[0] for callsign in callsigns]
+# just unique callsigns
+callsigns = list(set(callsigns))
+# create filter string
+filter = "p/" + "/".join(callsigns)
+print(filter)
+
+def callback(packet):
+    data_obj = Data()
+
+    # receive data from request
+    data = packet
+    data["type"] = "aprs"
+
+    print("Received data: ", data)
+    
+    # accept upload data
+    try:
+        data_obj.upload(data)
+    except Exception as e:
+        print("upload error: ", e)
+    
+    data_obj.info['ip'] = '127.0.0.1'
+
+    print("About to parse")
+
+    # parse data
+    try:
+        data_obj.parse()
+    except Exception as e:
+        print("parse error: ", e)
+    
+    # save data
+    try:
+        status_code = data_obj.save()
+        if status_code == 201 or status_code == 202:
+            print("New data saved")
+        elif status_code == 208:
+            print("Data already exists")
+    except Exception as e:
+        print("save error: ", e)
+
+# connect to APRS-IS and listen for all callsigns in items database
+aprs = aprslib.IS("N0CALL", port=14580)
+aprs.set_filter(filter)
+aprs.connect()
+aprs.consumer(callback)
+
+# ----- FUNCTIONS -----
 
 def build_json_message(id):
     # should have (at minimum):
@@ -141,18 +200,6 @@ def on_message(client, userdata, message):
                 message_building[id]['ssid'] = item.ssid
                 message_building[id]['sym'] = item.symbol
         
-        # periodically check that name, ssid, and symbol haven't been overwritten in the items table
-        # if they have, update message_building
-        if key == "ss" and id in message_building and (payload == "00" or payload == "15" or payload == "30" or payload == "45" or payload == "60"):
-            item = check_item_id(id)
-            if item is not None:
-                message_building[id]['name'] = item.callsign
-                message_building[id]['ssid'] = item.ssid
-                message_building[id]['sym'] = item.symbol
-            else:
-                print("Item not found in items table: ", id)
-                return
-        
         # if key is lwt, modify telemetry data to show changed lwt
         if key == "lwt":
             if id in message_building:
@@ -167,7 +214,7 @@ def on_message(client, userdata, message):
 
 
         # if key is "ss" (seconds), add message to db
-        if key == "ss":
+        if key == "lat" or key == "lon":
             # add message to db
             msg = build_json_message(id)
             if msg is None:
@@ -188,9 +235,9 @@ def on_message(client, userdata, message):
                 return
             
             # check if lat, lon, or alt changed
-            if 'lat' in message_building[id] and 'lon' in message_building[id] and 'alt' in message_building[id]:
+            if 'lat' in message_building[id] and 'lon' in message_building[id]:
                 if id in old_messages:
-                    if message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon'] and message_building[id]['alt'] == old_messages[id]['alt']:
+                    if message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon']:
                         # send telemetry data to mqtt
                         if 'telemetry' in src['data']:
                             topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
@@ -199,7 +246,10 @@ def on_message(client, userdata, message):
                                 if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
                                     continue
                                 client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
-                        message_building[id]['ss'] = payload
+                        if key == "lat":
+                            message_building[id]['lat'] = payload
+                        elif key == "lon":
+                            message_building[id]['lon'] = payload
                         return
             
                 try:
@@ -213,8 +263,15 @@ def on_message(client, userdata, message):
             
                 # copy values to old_messages
                 old_messages[id] = message_building[id].copy()
-                message_building[id]['ss'] = payload
+                if key == "lat":
+                    message_building[id]['lat'] = payload
+                elif key == "lon":
+                    message_building[id]['lon'] = payload
             return
+        elif key == "spd":
+            # convert speed to mph from knots
+            payload = float(payload) * 1.15078
+            message_building[id][key] = payload
         else:
             # add key and payload to message_building
             message_building[id][key] = payload

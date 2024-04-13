@@ -29,9 +29,18 @@ class Data:
 
         # try parsing data object
         try:
-            self.info["callsign"] = data["callsign"]
-            self.info["ssid"] = data["ssid"]
             self.info["type"] = data["type"]
+
+            if "from" in data:
+                self.info["callsign"] = data["from"].split("-")[0]
+                try:
+                    self.info["ssid"] = data["from"].split("-")[1]
+                except:
+                    self.info["ssid"] = 0
+            else:
+                self.info["callsign"] = data["callsign"]
+                self.info["ssid"] = data["ssid"]
+
         except KeyError:
             raise Exception("No callsign or ssid in upload data")
         
@@ -54,28 +63,114 @@ class Data:
     def parse_aprs(self):
         # parse aprs data
 
-        # TODO: need to implement - will be the same implemenation as in ground station
+        self.data = {
+            "callsign": None,
+            "ssid": None,
+            "symbol": None,
+            "lat": None,
+            "lon": None,
+            "alt": None,
+            "course": None,
+            "speed": None,
+            "comment": None,
+        }
 
-        # this should only be run when importing data from APRS-IS servers
-        # ground stations, etc, should parse and send data in json format
-        pass
+        # parse aprs data
+        # check for required fields
+        try:
+            callsign = self.info["callsign"]
+            ssid = self.info["ssid"]
+            try:
+                ssid = int(ssid)
+            except ValueError:
+                raise Exception("Invalid ssid")
+            symbol = self.raw["symbol_table"] + self.raw["symbol"]
+            if callsign is None or ssid is None or symbol is None:
+                print(callsign, ssid, symbol)
+                raise KeyError
+            if len(callsign) > 6:
+                raise Exception("Callsign too long")
+            if ssid < 0 or ssid > 15:
+                raise Exception("Invalid ssid")
+            if len(symbol) > 2:
+                raise Exception("Symbol too long")
+            self.data["callsign"] = callsign
+            self.data["ssid"] = ssid
+            self.data["symbol"] = symbol
+        except KeyError:
+            raise Exception("Parse APRS: Missing required fields in upload data")
+        
+        lat = None
+        try:
+            lat = self.raw["latitude"]
+            try:
+                lat = float(lat)
+            except ValueError:
+                raise Exception("Invalid latitude")
+            if lat < -90 or lat > 90:
+                raise Exception("Invalid latitude")
+        except KeyError:
+            pass
+
+        lon = None
+        try:
+            lon = self.raw["longitude"]
+            try:
+                lon = float(lon)
+            except ValueError:
+                raise Exception("Invalid longitude")
+            if lon < -180 or lon > 180:
+                raise Exception("Invalid longitude")
+        except KeyError:
+            pass
+
+        alt = None
+        try:
+            alt = self.raw["altitude"]
+        except KeyError:
+            pass
+
+        course = None
+        try:
+            course = self.raw["course"]
+            try:
+                course = float(course) 
+            except ValueError:
+                raise Exception("Invalid course")
+            if course < 0 or course > 360:
+                raise Exception("Invalid course")
+        except KeyError:
+            pass
+
+        speed = None
+        try:
+            speed = self.raw["speed"]
+            try:
+                # convert speed in knots to mph
+                speed = float(speed) * 1.15078
+            except ValueError:
+                raise Exception("Invalid speed")
+        except KeyError:
+            pass
+
+        comment = None
+        try:
+            comment = self.raw["comment"]
+        except KeyError:
+            pass
+
+        self.data["lat"] = lat
+        self.data["lon"] = lon
+        self.data["alt"] = alt
+        self.data["course"] = course
+        self.data["speed"] = speed
+        self.data["comment"] = comment
+
+        # TODO: APRS telemetry data
 
     def parse_json(self):
         # parse json data
         self.data = self.raw["data"]
-
-        # should we have assertions to check for required fields?
-        # this is done in the save function
-
-    def parse_data(self):
-        # check if data is in aprs format or json format
-        if self.info["type"] == "aprs":
-            # possible for uploading raw APRS data, but JSON is ideal?
-            self.parse_aprs()
-        elif self.info["type"] == "json":
-            self.parse_json()
-        else:
-            raise Exception("Invalid type in upload data")
 
         # check for required fields
         # verify callsign, ssid, symbol exists and are valid
@@ -164,12 +259,23 @@ class Data:
         if "telemetry" in self.raw["data"]:
             self.data["telemetry"] = self.raw["data"]["telemetry"]
 
+    def parse_data(self):
+        # check if data is in aprs format or json format
+        if self.info["type"] == "aprs":
+            # possible for uploading raw APRS data, but JSON is ideal?
+            self.parse_aprs()
+        elif self.info["type"] == "json":
+            self.parse_json()
+        else:
+            raise Exception("Invalid type in upload data")
+
         self.parse()
     
     def parse(self):
         # check if data is in aprs format or json format
         if self.info["type"] == "aprs":
-            self.data["raw"] = self.raw["data"]
+            print("Is aprs")
+            self.data["raw"] = self.raw["raw"]
         elif self.info["type"] == "json":
             self.data["raw"] = json.dumps(self.raw["data"])
         else:
