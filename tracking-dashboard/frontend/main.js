@@ -65,6 +65,10 @@ const getHistoricalGeoJSON = (name) => {
                 positions[name].previous_coordinates[i].longitude,
                 positions[name].previous_coordinates[i].latitude,
                 positions[name].previous_coordinates[i].altitude,
+                positions[name].previous_coordinates[i].speed,
+                positions[name].previous_coordinates[i].course,
+                positions[name].previous_coordinates[i].comment,
+                positions[name].previous_coordinates[i].datetime,
             ]);
         }
     }
@@ -116,7 +120,9 @@ const requestOldData = (names = null, age = 180) => {
                     positions[name] = {
                         name: name,
                         symbol: parseAPRSSymbol(data[name].symbol),
-                        last_update: "",
+                        last_update: new Date(
+                            Date.parse(data[name].last_updated + "Z")
+                        ).toString(),
                         current: {
                             latitude: 0,
                             longitude: 0,
@@ -130,11 +136,20 @@ const requestOldData = (names = null, age = 180) => {
                     };
                 }
                 // for each position in data[name]
-                for (let i = 0; i < data[name]["positions"].length; i++) {
+                for (let i = data[name]["positions"].length - 1; i >= 0; i--) {
                     // add previous coordinates to previous_coordinates
                     const datetime = new Date(
-                        Date.parse(data[name]["positions"][i].dt)
-                    ).toISOString();
+                        Date.parse(data[name]["positions"][i].dt + "Z")
+                    ).toString();
+
+                    // check if lat and lon are not both 0
+                    // sorry people that need that specific coordinate at exactly 0.000000, 0.000000 :(
+                    if (
+                        data[name]["positions"][i].lat === 0 &&
+                        data[name]["positions"][i].lon === 0
+                    ) {
+                        continue;
+                    }
                     positions[name].previous_coordinates.push({
                         latitude: data[name]["positions"][i].lat,
                         longitude: data[name]["positions"][i].lon,
@@ -145,15 +160,12 @@ const requestOldData = (names = null, age = 180) => {
                         datetime: datetime,
                     });
                 }
-                // update time of last update
-                positions[name].last_update = new Date(
-                    Date.parse(data[name]["last_updated"])
-                ).toISOString();
             }
             needData = false;
         })
         .catch((error) => {
             console.error("Error:", error);
+            needData = true;
             notificationBanner("Failed to fetch old data", 10000);
         });
 };

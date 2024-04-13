@@ -17,6 +17,7 @@
 
     <script src='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
 
     <link rel="stylesheet" href="/styles.css">
 
@@ -75,6 +76,7 @@
                             console.log('Removing source', name)
                             map.removeLayer(name);
                             map.removeSource(name);
+                            map.removeLayer(name + "-line-coordinates");
                             map.removeLayer(name + "-line");
                             map.removeSource(name + "-line");
 
@@ -150,17 +152,28 @@
                             data: getHistoricalGeoJSON(name),
                         });
 
+                        // draw line, and add point for each coordinate
                         map.addLayer({
                             id: name + "-line",
-                            source: name + "-line",
                             type: "line",
+                            source: name + "-line",
                             layout: {
                                 "line-join": "round",
-                                "line-cap": "round"
+                                "line-cap": "round",
                             },
                             paint: {
                                 "line-color": nameToColor(name),
-                                "line-width": 4,
+                                "line-width": 2,
+                            },
+                        });
+                        // and coordinates
+                        map.addLayer({
+                            id: name + "-line-coordinates",
+                            type: "circle",
+                            source: name + "-line",
+                            paint: {
+                                "circle-radius": 5,
+                                "circle-color": nameToColor(name),
                             },
                         });
                     }
@@ -239,47 +252,51 @@
             map.addControl(new mapboxgl.ScaleControl());
 
             map.on("load", async () => {
+                // start geolocate right away
                 geolocate.trigger();
 
-                // get class mapboxgl-ctrl-top-left
-                let top_left = document.getElementsByClassName(
-                    "mapboxgl-ctrl-top-left"
-                )[0];
-                // copy clone of layer-selector1 to top_left
-                let layer_selector1 = document.getElementById("layer-selector1").cloneNode(true);
-                // change id of layer_selector1 to layer-selector
-                layer_selector1.id = "layer-selector";
-                // change style-selector1 to style-selector
-                layer_selector1.children[0].id = "style-selector";
-                // add layer_selector1 to top_left
-                top_left.appendChild(layer_selector1);
-                // show layer-selector1
-                layer_selector1.style.display = "block";
+                // wait 1 second to allow map to load before adding data
+                setTimeout(() => {
+                    // get class mapboxgl-ctrl-top-left
+                    let top_left = document.getElementsByClassName(
+                        "mapboxgl-ctrl-top-left"
+                    )[0];
+                    // copy clone of layer-selector1 to top_left
+                    let layer_selector1 = document.getElementById("layer-selector1").cloneNode(true);
+                    // change id of layer_selector1 to layer-selector
+                    layer_selector1.id = "layer-selector";
+                    // change style-selector1 to style-selector
+                    layer_selector1.children[0].id = "style-selector";
+                    // add layer_selector1 to top_left
+                    top_left.appendChild(layer_selector1);
+                    // show layer-selector1
+                    layer_selector1.style.display = "block";
 
-                // When a new style is selected, update the map style
-                document
-                    .getElementById("style-selector")
-                    .addEventListener("change", function (e) {
-                        styleChange = true;
-                        map.setStyle(e.target.value);
-                    });
+                    // When a new style is selected, update the map style
+                    document
+                        .getElementById("style-selector")
+                        .addEventListener("change", function (e) {
+                            styleChange = true;
+                            map.setStyle(e.target.value);
+                        });
 
-                // get class mapboxgl-ctrl-top-right
-                let top_right = document.getElementsByClassName(
-                    "mapboxgl-ctrl-top-right"
-                )[0];
-                // create new div
-                let new_div = document.createElement("div");
-                // set class of new div
-                new_div.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
-                // add div to new_div
-                new_div.innerHTML = `
-                    <button class="mapboxgl-ctrl-icon" aria-label="Settings"  style="padding: 2px;" onclick="settings()">
-                        <img src="/assets/settings.svg" alt="Settings">
-                    </button>
-                `;
-                // add new_div to top_right
-                top_right.appendChild(new_div);
+                    // get class mapboxgl-ctrl-top-right
+                    let top_right = document.getElementsByClassName(
+                        "mapboxgl-ctrl-top-right"
+                    )[0];
+                    // create new div
+                    let new_div = document.createElement("div");
+                    // set class of new div
+                    new_div.className = "mapboxgl-ctrl mapboxgl-ctrl-group";
+                    // add div to new_div
+                    new_div.innerHTML = `
+                        <button class="mapboxgl-ctrl-icon" aria-label="Settings"  style="padding: 2px;" onclick="settings()">
+                            <img src="/assets/settings.svg" alt="Settings">
+                        </button>
+                    `;
+                    // add new_div to top_right
+                    top_right.appendChild(new_div);
+                }, 1000);
             });
 
             geolocate.on('error', () => {
@@ -290,57 +307,114 @@
                 console.log('Map error', e);
             });
 
-            map.on('click', (e) => {
-                const features = map.queryRenderedFeatures(e.point, {
-                    layers: Object.keys(positions)
-                });
-                if (!features.length) {
-                    return;
-                }
-
-                const feature = features[0];
+            const call_symbol_popup = (feature) => {
                 const coordinates = feature.geometry.coordinates.slice();
                 const name = feature.properties.name;
                 const altitude = feature.properties.altitude;
                 const speed = feature.properties.speed;
                 const heading = feature.properties.heading;
-                // time since last update to now in human readable format
-                const last_update = new Date(feature.properties.last_update).toLocaleString();
+                const last_update = feature.properties.last_update;
 
-                // fly to the point
-                let current_zoom = map.getZoom();
-                if (current_zoom < 10) {
-                    current_zoom = 10;
-                }
-                map.flyTo({
-                    center: coordinates,
-                    zoom: current_zoom,
-                });
-
-                const popup = new mapboxgl.Popup({
-                    closeButton: true,
-                    closeOnClick: true,
-                    anchor: 'bottom',
-                    offset: 20
-                })
+                const popup = new mapboxgl.Popup()
                     .setLngLat(coordinates)
                     .setHTML(
-                        `
-                        <div class="popup">
-                            <div class="popup-header">
-                                <h3>${name}</h3>
-                                <img src="/assets/car.png" alt="Car">
-                            </div>
-                            <p>Cordinates: ${coordinates[1].toFixed(6)}, ${coordinates[0].toFixed(6)}</p>
-                            <p>Altitude: ${altitude} m</p>
-                            <p>Speed: ${speed} m/s</p>
-                            <p>Heading: ${heading}°</p>
-                            <p>Last Update: ${last_update}</p>
-                            <span class="more" onclick="openTelemetry('${name}')">More</span>
-                        </div>
-                        `
+                        `<h3>${name}</h3>
+                        <p>Altitude: ${altitude} m</p>
+                        <p>Speed: ${speed} m/s</p>
+                        <p>Heading: ${heading}°</p>
+                        <p>Last Update: ${last_update}</p>`
                     )
                     .addTo(map);
+            }
+
+            const call_circle_popup = (feature, closest) => {
+                // first 2 elements of closest are lng, lat
+                const coordinates = closest.slice(0, 2);
+                const name = feature.properties.name;
+
+                let popup_data = `<h3>${name}</h3>`;
+                // add coordinates to 6 decimal places
+                popup_data += `<p>Coordinates: ${coordinates[1].toFixed(6)}, ${coordinates[0].toFixed(6)}</p>`;
+
+                // this data should be in the geojson object
+                if (closest.length !== 7) {
+                    console.error('Point missing data: ', closest);
+                } else {
+                    const altitude = closest[2];
+                    const speed = closest[3];
+                    const heading = closest[4];
+                    const comment = closest[5];
+                    const last_update = closest[6];
+
+                    // set popup with data (only data that is not undefined, none, null, "", etc)
+                    
+                    if (altitude) {
+                        popup_data += `<p>Altitude: ${altitude} m</p>`;
+                    }
+                    if (speed) {
+                        popup_data += `<p>Speed: ${speed} m/s</p>`;
+                    }
+                    if (heading) {
+                        popup_data += `<p>Heading: ${heading}°</p>`;
+                    }
+                    if (comment) {
+                        popup_data += `<p>Comment: ${comment}</p>`;
+                    }
+                    if (last_update) {
+                        popup_data += `<p>Data Timestamp: ${last_update}</p>`;
+                    }
+                }
+
+                const popup = new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(popup_data)
+                    .addTo(map);
+            }
+
+            map.on('click', (e) => {
+                // should be able to click on a symbol (car or balloon) and pop-open a popup with more information
+                // or click on a circle on the line and pop-open a popup with more information
+
+                // get features at the point that were created by us
+                let features = [];
+                try {
+                    features = map.queryRenderedFeatures(e.point);
+                } catch (error) {
+                    // ignore RangeError
+                    if (error instanceof RangeError) {
+                        return;
+                    }
+                    console.error('Error querying rendered features', error);
+                }
+
+                if (features.length === 0) {
+                    return;
+                }
+
+                // get first "symbol" in layer.type
+                let feature = features.find((feature) => feature.layer.type === "symbol");
+                // if no symbol, get first "circle" in layer.type
+                if (!feature) {
+                    feature = features.find((feature) => feature.layer.type === "circle");
+                }
+                if (!feature) {
+                    return;
+                }
+
+                // if its a symbol, call popup with more information
+                if (feature.layer.type === "symbol") {
+                    call_symbol_popup(feature);
+                } else if (feature.layer.type === "circle") {
+                    // use turf nearestPointOnLine to get closest point on line to clicked coords
+                    const line = map.getSource(feature.source)._data;
+                    // convert line to turf line
+                    const turf_line = turf.lineString(line.geometry.coordinates);
+                    // convert clicked coords to turf point
+                    const turf_point = turf.point(e.lngLat.toArray());
+                    // get closest point on line to clicked coords
+                    const closest = turf.nearestPointOnLine(turf_line, turf_point);
+                    call_circle_popup(feature, closest.geometry.coordinates);
+                }
             });
         };
     </script>

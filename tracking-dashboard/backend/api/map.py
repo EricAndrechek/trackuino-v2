@@ -58,7 +58,7 @@ def getTails():
                     "lon": position["longitude"],
                     "alt": position["altitude"],
                     "cse": position["course"],
-                    "cpd": position["speed"],
+                    "spd": position["speed"],
                     "cmnt": position["comment"],
                     "dt": position["timestamp"]
                 })

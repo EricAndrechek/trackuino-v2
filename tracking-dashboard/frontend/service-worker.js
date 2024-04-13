@@ -1,4 +1,4 @@
-const CACHE_NAME = "balloon-map-cache-v1";
+const CACHE_NAME = "balloon-map-cache-v1.0.0";
 const urlsToCache = [
     "/",
     "/main.js",
@@ -12,7 +12,7 @@ const urlsToCache = [
     "https://api.mapbox.com/styles/v1/ericandr/cluvy4r03005g01nrdfgg89ea?sdk=js-3.2.0&access_token=pk.eyJ1IjoiZXJpY2FuZHIiLCJhIjoiY2x1cnp3Z2tpMDcybTJycGVwN2czNTk3OCJ9.Ccv9oGIfUewgj2Iw-CqOyw",
     "https://api.mapbox.com/v4/mapbox.mapbox-terrain-dem-v1.json?secure&access_token=pk.eyJ1IjoiZXJpY2FuZHIiLCJhIjoiY2x1cnp3Z2tpMDcybTJycGVwN2czNTk3OCJ9.Ccv9oGIfUewgj2Iw-CqOyw",
     "https://api.mapbox.com/v4/mapbox.mapbox-streets-v8,mapbox.mapbox-terrain-v2,mapbox.mapbox-bathymetry-v2.json?secure&access_token=pk.eyJ1IjoiZXJpY2FuZHIiLCJhIjoiY2x1cnp3Z2tpMDcybTJycGVwN2czNTk3OCJ9.Ccv9oGIfUewgj2Iw-CqOyw",
-    "",
+    "https://unpkg.com/@turf/turf@6/turf.min.js",
 ];
 
 self.addEventListener("install", (event) => {

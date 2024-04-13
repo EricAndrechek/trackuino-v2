@@ -66,17 +66,6 @@ const positionHandler = (topic, payload) => {
             },
             previous_coordinates: [],
         };
-    } else {
-        // add previous coordinates to previous_coordinates
-        positions[name].previous_coordinates.push({
-            latitude: positions[name].current.latitude,
-            longitude: positions[name].current.longitude,
-            altitude: positions[name].current.altitude,
-            speed: positions[name].current.speed,
-            course: positions[name].current.course,
-            comment: positions[name].current.comment,
-            datetime: positions[name].current.datetime,
-        });
     }
 
     const heading = parseFloat(data.cse);
@@ -87,27 +76,40 @@ const positionHandler = (topic, payload) => {
         positions[name].symbol = parseAPRSSymbol(data.sym);
     }
 
-    // update the position data
-    positions[name].current.latitude = parseFloat(data.lat);
-    positions[name].current.longitude = parseFloat(data.lon);
-    positions[name].current.altitude = parseFloat(data.alt);
-    positions[name].current.speed = parseFloat(data.spd);
-    positions[name].current.course = heading;
-    positions[name].current.comment = data.cmnt;
-    try {
-        positions[name].current.datetime = new Date(
-            Date.parse(data.dt),
-            "UTC"
-        ).toISOString();
-    } catch (err) {
-        // default to now
-        positions[name].current.datetime = new Date().toISOString();
+    // if lat and lon are both 0, don't update position
+    if (data.lat !== 0 && data.lon !== 0) {
+        // update the position data
+        positions[name].current.latitude = parseFloat(data.lat);
+        positions[name].current.longitude = parseFloat(data.lon);
+        positions[name].current.altitude = parseFloat(data.alt);
+        positions[name].current.speed = parseFloat(data.spd);
+        positions[name].current.course = heading;
+        positions[name].current.comment = data.cmnt;
+        try {
+            const parsed_datetime = new Date(Date.parse(data.dt + "Z"));
+            positions[name].current.datetime = parsed_datetime.toString();
+        } catch (err) {
+            // default to now
+            console.log("Error parsing datetime: ", err);
+            positions[name].current.datetime = new Date().toString();
+        }
+
+        // and push to previous coordinates
+        positions[name].previous_coordinates.push({
+            latitude: parseFloat(data.lat),
+            longitude: parseFloat(data.lon),
+            altitude: parseFloat(data.alt),
+            speed: parseFloat(data.spd),
+            course: heading,
+            comment: data.cmnt,
+            datetime: positions[name].current.datetime,
+        });
     }
 
     // check if has telemetry data
     if (name in telemetry) {
         // update last_update in telemetry
-        telemetry[name].last_update = new Date().toISOString();
+        telemetry[name].last_update = positions[name].last_update;
         // update altitude, speed, course in telemetry
         telemetry[name].altitude = data.alt;
         telemetry[name].speed = data.spd;
@@ -124,18 +126,17 @@ const positionHandler = (topic, payload) => {
             speed: data.spd,
             course: data.cse,
             altitude: data.alt,
-            last_update: new Date().toISOString(),
+            last_update: data.dt,
         };
     }
 
     try {
-        positions[name].last_update = new Date(
-            Date.parse(data.dt),
-            "UTC"
-        ).toISOString();
+        const parsed_last_update = new Date(Date.parse(data.dt + "Z"));
+        positions[name].last_update = parsed_last_update.toString();
     } catch (err) {
         // default to now
-        positions[name].last_update = new Date().toISOString();
+        console.log("Error parsing last_update: ", err);
+        positions[name].last_update = new Date().toString();
     }
     console.log("Position for ", name, " updated");
 };
