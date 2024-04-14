@@ -39,6 +39,20 @@ let telemetry = {};
 // prediction storage object
 let predictions = {};
 
+const debugLogs = () => {
+    if (window.matchMedia("(orientation: portrait)").matches) {
+        // open rickroll in new tab
+        window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "_blank");
+    } else if (window.matchMedia("(orientation: landscape)").matches) {
+        console.log("Debug Logs");
+        console.log("positions: ", positions);
+        console.log("telemetry: ", telemetry);
+        console.log("predictions: ", predictions);
+    } else {
+        console.log("Unknown orientation");
+    }
+};
+
 const settings = () => {
     // get the settings from the settings form
     console.log("Settings");
@@ -97,6 +111,14 @@ const settings = () => {
         altitude_units_label.setAttribute("for", "altitude-units");
         altitude_units_label.innerText = "Altitude Units";
 
+        // create p element for version number
+        const version = document.createElement("p");
+        // TODO: get version number from service-worker.js
+        version.innerText = "Version: 1.0.4";
+
+        // create button for debug logs
+        const debug = `<div id="debug-button" onclick="debugLogs()">Debug Logs</div>`;
+
         // create settings form
         const settings_form = document.createElement("form");
         settings_form.setAttribute("id", "settings-form");
@@ -105,6 +127,8 @@ const settings = () => {
         settings_form.appendChild(speed_units);
         settings_form.appendChild(altitude_units_label);
         settings_form.appendChild(altitude_units);
+        settings_form.appendChild(version);
+        settings_form.innerHTML += debug;
 
         // onchange event listener for speed_units
         speed_units.addEventListener("change", (event) => {
@@ -118,6 +142,11 @@ const settings = () => {
 
         // append settings form to popup-page
         document.getElementById("popup-page").appendChild(settings_form);
+
+        const close = `<img id="close" onclick="closePopupPage()" src="/assets/x-mark.svg" alt="Close">`;
+
+        // add close button to popup-page
+        document.getElementById("popup-page").innerHTML += close;
 
         // show popup-page
         document.getElementById("popup-page").classList.add("page-show");
@@ -341,7 +370,55 @@ const requestOldData = (names = null, age = 180) => {
 };
 
 // main function
-const main = () => {};
+const main = () => {
+    // check if has localStorage
+    if (typeof Storage !== "undefined") {
+        // if "has launched" is not in localStorage
+        if (localStorage.getItem("hasLaunched") === null) {
+            // create div element for popup-page contents
+            const welcome = document.createElement("div");
+            welcome.setAttribute("id", "welcome");
+
+            // create title element
+            const title = document.createElement("h1");
+            title.innerText = "Welcome to umich-balloons!";
+
+            // create p element for description
+            const description = document.createElement("p");
+            description.innerText =
+                "This is a balloon tracking application made by Eric @ the University of Michigan. This application is designed to track the position of high altitude balloons in real-time. You can view the current position of the balloons, as well as their historical positions for up to 3 hours in the past. You can also view telemetry data for the balloons by clicking on the balloon. You can change the settings for the application by clicking the settings button in the top right corner.";
+
+            const install = document.createElement("p");
+            install.innerText =
+                "For best performance when offline and while tracking multiple balloons, please install this web application on your device or add it to your home screen.";
+
+            // create button element for close
+            const close = `<img id="close" onclick="closePopupPage()" src="/assets/x-mark.svg" alt="Close">`;
+
+            // create button element for dismissing message
+            const button = `
+                <button id="dismiss" onclick="localStorage.setItem('hasLaunched', 'true'); closePopupPage();">Dismiss</button>`;
+
+            // append elements to welcome
+            welcome.appendChild(title);
+            welcome.appendChild(description);
+            welcome.appendChild(install);
+            welcome.innerHTML += button;
+            welcome.innerHTML += close;
+
+            // add to popup-page
+            const popupPage = document.getElementById("popup-page");
+            // clear popup-page
+            popupPage.innerHTML = "";
+            // add welcome to popup-page
+            popupPage.appendChild(welcome);
+            // show popup-page
+            popupPage.classList.add("page-show");
+        }
+    } else {
+        console.log("No localStorage support");
+    }
+};
 
 // wait for the DOM to load before running the main function
 document.addEventListener("DOMContentLoaded", main);
