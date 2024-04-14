@@ -42,6 +42,62 @@ let predictions = {};
 const settings = () => {
     // get the settings from the settings form
     console.log("Settings");
+    // show popup-page
+    // check if popup-page is hidden
+    if (document.getElementById("popup-page").classList.contains("page-show")) {
+        // hide popup-page
+        document.getElementById("popup-page").classList.remove("page-show");
+    } else {
+        document.getElementById("popup-page").classList.add("page-show");
+        // populate settings form with current settings
+    }
+};
+
+const closePopupPage = () => {
+    // check if popup-page is hidden
+    if (document.getElementById("popup-page").classList.contains("page-show")) {
+        // hide popup-page
+        document.getElementById("popup-page").classList.remove("page-show");
+    }
+};
+
+const getOrder = (name) => {
+    // given a name as callsign - ssid, return an integer value for sorting
+    let order = 0;
+    // order cannot have decimals
+    // name is callsign-ssid with -ssid being optional
+    let callsign = name.split("-")[0];
+    let ssid = name.split("-")[1];
+    // callsign is 0-6 characters
+    if (callsign.length > 6) {
+        callsign = callsign.substring(0, 6);
+    }
+    // ssid is 0-2 characters
+    if (ssid === undefined) {
+        ssid = "0";
+    } else if (ssid.length > 2) {
+        ssid = ssid.substring(0, 2);
+    }
+    // callsign is 0-6 characters, ssid is 0-2 characters
+    // must be less than max int value, but still unique
+    // 0-6 characters = 0-6^26
+    // 0-2 characters = 0-2^10
+    // 6^26 = 308915776, 2^10 = 1024
+    // 308915776 * 1024 = 316669952
+
+    // callsign
+    for (let i = 0; i < callsign.length; i++) {
+        order += callsign.charCodeAt(i) * Math.pow(6, i);
+    }
+    // ssid
+    for (let i = 0; i < ssid.length; i++) {
+        order += ssid.charCodeAt(i) * Math.pow(2, i);
+    }
+
+    // not alphabetical, but unique I think?
+    // could be very wrong, but limited testing shows works for now
+
+    return order;
 };
 
 const nameToColor = (name) => {
@@ -122,7 +178,7 @@ const requestOldData = (names = null, age = 180) => {
                         symbol: parseAPRSSymbol(data[name].symbol),
                         last_update: new Date(
                             Date.parse(data[name].last_updated + "Z")
-                        ).toString(),
+                        ).toLocaleString(),
                         current: {
                             latitude: 0,
                             longitude: 0,
@@ -138,10 +194,21 @@ const requestOldData = (names = null, age = 180) => {
                 // for each position in data[name]
                 for (let i = data[name]["positions"].length - 1; i >= 0; i--) {
                     // add previous coordinates to previous_coordinates
-                    const datetime = new Date(
-                        Date.parse(data[name]["positions"][i].dt + "Z")
-                    ).toString();
-
+                    let datatime;
+                    try {
+                        datetime = new Date(
+                            Date.parse(data[name]["positions"][i].dt)
+                        ).toLocaleString();
+                    } catch (err) {
+                        try {
+                            datetime = new Date(
+                                Date.parse(data[name]["positions"][i].dt)
+                            ).toLocaleString();
+                        } catch (err) {
+                            console.log("Error parsing datetime: ", err);
+                            datetime = new Date().toLocaleString();
+                        }
+                    }
                     // check if lat and lon are not both 0
                     // sorry people that need that specific coordinate at exactly 0.000000, 0.000000 :(
                     if (

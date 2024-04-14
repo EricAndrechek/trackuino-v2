@@ -60,7 +60,7 @@ const positionHandler = (topic, payload) => {
                 longitude: 0,
                 altitude: 0,
                 speed: 0,
-                course: 0,
+                course: 90,
                 comment: "",
                 datetime: "",
             },
@@ -87,11 +87,11 @@ const positionHandler = (topic, payload) => {
         positions[name].current.comment = data.cmnt;
         try {
             const parsed_datetime = new Date(Date.parse(data.dt + "Z"));
-            positions[name].current.datetime = parsed_datetime.toString();
+            positions[name].current.datetime = parsed_datetime.toLocaleString();
         } catch (err) {
             // default to now
             console.log("Error parsing datetime: ", err);
-            positions[name].current.datetime = new Date().toString();
+            positions[name].current.datetime = new Date().toLocaleString();
         }
 
         // and push to previous coordinates
@@ -104,6 +104,13 @@ const positionHandler = (topic, payload) => {
             comment: data.cmnt,
             datetime: positions[name].current.datetime,
         });
+
+        console.log(
+            "Position for ",
+            name,
+            " updated with datetime: ",
+            positions[name].current.datetime
+        );
     }
 
     // check if has telemetry data
@@ -132,11 +139,11 @@ const positionHandler = (topic, payload) => {
 
     try {
         const parsed_last_update = new Date(Date.parse(data.dt + "Z"));
-        positions[name].last_update = parsed_last_update.toString();
+        positions[name].last_update = parsed_last_update.toLocaleString();
     } catch (err) {
         // default to now
         console.log("Error parsing last_update: ", err);
-        positions[name].last_update = new Date().toString();
+        positions[name].last_update = new Date().toLocaleString();
     }
     console.log("Position for ", name, " updated");
 };

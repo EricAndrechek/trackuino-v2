@@ -5,7 +5,7 @@
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
 #define SerialAT Serial1
 
-#define version "1.0.0"
+#define version "1.1.0"
 
 // ---------- SETTINGS ----------
 
@@ -23,9 +23,7 @@ const char gprsPass[] = "";
 // ---------- END SETTINGS ----------
 
 #include <TinyGsmClient.h>
-#include <TinyGPS++.h>
 #include <PubSubClient.h>
-#include <Wire.h>
 
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
@@ -45,67 +43,20 @@ String pieces[24], input;
 int ledStatus = LOW;
 
 // battery data
-uint8_t  chargeState = -99;
 int8_t   percent     = -99;
 uint16_t milliVolts  = -9999;
+uint8_t  chargeState = 0;
 
 // gps data
 float lat       = 0;
 float lon       = 0;
-float spd       = 0;
-float alt       = 0;
 float cse       = 0;
-int   vsat      = 0;
-float usat      = 0;
-float acc       = 0;
-int   year      = 0;
-int   month     = 0;
-int   day       = 0;
-int   hour      = 0;
-int   minute    = 0;
-int   second    = 0;
-String hours    = "";
-String minutes  = "";
-String seconds  = "";
-String months   = "";
-String days     = "";
-String years    = "";
 
 // ---------- DISPLAY FUNCTIONS ----------
 
-// if debugging is enabled, print to serial monitor as well
-#define DEBUG true
-
-// if display is enabled, print to display as well
-#define Display true
-
 void show(String message) {
-    #if Display
-        Wire.beginTransmission(0x3C);
-        Wire.write(message.c_str());
-        Wire.endTransmission();
-    #endif
-    #if DEBUG
-        SerialMon.println(message);
-    #endif
+    SerialMon.println(message);
 }
-
-void clearDisplay() {
-    #if Display
-        Wire.beginTransmission(0x3C);
-        Wire.write("*CLEAR*");
-        Wire.endTransmission();
-    #endif
-}
-
-void initCompass() {
-    #if Display
-        Wire.beginTransmission(0x3C);
-        Wire.write("*INIT*");
-        Wire.endTransmission();
-    #endif
-}
-
 
 // ---------- END DISPLAY FUNCTIONS ----------
 
@@ -123,13 +74,6 @@ String IMSI = "";
 
 // topic for publishing
 String push_string = "";
-
-// topic for subscribing
-String sub_string = "";
-
-// subscription routes
-String sub_dir = "B/";
-char* sub_routes[] = {"cLa", "cLo", "alt", "eLa", "eLo"};
 
 // last will and testement message, 0 for offline, 1 for online
 String lwt_msg = "0"; // should auto set to 0 when offline
@@ -154,19 +98,9 @@ void publishTopic(String topic, String content, bool retain = false) {
 String last_csq = "";
 String last_lat = "";
 String last_lon = "";
-String last_spd = "";
-String last_alt = "";
-String last_cse = "";
-String last_vsat = "";
 String last_bat = "";
 String last_bmv = "";
-String last_bcs = "";
-String last_hours = "";
-String last_minutes = "";
-String last_seconds = "";
-String last_months = "";
-String last_days = "";
-String last_years = "";
+String last_cse = "";
 
 bool boot_topics = false;
 
@@ -193,13 +127,30 @@ void publishTopics() {
     String S_csq = String(modem.getSignalQuality());
     String S_lat = String(lat, 6);
     String S_lon = String(lon, 6);
-    String S_spd = String(spd, 3);
-    String S_alt = String(alt, 3);
-    String S_cse = String(cse, 2);
-    String S_vsat = String(vsat);
     String S_bat = String(percent);
     String S_bmv = String(milliVolts);
-    String S_bcs = String(chargeState);
+
+    // calculate course with change in lat/lon
+    if (last_lat == "" || last_lon == "") {
+        last_lat = S_lat;
+        last_lon = S_lon;
+    }
+    float last_lat_f = last_lat.toFloat();
+    float last_lon_f = last_lon.toFloat();
+
+    float dlat = S_lat.toFloat() - last_lat_f;
+    float dlon = S_lon.toFloat() - last_lon_f;
+
+    if (dlat == 0 && dlon == 0) {
+        // no change in position
+        S_cse = last_cse;
+    } else {
+        // calculate course
+        S_cse = atan2(dlat, dlon) * 180 / PI;
+        if (S_cse < 0) {
+            S_cse += 360;
+        }
+    }
 
     if (S_csq != last_csq) {
         publishTopic("csq", S_csq, true);
@@ -213,22 +164,6 @@ void publishTopics() {
         publishTopic("lon", S_lon, true);
         last_lon = S_lon;
     }
-    if (S_spd != last_spd) {
-        publishTopic("spd", S_spd, true);
-        last_spd = S_spd;
-    }
-    if (S_alt != last_alt) {
-        publishTopic("alt", S_alt, true);
-        last_alt = S_alt;
-    }
-    if (S_cse != last_cse) {
-        publishTopic("cse", S_cse, true);
-        last_cse = S_cse;
-    }
-    if (S_vsat != last_vsat) {
-      publishTopic("vsat", S_vsat, true);
-      last_vsat = S_vsat;
-    }
     if (S_bat != last_bat) {
         publishTopic("b%", S_bat, true);
         last_bat = S_bat;
@@ -237,33 +172,9 @@ void publishTopics() {
         publishTopic("bmV", S_bmv, true);
         last_bmv = S_bmv;
     }
-    if (S_bcs != last_bcs) {
-        publishTopic("bCS", S_bcs, true);
-        last_bcs = S_bcs;
-    }
-    if (last_months != months) {
-        publishTopic("MM", months, true);
-        last_months = months;
-    }
-    if (last_days != days) {
-        publishTopic("DD", days, true);
-        last_days = days;
-    }
-    if (last_years != years) {
-        publishTopic("YY", years, true);
-        last_years = years;
-    }
-    if (last_hours != hours) {
-        publishTopic("hh", hours, true);
-        last_hours = hours;
-    }
-    if (last_minutes != minutes) {
-        publishTopic("mm", minutes, true);
-        last_minutes = minutes;
-    }
-    if (last_seconds != seconds) {
-        publishTopic("ss", seconds, true);
-        last_seconds = seconds;
+    if (S_cse != last_cse) {
+        publishTopic("cse", S_cse, true);
+        last_cse = S_cse;
     }
 }
 
@@ -281,11 +192,6 @@ boolean mqttConnect() {
     }
     SerialMon.println(" success");
 
-    // Subscribe to topics
-    for (int i = 0; i < sizeof(sub_routes) / sizeof(sub_routes[0]); i++) {
-          String topic = sub_string + sub_routes[i];
-          mqtt.subscribe(topic.c_str());
-    }
     publishTopics();
 
     return mqtt.connected();
@@ -297,8 +203,6 @@ boolean mqttConnect() {
 
 // ---------- GPS FUNCTIONS ----------
 
-TinyGPSPlus gps;
-
 void enableGPS(void) {
     // Set Modem GPS Power Control Pin to HIGH ,turn on GPS power
     // Only in version 20200415 is there a function to control GPS power
@@ -306,10 +210,10 @@ void enableGPS(void) {
     // wtf does this do??
     // modem.sendAT("+CGNSNMEA=237279");
     // and this? - 10m accuracy I think?
-    modem.sendAT("+CGNSHOR=10");
+    // modem.sendAT("+CGNSHOR=10");
     // whats the difference between these:??
     modem.sendAT("+CGPIO=0,48,1,1");
-    modem.sendAT("+SGPIO=0,4,1,1");
+    // modem.sendAT("+SGPIO=0,4,1,1");
     if (modem.waitResponse(10000L) != 1) {
         show("Set GPS Power HIGH Failed");
     }
@@ -328,75 +232,18 @@ void disableGPS(void) {
 
 // get latest GPS and GSM position data
 void getPos() {
-
-    // GSM
-    modem.getGsmLocation(&lon, &lat, &acc, &year, &month, &day, &hour, &minute, &second);
-    SerialMon.println("GSM Location:");
-    SerialMon.print("  Latitude: "); SerialMon.println(lat, 6);
-    SerialMon.print("  Longitude: "); SerialMon.println(lon, 6);
-    SerialMon.print("  Accuracy: "); SerialMon.println(acc);
-    SerialMon.print("  Date: "); SerialMon.print(year); SerialMon.print("/"); SerialMon.print(month); SerialMon.print("/"); SerialMon.println(day);
-    SerialMon.print("  Time: "); SerialMon.print(hour); SerialMon.print(":"); SerialMon.print(minute); SerialMon.print(":"); SerialMon.println(second);
-
-
-    // GPS
-    String raw_gps = modem.getGPSraw();
-    SerialMon.println("GPS Location:");
-    SerialMon.println(raw_gps);
-    // Parse GPS data with TinyGPS++
-    for (int i = 0; i < raw_gps.length(); i++) {
-        gps.encode(raw_gps[i]);
+    bool gpsSuccess = false;
+    for (int i = 0; i < 10; i++) {
+        if (modem.getGPS(&lat, &lon)) {
+            break;
+        }
+        digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+        delay(2000);
     }
-    // check that gps data is valid and age is less than 5 seconds old before using it
-    if (gps.location.isValid() && gps.location.age() < 5000) {
-        lat = gps.location.lat();
-        lon = gps.location.lng();
-        spd = gps.speed.kmph();
-        alt = gps.altitude.meters();
-        cse = gps.course.deg();
-        vsat = gps.satellites.value();
-        usat = gps.hdop.hdop();
-        acc = gps.hdop.hdop();
-        year = gps.date.year();
-        month = gps.date.month();
-        day = gps.date.day();
-        hour = gps.time.hour();
-        minute = gps.time.minute();
-        second = gps.time.second();
-    } else {
-        show(String(gps.location.isValid()));
-        show(String(gps.location.age()));
-        show(String(gps.satellites.value()));
-        vsat = gps.satellites.value();
+    if (!gpsSuccess) {
+        modem.getGsmLocation(&lat, &lon);
+        show("Failed to get GPS data\n");
     }
-
-    // put date and times into their strings with leading zeros
-    if (hour < 10) {
-        hours = "0" + String(hour);
-    } else {
-        hours = String(hour);
-    }
-    if (minute < 10) {
-        minutes = "0" + String(minute);
-    } else {
-        minutes = String(minute);
-    }
-    if (second < 10) {
-        seconds = "0" + String(second);
-    } else {
-        seconds = String(second);
-    }
-    if (month < 10) {
-        months = "0" + String(month);
-    } else {
-        months = String(month);
-    }
-    if (day < 10) {
-        days = "0" + String(day);
-    } else {
-        days = String(day);
-    }
-    years = String(year);
 }
 
 // ---------- END GPS FUNCTIONS ----------
@@ -445,12 +292,6 @@ void setup() {
 
     // begin serial interface to modem
     SerialAT.begin(UART_BAUD, SERIAL_8N1, PIN_RX, PIN_TX);
-
-    #if Display
-        // communicate with display over I2C
-        Wire.begin();
-        clearDisplay();
-    #endif
 
     // display startup message
     String bootmsg = "Vehicle Tracker v" + String(version) + " starting up...\n";
@@ -606,13 +447,10 @@ void setup() {
     // set "SIM" to last 5 digits of ICCID
     String SIM = ICCID.substring(ICCID.length() - 5);
     push_string = "T/" + SIM + "/";
-    sub_string = "B/" + SIM + "/";
 
     show("Done SIM setup, starting...");
 
     delay(500);
-
-    initCompass();
 }
 
 void loop() {

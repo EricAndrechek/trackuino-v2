@@ -52,16 +52,16 @@ Restart=always
 WantedBy=api-tasks.target
 EOT
 
-# setup mqtt to pg service
-sudo tee /etc/systemd/system/mqttsync.service > /dev/null <<EOT
+# setup mqtt and aprs to pg service
+sudo tee /etc/systemd/system/sync.service > /dev/null <<EOT
 [Unit]
-Description=mqttsync
+Description=sync
 After=network.target
 
 [Service]
 User=ubuntu
 WorkingDirectory=$DIR/backend
-ExecStart=$DIR/backend/venv/bin/python -u $DIR/backend/mqtt-syncer.py
+ExecStart=$DIR/backend/venv/bin/python -u $DIR/backend/syncer.py
 Restart=always
 
 [Install]
@@ -76,8 +76,8 @@ sudo systemctl enable api
 sudo systemctl enable api-tasks@{1..4}
 sudo systemctl start api
 sudo systemctl start api-tasks@{1..4}
-sudo systemctl enable mqttsync
-sudo systemctl start mqttsync
+sudo systemctl enable sync
+sudo systemctl start sync
 
 
 # all info from: https://blog.miguelgrinberg.com/post/running-a-flask-application-as-a-service-with-systemd

@@ -25,13 +25,23 @@
 </head>
 <body>
     <div id="map"></div>
-    <div style="display: none" id="layer-selector1" class="mapboxgl-ctrl mapboxgl-ctrl-group">
-        <select id="style-selector1">
-            <option value="mapbox://styles/ericandr/cluvydoes006n01pk7a9z9hwv">Streets</option>
-            <option value="mapbox://styles/ericandr/cluvy4r03005g01nrdfgg89ea">Satellite Streets</option>
+    <div style="display: none" id="selector1">
+        <select id="style-selector1" class="mapboxgl-ctrl mapboxgl-ctrl-group">
+            <option value="mapbox://styles/mapbox/standard">Standard Map</option>
+            <option value="mapbox://styles/mapbox/streets-v12">Streets</option>
+            <option value="mapbox://styles/mapbox/outdoors-v12">Outdoors</option>
+            <option value="mapbox://styles/mapbox/light-v11">Light</option>
+            <option value="mapbox://styles/mapbox/dark-v11">Dark</option>
+            <option value="mapbox://styles/mapbox/satellite-v9">Satellite</option>
+            <option value="mapbox://styles/mapbox/satellite-streets-v12">Satellite Streets</option>
         </select>
+        <div id="source-selector1" class="mapboxgl-ctrl mapboxgl-ctrl-group">
+        </div>
     </div>
     <div id="notification"></div>
+    <div id="popup-page">
+        <img id="close" onclick="closePopupPage()" src="/assets/x-mark.svg" alt="Close">
+    </div>
     <script>        
         onload = () => {
             mapboxgl.accessToken =
@@ -41,12 +51,77 @@
                 accessToken: mapboxgl.accessToken,
                 container: "map",
                 attributionControl: false,
-                style: "mapbox://styles/ericandr/cluvydoes006n01pk7a9z9hwv",
+                style: "mapbox://styles/mapbox/standard",
                 center: [-83.710993, 42.294517],
                 zoom: 9,
             });
 
             let styleChange = false;
+
+            const addSourceSelector = (name) => {
+                // check if source selector exists
+                if (document.getElementById("source-selector-holder")) {
+                    // check if source already exists
+                    if (document.getElementById(name + "-checkbox")) {
+                        return;
+                    } else {
+                        // add source selector checkbox
+                        const source_selector = document.getElementById("source-selector-holder");
+
+                        // create div to hold checkbox and label
+                        const holder = document.createElement("div");
+                        // set order to stringified value of getOrder(name)
+                        const order = getOrder(name);
+                        holder.style.order = order;
+
+
+                        const checkbox = document.createElement("input");
+                        checkbox.type = "checkbox";
+                        checkbox.id = name + "-checkbox";
+                        checkbox.checked = true;
+                        checkbox.onchange = () => {
+                            if (checkbox.checked) {
+                                map.setLayoutProperty(name, 'visibility', 'visible');
+                                map.setLayoutProperty(name + "-line", 'visibility', 'visible');
+                                map.setLayoutProperty(name + "-line-coordinates", 'visibility', 'visible');
+                            } else {
+                                map.setLayoutProperty(name, 'visibility', 'none');
+                                map.setLayoutProperty(name + "-line", 'visibility', 'none');
+                                map.setLayoutProperty(name + "-line-coordinates", 'visibility', 'none');
+                            }
+                        }
+                        const label = document.createElement("label");
+                        label.htmlFor = name + "-checkbox";
+                        label.style.marginLeft = "5px";
+                        label.style.lineHeight = "20px";
+                        label.appendChild(document.createTextNode(name));
+
+                        // add map-pin icon to div - when clicked on, center map on source
+                        const map_pin = document.createElement("img");
+                        map_pin.src = "/assets/map-pin.svg";
+                        map_pin.alt = "Center Map";
+                        map_pin.style.height = "20px";
+                        map_pin.style.cursor = "pointer";
+                        map_pin.style.marginLeft = "5px";
+                        map_pin.onclick = () => {
+                            const source = map.getSource(name);
+                            if (source) {
+                                const coordinates = source._data.geometry.coordinates;
+                                map.flyTo({
+                                    center: coordinates,
+                                    zoom: 15,
+                                });
+                            }
+                        }
+
+                        holder.appendChild(checkbox);
+                        holder.appendChild(label);
+                        holder.appendChild(map_pin);
+
+                        source_selector.appendChild(holder);
+                    }
+                }
+            }
 
             const loopHandler = () => {
                 // loop to update map with new data
@@ -80,6 +155,12 @@
                             map.removeLayer(name + "-line");
                             map.removeSource(name + "-line");
 
+                            // remove checkbox
+                            const checkbox = document.getElementById(name + "-checkbox");
+                            if (checkbox) {
+                                checkbox.parentElement.remove();
+                            }
+
                             // also remove the position from the positions object
                             delete positions[name];
                             // and from telemetry object if it exists
@@ -106,6 +187,10 @@
                             },
                         });
                         map.getSource(name + "-line").setData(getHistoricalGeoJSON(name));
+
+                        // make sure source selector is added
+                        addSourceSelector(name);
+
                     } else {
                         // create a new GeoJSON source and add it to the map
                         const geojson = {
@@ -123,7 +208,6 @@
                                 coordinates: [position.current.longitude,position.current.latitude, position.current.altitude]
                             },
                         };
-                        console.log('Adding new source', name, geojson, getHistoricalGeoJSON(name));
 
                         map.addSource(name, {
                             type: "geojson",
@@ -137,10 +221,20 @@
                                 'icon-image': ['get', 'symbol'],
                                 'icon-allow-overlap': true,
                                 'icon-size': 0.1,
+                                'icon-pitch-alignment': 'viewport',
                                 'icon-rotate': ['get', 'heading'],
                                 'icon-rotation-alignment': 'map',
                                 'symbol-placement': 'point',
-                                'symbol-z-elevate': true
+                                'symbol-z-elevate': true,
+                                'text-field': ['get', 'name'],
+                                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                                'text-size': 12,
+                                'text-offset': [0, 1.5],
+                                'text-anchor': 'top',
+                                'text-allow-overlap': false,
+                                'text-ignore-placement': true,
+                                'text-justify': 'center',
+
                             },
                             paint: {
                                 'icon-color': nameToColor(name),
@@ -176,12 +270,15 @@
                                 "circle-color": nameToColor(name),
                             },
                         });
+
+                        addSourceSelector(name);
+
                     }
                 }
                 setTimeout(loopHandler, 100);
             }
 
-            const getCustomImages = async () => {
+            const getCustomImages = async (callback) => {
                 // load svgs
                 const response = await fetch("/svgs.json");
                 const svgs = await response.json();
@@ -208,26 +305,29 @@
                         map.addImage(svg.name + "-flip", image, { sdf: true });
                     });
                 }
+                callback();
             }
 
             map.on('style.load', () => {
                 console.log('Style loaded');
-                getCustomImages();
+                getCustomImages(
+                    () => {
+                        // delay 1 seconds to allow map to load for sure before adding data
+                        setTimeout(() => {
+                            console.log('Map loaded');
+                            // get class mapboxgl-ctrl-attrib-inner
+                            let attrib = document.getElementsByClassName(
+                                "mapboxgl-ctrl-attrib-inner"
+                            )[0];
+                            // edit innerHTML of attrib
+                            attrib.innerHTML =
+                                "UMich Balloon Map | Made by <a href='https://github.com/EricAndrechek'>Eric</a>";
 
-                // delay 1 seconds to allow map to load for sure before adding data
-                setTimeout(() => {
-                    console.log('Map loaded');
-                    // get class mapboxgl-ctrl-attrib-inner
-                    let attrib = document.getElementsByClassName(
-                        "mapboxgl-ctrl-attrib-inner"
-                    )[0];
-                    // edit innerHTML of attrib
-                    attrib.innerHTML =
-                        "UMich Balloon Map | Made by <a href='https://github.com/EricAndrechek'>Eric</a>";
-
-                    console.log('Adding data');
-                    loopHandler();
-                }, 1000);
+                            console.log('Adding data');
+                            loopHandler();
+                        }, 1000);
+                    }
+                );
             });
 
 
@@ -262,15 +362,17 @@
                         "mapboxgl-ctrl-top-left"
                     )[0];
                     // copy clone of layer-selector1 to top_left
-                    let layer_selector1 = document.getElementById("layer-selector1").cloneNode(true);
-                    // change id of layer_selector1 to layer-selector
-                    layer_selector1.id = "layer-selector";
+                    let selector = document.getElementById("selector1").cloneNode(true);
+                    // change id of selector to layer-selector
+                    selector.id = "selector";
                     // change style-selector1 to style-selector
-                    layer_selector1.children[0].id = "style-selector";
-                    // add layer_selector1 to top_left
-                    top_left.appendChild(layer_selector1);
-                    // show layer-selector1
-                    layer_selector1.style.display = "block";
+                    selector.children[0].id = "style-selector";
+                    // change source-selector1 to source-selector
+                    selector.children[1].id = "source-selector";
+                    // add selector to top_left
+                    top_left.appendChild(selector);
+                    // show selector
+                    selector.style.display = "block";
 
                     // When a new style is selected, update the map style
                     document
@@ -279,6 +381,9 @@
                             styleChange = true;
                             map.setStyle(e.target.value);
                         });
+                    
+                    // list to each checkbox in source-selector
+                    const source_selector = document.getElementById("source-selector");
 
                     // get class mapboxgl-ctrl-top-right
                     let top_right = document.getElementsByClassName(
@@ -296,6 +401,44 @@
                     `;
                     // add new_div to top_right
                     top_right.appendChild(new_div);
+
+                    // add source selector title to source selector
+                    const source_selector_title = document.createElement("div");
+                    source_selector_title.classList.add("source-selector-title");
+
+                    const source_selector_title_content = document.createElement("h3");
+                    source_selector_title_content.innerHTML = "Sources";
+                    source_selector_title_content.classList.add("source-title");
+                    source_selector_title.appendChild(source_selector_title_content);
+                    
+                    // add dropdown arrow to source selector
+                    const dropdown_arrow = document.createElement("img");
+                    dropdown_arrow.src = "/assets/chevron-down.svg";
+                    dropdown_arrow.alt = "Dropdown Arrow";
+                    dropdown_arrow.classList.add("dropdown-arrow");
+                    source_selector_title.appendChild(dropdown_arrow);
+
+                    // create source selector holder for checkboxes
+                    const source_selector_holder = document.createElement("div");
+                    source_selector_holder.id = "source-selector-holder";
+                    source_selector_holder.style.display = "flex";
+
+                    // if source selector is clicked, toggle visibility of source selector
+                    source_selector_title.onclick = () => {
+                        // change dropdown arrow to point up or down
+                        if (source_selector_holder.style.display === "none") {
+                            dropdown_arrow.style.transform = "rotate(180deg)";
+                        } else {
+                            dropdown_arrow.style.transform = "rotate(0deg)";
+                        }
+                        // toggle visibility of source selector
+                        source_selector_holder.style.display = source_selector_holder.style.display === "none" ? "flex" : "none";
+                    }
+
+                    source_selector.appendChild(source_selector_title);
+                    source_selector.appendChild(source_selector_holder);
+
+                    console.log("added source selector");
                 }, 1000);
             });
 
@@ -315,15 +458,25 @@
                 const heading = feature.properties.heading;
                 const last_update = feature.properties.last_update;
 
+                let popup_data = `<h3>${name}</h3>`;
+                // add coordinates to 6 decimal places
+                popup_data += `<p>Coordinates: ${coordinates[1].toFixed(6)}, ${coordinates[0].toFixed(6)}</p>`;
+                if (altitude) {
+                    popup_data += `<p>Altitude: ${altitude.toFixed(2)} m</p>`;
+                }
+                if (speed) {
+                    popup_data += `<p>Speed: ${speed.toFixed(2)} mph</p>`;
+                }
+                if (heading) {
+                    popup_data += `<p>Heading: ${heading.toFixed(2)}°</p>`;
+                }
+                if (last_update && last_update !== "undefined" && last_update !== "null" && last_update !== "None" && last_update !== "null" && last_update !== "None" && last_update !== "undefined" && last_update !== "" && last_update !== "Invalid Date") {
+                    popup_data += `<p>Last Update: ${last_update}</p>`;
+                }
+
                 const popup = new mapboxgl.Popup()
                     .setLngLat(coordinates)
-                    .setHTML(
-                        `<h3>${name}</h3>
-                        <p>Altitude: ${altitude} m</p>
-                        <p>Speed: ${speed} m/s</p>
-                        <p>Heading: ${heading}°</p>
-                        <p>Last Update: ${last_update}</p>`
-                    )
+                    .setHTML(popup_data)
                     .addTo(map);
             }
 
@@ -349,18 +502,18 @@
                     // set popup with data (only data that is not undefined, none, null, "", etc)
                     
                     if (altitude) {
-                        popup_data += `<p>Altitude: ${altitude} m</p>`;
+                        popup_data += `<p>Altitude: ${altitude.toFixed(2)} m</p>`;
                     }
                     if (speed) {
-                        popup_data += `<p>Speed: ${speed} m/s</p>`;
+                        popup_data += `<p>Speed: ${speed.toFixed(2)} mph</p>`;
                     }
                     if (heading) {
-                        popup_data += `<p>Heading: ${heading}°</p>`;
+                        popup_data += `<p>Heading: ${heading.toFixed(2)}°</p>`;
                     }
                     if (comment) {
                         popup_data += `<p>Comment: ${comment}</p>`;
                     }
-                    if (last_update) {
+                    if (last_update && last_update !== "undefined" && last_update !== "null" && last_update !== "None" && last_update !== "null" && last_update !== "None" && last_update !== "undefined" && last_update !== "" && last_update !== "Invalid Date") {
                         popup_data += `<p>Data Timestamp: ${last_update}</p>`;
                     }
                 }
@@ -374,6 +527,12 @@
             map.on('click', (e) => {
                 // should be able to click on a symbol (car or balloon) and pop-open a popup with more information
                 // or click on a circle on the line and pop-open a popup with more information
+
+                // if popup-page is open, close it
+                const popup_page = document.getElementById("popup-page");
+                if (popup_page.classList.contains("page-show")) {
+                    popup_page.classList.remove("page-show");
+                }
 
                 // get features at the point that were created by us
                 let features = [];
@@ -407,13 +566,19 @@
                 } else if (feature.layer.type === "circle") {
                     // use turf nearestPointOnLine to get closest point on line to clicked coords
                     const line = map.getSource(feature.source)._data;
-                    // convert line to turf line
-                    const turf_line = turf.lineString(line.geometry.coordinates);
-                    // convert clicked coords to turf point
-                    const turf_point = turf.point(e.lngLat.toArray());
-                    // get closest point on line to clicked coords
-                    const closest = turf.nearestPointOnLine(turf_line, turf_point);
-                    call_circle_popup(feature, closest.geometry.coordinates);
+                    const closest = turf.nearestPointOnLine(line, e.lngLat.toArray());
+                    // find coordinate index in line smallest distance away from closest point
+                    lowest_distance = Number.MAX_VALUE;
+                    closest_index = 0;
+                    for (let i = 0; i < line.geometry.coordinates.length; i++) {
+                        const distance = turf.distance(turf.point(line.geometry.coordinates[i]), closest);
+                        if (distance < lowest_distance) {
+                            lowest_distance = distance;
+                            closest_index = i;
+                        }
+                    }
+                    // call popup with more information
+                    call_circle_popup(feature, line.geometry.coordinates[closest_index]);
                 }
             });
         };
