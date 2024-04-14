@@ -160,7 +160,7 @@ def on_message(client, userdata, message):
 
 
         # if key is "ss" (seconds), add message to db
-        if key == "lat" or key == "lon":
+        if key == "lat" or key == "lon" or key == "alt":
             # add message to db
             msg = build_json_message(id)
             if msg is None:
@@ -181,9 +181,9 @@ def on_message(client, userdata, message):
                 return
             
             # check if lat, lon, or alt changed
-            if 'lat' in message_building[id] and 'lon' in message_building[id]:
+            if 'lat' in message_building[id] and 'lon' in message_building[id] and 'alt' in message_building[id]:
                 if id in old_messages:
-                    if message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon']:
+                    if (message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon'] and message_building[id]['alt'] == old_messages[id]['alt']):
                         # send telemetry data to mqtt
                         if 'telemetry' in src['data']:
                             topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
@@ -196,6 +196,8 @@ def on_message(client, userdata, message):
                             message_building[id]['lat'] = payload
                         elif key == "lon":
                             message_building[id]['lon'] = payload
+                        elif key == "alt":
+                            message_building[id]['alt'] = payload
                         return
             
                 try:
@@ -213,6 +215,8 @@ def on_message(client, userdata, message):
                     message_building[id]['lat'] = payload
                 elif key == "lon":
                     message_building[id]['lon'] = payload
+                elif key == "alt":
+                    message_building[id]['alt'] = payload
             return
         elif key == "spd":
             # convert speed to mph from knots

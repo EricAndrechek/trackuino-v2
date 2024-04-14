@@ -1,3 +1,5 @@
+const versionNumber = "Version: 1.0.5";
+
 // boolean to tell us if we've been offline and need to re-request old track data
 let needData = true;
 
@@ -114,7 +116,7 @@ const settings = () => {
         // create p element for version number
         const version = document.createElement("p");
         // TODO: get version number from service-worker.js
-        version.innerText = "Version: 1.0.4";
+        version.innerText = versionNumber;
 
         // create button for debug logs
         const debug = `<div id="debug-button" onclick="debugLogs()">Debug Logs</div>`;
