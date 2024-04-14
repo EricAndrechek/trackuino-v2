@@ -129,6 +129,7 @@ void publishTopics() {
     String S_lon = String(lon, 6);
     String S_bat = String(percent);
     String S_bmv = String(milliVolts);
+    String S_cse = "";
 
     // calculate course with change in lat/lon
     if (last_lat == "" || last_lon == "") {
@@ -146,11 +147,12 @@ void publishTopics() {
         S_cse = last_cse;
     } else {
         // calculate course
-        S_cse = atan2(dlat, dlon) * 180 / PI;
-        if (S_cse < 0) {
-            S_cse += 360;
+        cse = atan2(dlat, dlon) * 180 / PI;
+        if (cse < 0) {
+            cse += 360;
         }
     }
+    S_cse = String(cse, 2);
 
     if (S_csq != last_csq) {
         publishTopic("csq", S_csq, true);

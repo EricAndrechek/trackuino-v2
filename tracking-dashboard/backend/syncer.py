@@ -58,6 +58,7 @@ def callback(packet):
         print("parse error: ", e)
 
     # check if callsign exists in items table
+    print("Data: ", data_obj.data)
     name = data_obj.data['callsign'] + "-" + str(data_obj.data['ssid'])
     item = check_item_id(name)
     if item is None:
