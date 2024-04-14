@@ -45,7 +45,7 @@ def callback(packet):
     item = check_item_id(name)
     if item is None:
         # add item to items table
-        add_item_id(name, data_obj.info['callsign'], data_obj.info['ssid'], data_obj.info['symbol'])
+        add_item_id(name, data_obj.info['callsign'], data_obj.info['ssid'], "/O")
     else:
         # change callsign, name, and symbol to item values
         data_obj.data['callsign'] = item.callsign
