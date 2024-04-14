@@ -5,7 +5,7 @@
 #define TINY_GSM_RX_BUFFER 1024 // Set RX buffer to 1Kb
 #define SerialAT Serial1
 
-#define version "1.1.0"
+#define version "1.1.1"
 
 // ---------- SETTINGS ----------
 
@@ -51,6 +51,9 @@ uint8_t  chargeState = 0;
 float lat       = 0;
 float lon       = 0;
 float cse       = 0;
+float alt       = 0;
+float speed     = 0;
+int   vsat      = 0;
 
 // ---------- DISPLAY FUNCTIONS ----------
 
@@ -101,6 +104,9 @@ String last_lon = "";
 String last_bat = "";
 String last_bmv = "";
 String last_cse = "";
+String last_spd = "";
+String last_alt = "";
+String last_vsat = "";
 
 bool boot_topics = false;
 
@@ -129,7 +135,10 @@ void publishTopics() {
     String S_lon = String(lon, 6);
     String S_bat = String(percent);
     String S_bmv = String(milliVolts);
+    String S_spd = String(speed, 2);
+    String S_alt = String(alt, 2);
     String S_cse = "";
+    String S_vsat = String(vsat);
 
     // calculate course with change in lat/lon
     if (last_lat == "" || last_lon == "") {
@@ -177,6 +186,18 @@ void publishTopics() {
     if (S_cse != last_cse) {
         publishTopic("cse", S_cse, true);
         last_cse = S_cse;
+    }
+    if (S_spd != last_spd) {
+        publishTopic("spd", S_spd, true);
+        last_spd = S_spd;
+    }
+    if (S_alt != last_alt) {
+        publishTopic("alt", S_alt, true);
+        last_alt = S_alt;
+    }
+    if (S_vsat != last_vsat) {
+        publishTopic("vsat", S_vsat, true);
+        last_vsat = S_vsat;
     }
 }
 
@@ -236,7 +257,7 @@ void disableGPS(void) {
 void getPos() {
     bool gpsSuccess = false;
     for (int i = 0; i < 10; i++) {
-        if (modem.getGPS(&lat, &lon)) {
+        if (modem.getGPS(&lat, &lon, &cse, &speed, &alt, &vsat)) {
             break;
         }
         digitalWrite(LED_PIN, !digitalRead(LED_PIN));

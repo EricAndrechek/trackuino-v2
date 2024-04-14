@@ -11,4 +11,4 @@
 # -B 1200: data rate in bits per second for channel 0
 # -t 0: text colors: 0 = off, 1 = on, 2,3,4... other
 
-rtl_fm -f 144390000 -o 4 - | direwolf -c ~/direwolf.conf -T -r 24000 -n 1 -B 1200 -t 0 -
+sudo rtl_fm -f 144.39M -o 4 - | direwolf -c direwolf.conf -t 0 -r 24000 -D 1 -dgitm -
