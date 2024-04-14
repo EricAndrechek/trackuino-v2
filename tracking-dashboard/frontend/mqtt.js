@@ -273,7 +273,7 @@ client.on("reconnect", () => {
 });
 
 client.on("connect", () => {
-    notificationBanner("Online and connected to server", 5000);
+    notificationBanner("Online", 5000);
 
     // we know we are online now and can request old data
     if (needData) {
