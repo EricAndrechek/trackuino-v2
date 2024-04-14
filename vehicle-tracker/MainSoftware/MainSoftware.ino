@@ -257,7 +257,7 @@ void disableGPS(void) {
 void getPos() {
     bool gpsSuccess = false;
     for (int i = 0; i < 10; i++) {
-        if (modem.getGPS(&lat, &lon, &cse, &speed, &alt, &vsat)) {
+        if (modem.getGPS(&lat, &lon, &speed, &alt, &vsat)) {
             break;
         }
         digitalWrite(LED_PIN, !digitalRead(LED_PIN));

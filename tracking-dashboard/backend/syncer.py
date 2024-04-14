@@ -289,8 +289,9 @@ def on_message(client, userdata, message):
             # add key and payload to message_building
             message_building[id][key] = payload
             # if telemetry data, send to mqtt
-            nonTelemKeys = ['name', 'ssid', 'sym', 'lat', 'lon', 'alt', 'cse', 'spd', 'hh', 'mm', 'ss', 'YY', 'MM', 'DD']
+            nonTelemKeys = ['name', 'ssid', 'sym', 'lat', 'lon', 'alt', 'cse', 'spd']
             if key not in nonTelemKeys:
+                print(key, payload)
                 # check if value is the same as last value
                 if id in old_messages:
                     if key in old_messages[id] and payload == old_messages[id][key]:
