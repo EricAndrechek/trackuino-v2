@@ -103,7 +103,7 @@ def api_rock7_upload():
 
     # if speed is in data, convert from m/s to mph
     if 'speed' in source['data']:
-        source['data']['speed'] = source['data']['speed'] * 2.23694
+        source['data']['speed'] = float(source['data']['speed']) * 2.23694
 
     
     # accept upload data
