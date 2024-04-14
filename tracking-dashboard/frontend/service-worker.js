@@ -1,4 +1,4 @@
-const CACHE_NAME = "balloon-map-cache-v1.0.5";
+const CACHE_NAME = "balloon-map-cache-v1.0.6";
 const urlsToCache = [
     "/",
     "/main.js",

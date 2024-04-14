@@ -1,4 +1,4 @@
-const versionNumber = "Version: 1.0.5";
+const versionNumber = "Version: 1.0.6";
 
 // boolean to tell us if we've been offline and need to re-request old track data
 let needData = true;
@@ -168,7 +168,7 @@ const speedConversion = (speed) => {
     } else if (speed_units === "knots") {
         results += (speed * 0.868976).toFixed(2) + " knots";
     } else {
-        result += speed.toFixed(2) + " mph";
+        results += speed.toFixed(2) + " mph";
     }
     return results;
 };
