@@ -1,10 +1,17 @@
-const CACHE_NAME = "balloon-map-cache-v1.0.0";
+const CACHE_NAME = "balloon-map-cache-v1.0.1";
 const urlsToCache = [
     "/",
     "/main.js",
     "/styles.css",
     "/mqtt.js",
     "/manifest.json",
+    "/assets/balloon.png",
+    "/assets/car.png",
+    "/assets/car-flip.png",
+    "/assets/chevron-down.svg",
+    "/assets/map-pin.svg",
+    "/assets/settings.svg",
+    "/assets/x-mark.svg",
     "https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.css",
     "https://api.mapbox.com/mapbox-gl-js/v3.2.0/mapbox-gl.js",
     "https://unpkg.com/mqtt@5.5.1/dist/mqtt.min.js",

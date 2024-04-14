@@ -48,9 +48,112 @@ const settings = () => {
         // hide popup-page
         document.getElementById("popup-page").classList.remove("page-show");
     } else {
-        document.getElementById("popup-page").classList.add("page-show");
+        // wipe contents of popup-page
+        document.getElementById("popup-page").innerHTML = "";
+
         // populate settings form with current settings
+        // fill with some unit selection options
+
+        // create input elements
+        const speed_units = document.createElement("select");
+        speed_units.setAttribute("id", "speed-units");
+        speed_units.setAttribute("name", "speed-units");
+        speed_units.setAttribute("class", "input-select");
+        const speed_units_options = ["m/s", "km/h", "mph", "knots"];
+        for (let i = 0; i < speed_units_options.length; i++) {
+            const option = document.createElement("option");
+            option.setAttribute("value", speed_units_options[i]);
+            option.innerText = speed_units_options[i];
+            speed_units.appendChild(option);
+        }
+        // get speed_units from localStorage
+        const speed_units_value = localStorage.getItem("speed_units");
+        if (speed_units_value !== null) {
+            speed_units.value = speed_units_value;
+        }
+        // create label for speed_units
+        const speed_units_label = document.createElement("label");
+        speed_units_label.setAttribute("for", "speed-units");
+        speed_units_label.innerText = "Speed Units";
+
+        const altitude_units = document.createElement("select");
+        altitude_units.setAttribute("id", "altitude-units");
+        altitude_units.setAttribute("name", "altitude-units");
+        altitude_units.setAttribute("class", "input-select");
+        const altitude_units_options = ["m", "ft"];
+        for (let i = 0; i < altitude_units_options.length; i++) {
+            const option = document.createElement("option");
+            option.setAttribute("value", altitude_units_options[i]);
+            option.innerText = altitude_units_options[i];
+            altitude_units.appendChild(option);
+        }
+        // get altitude_units from localStorage
+        const altitude_units_value = localStorage.getItem("altitude_units");
+        if (altitude_units_value !== null) {
+            altitude_units.value = altitude_units_value;
+        }
+        // create label for altitude_units
+        const altitude_units_label = document.createElement("label");
+        altitude_units_label.setAttribute("for", "altitude-units");
+        altitude_units_label.innerText = "Altitude Units";
+
+        // create settings form
+        const settings_form = document.createElement("form");
+        settings_form.setAttribute("id", "settings-form");
+        settings_form.setAttribute("class", "form");
+        settings_form.appendChild(speed_units_label);
+        settings_form.appendChild(speed_units);
+        settings_form.appendChild(altitude_units_label);
+        settings_form.appendChild(altitude_units);
+
+        // onchange event listener for speed_units
+        speed_units.addEventListener("change", (event) => {
+            localStorage.setItem("speed_units", event.target.value);
+        });
+
+        // onchange event listener for altitude_units
+        altitude_units.addEventListener("change", (event) => {
+            localStorage.setItem("altitude_units", event.target.value);
+        });
+
+        // append settings form to popup-page
+        document.getElementById("popup-page").appendChild(settings_form);
+
+        // show popup-page
+        document.getElementById("popup-page").classList.add("page-show");
     }
+};
+
+const speedConversion = (speed) => {
+    // convert speed to the units specified in localStorage
+    let speed_units = localStorage.getItem("speed_units");
+    let results = "";
+    if (speed_units === "m/s") {
+        results += (speed * 0.44704).toFixed(2) + " m/s";
+    } else if (speed_units === "km/h") {
+        results += (speed * 1.609344).toFixed(2) + " km/h";
+    } else if (speed_units === "mph") {
+        results += speed.toFixed(2) + " mph";
+    } else if (speed_units === "knots") {
+        results += (speed * 0.868976).toFixed(2) + " knots";
+    } else {
+        result += speed.toFixed(2) + " mph";
+    }
+    return results;
+};
+
+const altitudeConversion = (altitude) => {
+    // convert altitude to the units specified in localStorage
+    let altitude_units = localStorage.getItem("altitude_units");
+    let results = "";
+    if (altitude_units === "m") {
+        results += altitude.toFixed(2) + " m";
+    } else if (altitude_units === "ft") {
+        results += (altitude * 3.28084).toFixed(2) + " ft";
+    } else {
+        results += altitude.toFixed(2) + " m";
+    }
+    return results;
 };
 
 const closePopupPage = () => {

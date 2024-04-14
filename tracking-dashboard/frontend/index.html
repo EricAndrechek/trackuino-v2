@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Balloon Tracking Map</title>
     <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="/site.webmanifest">
@@ -462,10 +464,10 @@
                 // add coordinates to 6 decimal places
                 popup_data += `<p>Coordinates: ${coordinates[1].toFixed(6)}, ${coordinates[0].toFixed(6)}</p>`;
                 if (altitude) {
-                    popup_data += `<p>Altitude: ${altitude.toFixed(2)} m</p>`;
+                    popup_data += `<p>Altitude: ${altitudeConversion(altitude)}</p>`;
                 }
                 if (speed) {
-                    popup_data += `<p>Speed: ${speed.toFixed(2)} mph</p>`;
+                    popup_data += `<p>Speed: ${speedConversion(speed)}</p>`;
                 }
                 if (heading) {
                     popup_data += `<p>Heading: ${heading.toFixed(2)}°</p>`;
@@ -474,10 +476,34 @@
                     popup_data += `<p>Last Update: ${last_update}</p>`;
                 }
 
-                const popup = new mapboxgl.Popup()
-                    .setLngLat(coordinates)
-                    .setHTML(popup_data)
-                    .addTo(map);
+                // add telemetry data if it exists
+                if (telemetry[name]) {
+                    const telemetry_data = telemetry[name];
+                    for (const key in telemetry_data) {
+                        if (key === "undefined") {
+                            continue;
+                        }
+                        const value = telemetry_data[key];
+                        if (value === "undefined" || value === undefined || value === null || value === "null" || value === "None" || value === "none" || value === "") {
+                            continue;
+                        }
+                        popup_data += `<p>${key}: ${value}</p>`;
+                    }
+                }
+
+                // show popup-page
+                const popup_page = document.getElementById("popup-page");
+                // clear innerHTML of popup-page
+                popup_page.innerHTML = "";
+                // create div to hold popup data
+                const popup_div = document.createElement("div");
+                popup_div.classList.add("popup-div");
+                popup_div.innerHTML = popup_data;
+
+                // add popup_div to popup_page
+                popup_page.appendChild(popup_div);
+                // show popup_page
+                popup_page.classList.add("page-show");
             }
 
             const call_circle_popup = (feature, closest) => {
@@ -502,10 +528,10 @@
                     // set popup with data (only data that is not undefined, none, null, "", etc)
                     
                     if (altitude) {
-                        popup_data += `<p>Altitude: ${altitude.toFixed(2)} m</p>`;
+                        popup_data += `<p>Altitude: ${altitudeConversion(altitude)}</p>`;
                     }
                     if (speed) {
-                        popup_data += `<p>Speed: ${speed.toFixed(2)} mph</p>`;
+                        popup_data += `<p>Speed: ${speedConversion(speed)}</p>`;
                     }
                     if (heading) {
                         popup_data += `<p>Heading: ${heading.toFixed(2)}°</p>`;
