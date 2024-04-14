@@ -56,6 +56,18 @@ def callback(packet):
         data_obj.parse()
     except Exception as e:
         print("parse error: ", e)
+
+    # check if callsign exists in items table
+    name = data_obj.data['callsign'] + "-" + str(data_obj.data['ssid'])
+    item = check_item_id(name)
+    if item is None:
+        # add item to items table
+        add_item_id(name, data_obj.data['callsign'], data_obj.data['ssid'], data_obj.data['symbol'])
+    else:
+        # change callsign, name, and symbol to item values
+        data_obj.data['callsign'] = item.callsign
+        data_obj.data['ssid'] = item.ssid
+        data_obj.data['symbol'] = item.symbol
     
     # save data
     try:
