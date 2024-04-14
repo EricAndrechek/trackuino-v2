@@ -1,8 +1,18 @@
-# connect to APRS-IS and listen for all callsigns in items database, mirroring their data to our database
-
 import aprslib
-from sql.helpers import get_all_callsigns
+from sql.helpers import check_item_id, add_item_id, get_all_callsigns
 from utils.api import Data
+
+# ----- APRS SETUP -----
+
+# get all callsigns in items database
+callsigns = get_all_callsigns()
+# get just first item from each tuple
+callsigns = [callsign[0] for callsign in callsigns]
+# just unique callsigns
+callsigns = list(set(callsigns))
+# create filter string
+filter = "p/" + "/".join(callsigns)
+print(filter)
 
 def callback(packet):
     data_obj = Data()
@@ -28,6 +38,19 @@ def callback(packet):
         data_obj.parse()
     except Exception as e:
         print("parse error: ", e)
+
+    # check if callsign exists in items table
+    print("Data: ", data_obj.data)
+    name = data_obj.data['callsign'] + "-" + str(data_obj.data['ssid'])
+    item = check_item_id(name)
+    if item is None:
+        # add item to items table
+        add_item_id(name, data_obj.data['callsign'], data_obj.data['ssid'], data_obj.data['symbol'])
+    else:
+        # change callsign, name, and symbol to item values
+        data_obj.data['callsign'] = item.callsign
+        data_obj.data['ssid'] = item.ssid
+        data_obj.data['symbol'] = item.symbol
     
     # save data
     try:
@@ -38,28 +61,6 @@ def callback(packet):
             print("Data already exists")
     except Exception as e:
         print("save error: ", e)
-
-# get all callsigns in items database
-callsigns = get_all_callsigns()
-# get just first item from each tuple
-callsigns = [callsign[0] for callsign in callsigns]
-# just unique callsigns
-callsigns = list(set(callsigns))
-callsigns.append("KF8ABL")
-callsigns.append("W8AXP")
-callsigns.append("N9FEB")
-callsigns.append("KB6OJE")
-callsigns.append("KJ7MLW")
-callsigns.append("KJ6ZOY")
-callsigns.append("N4KCB")
-callsigns.append("DK3MM")
-callsigns.append("ZBPDT")
-callsigns.append("JH0EYA")
-callsigns.append("KC7RUF")
-callsigns.append("VE7IKX")
-# create filter string
-filter = "p/" + "/".join(callsigns)
-print(filter)
 
 # connect to APRS-IS and listen for all callsigns in items database
 aprs = aprslib.IS("N0CALL", port=14580)
