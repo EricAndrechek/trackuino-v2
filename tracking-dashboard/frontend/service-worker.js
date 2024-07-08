@@ -40,6 +40,19 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
+    // don't cache MQTT requests, http, extensions, etc
+    let url = event.request.url;
+    if (
+        url.startsWith('chrome-extension') ||
+        url.includes('extension') ||
+        !(url.indexOf('http') === 0) ||
+        url.includes('mqtt') ||
+        url.includes('socket') ||
+        url.includes('chrome-extension')
+    ) {
+        return;
+    }
+
     event.respondWith(
         fetch(event.request)
             .then((res) => {
