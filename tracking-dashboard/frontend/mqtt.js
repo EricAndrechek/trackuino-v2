@@ -208,10 +208,15 @@ const telemetryHandler = (topic, payload) => {
         telemetry[name].battery_cs = parseInt(value);
     } else {
         // add key/value pair to telemetry
+        console.log("Adding key/value pair to telemetry: ", key, value);
         telemetry[name][key] = value;
         // try to parse to float
         try {
-            telemetry[name][key] = parseFloat(value);
+            if (parseFloat(value) === NaN) {
+                telemetry[name][key] = value;
+            } else {
+                telemetry[name][key] = parseFloat(value);
+            }
         } catch (err) {
             console.log("Error parsing telemetry value: ", err);
         }
@@ -301,9 +306,6 @@ client.on("connect", () => {
 });
 
 client.on("message", (topic, payload) => {
-    console.log("Message received");
-    console.log("Topic: ", topic);
-    console.log("Payload: ", payload.toString());
     if (topic.includes("POSITION")) {
         positionHandler(topic, payload);
     } else if (topic.includes("TELEMETRY")) {
