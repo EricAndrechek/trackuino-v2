@@ -181,7 +181,7 @@ const telemetryHandler = (topic, payload) => {
         console.log("Updating battery for ", name, " to ", value);
         telemetry[name].battery = parseInt(value) !== NaN ? parseInt(value) : value;
     } else if (key === "bmV") {
-        console.log("Updating battery_mv for ", name, " to ", value);
+        console.log("Updating battery_mv for ", name, " to ", parseInt(value));
         telemetry[name].battery_mv = parseInt(value) !== NaN ? parseInt(value) : value;
     } else if (key === "bCS") {
         console.log("Updating battery_cs for ", name, " to ", value);
