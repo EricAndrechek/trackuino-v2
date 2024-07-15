@@ -192,14 +192,19 @@ const telemetryHandler = (topic, payload) => {
 
     // update telemetry data
     if (key === "lwt") {
+        console.log("Updating lwt for ", name, " to ", value);
         telemetry[name].lwt = parseInt(value);
     } else if (key === "csq") {
+        console.log("Updating csq for ", name, " to ", value);
         telemetry[name].csq = parseInt(value);
     } else if (key === "b%") {
+        console.log("Updating battery for ", name, " to ", value);
         telemetry[name].battery = parseInt(value);
     } else if (key === "bmV") {
+        console.log("Updating battery_mv for ", name, " to ", value);
         telemetry[name].battery_mv = parseInt(value);
     } else if (key === "bCS") {
+        console.log("Updating battery_cs for ", name, " to ", value);
         telemetry[name].battery_cs = parseInt(value);
     } else {
         // add key/value pair to telemetry
