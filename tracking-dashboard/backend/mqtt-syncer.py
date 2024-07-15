@@ -187,9 +187,11 @@ def on_message(client, userdata, message):
 
         # if key is "ss" (seconds), add message to db
         if key == "lat" or key == "lon" or key == "alt":
+            print(key, payload)
             # add message to db
             msg = build_json_message(id)
             if msg is None:
+                print("Error building message")
                 return
             src = build_source_packet(msg)
             data_obj = Data()
