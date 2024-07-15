@@ -15,7 +15,8 @@ const parseAPRSSymbol = (symbol) => {
         switch (symbol_code) {
             case "O":
                 // should be balloon
-                symbol_string = "custom-balloon";
+                // symbol_string = "custom-balloon";
+                symbol_string = "custom-car";
                 break;
             case ">":
                 symbol_string = "custom-car";

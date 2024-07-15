@@ -384,11 +384,11 @@ const main = () => {
             // create p element for description
             const description = document.createElement("p");
             description.innerText =
-                "This is a balloon tracking application made by Eric @ the University of Michigan. This application is designed to track the position of high altitude balloons in real-time. You can view the current position of the balloons, as well as their historical positions for up to 3 hours in the past. You can also view telemetry data for the balloons by clicking on the balloon. You can change the settings for the application by clicking the settings button in the top right corner.";
+                "This is a tracking application made by Eric @ the University of Michigan. You can view the current position of items, as well as their historical positions for up to 3 hours in the past. You can also view telemetry data by clicking on the item. You can change the settings for the application by clicking the settings button in the top right corner.";
 
             const install = document.createElement("p");
             install.innerText =
-                "For best performance when offline and while tracking multiple balloons, please install this web application on your device or add it to your home screen.";
+                "For best performance when offline and while tracking multiple items, please install this web application on your device or add it to your home screen.";
 
             // create button element for close
             const close = `<img id="close" onclick="closePopupPage()" src="/assets/x-mark.svg" alt="Close">`;
