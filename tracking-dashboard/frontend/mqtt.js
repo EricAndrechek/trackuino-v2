@@ -161,6 +161,10 @@ const telemetryHandler = (topic, payload) => {
     let name = topic.split("/")[1];
     let key = topic.split("/")[2];
     let value = payload.toString();
+    // strip quotes if they exist
+    if (value[0] === '"') {
+        value = value.substring(1, value.length - 1);
+    }
 
     // check if track_id exists in telemetry
     if (!(name in telemetry)) {
