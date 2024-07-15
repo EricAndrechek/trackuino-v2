@@ -208,6 +208,7 @@ def on_message(client, userdata, message):
                 print("Error parsing data: ", e)
                 return
 
+            print("made it here")
             # check if lat, lon, or alt changed
             if (
                 "lat" in message_building[id]
@@ -248,7 +249,6 @@ def on_message(client, userdata, message):
                             message_building[id]["lon"] = payload
                         elif key == "alt":
                             message_building[id]["alt"] = payload
-                        return
 
                 try:
                     status_code = data_obj.save()
@@ -277,6 +277,7 @@ def on_message(client, userdata, message):
             message_building[id][key] = payload
             # if telemetry data, send to mqtt
             if key not in nonTelemKeys:
+                print("non-telemetry key: ", key)
                 print(key, payload)
                 # check if value is the same as last value
                 if id in old_messages:
