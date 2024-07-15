@@ -124,18 +124,14 @@ const positionHandler = (topic, payload) => {
         telemetry[name].course = data.cse;
     } else {
         // add telemetry data
-        telemetry[name] = {
-            name: name,
-            lwt: 0,
-            csq: 0,
-            battery: 0,
-            battery_mv: 0,
-            battery_cs: 0,
-            speed: data.spd,
-            course: data.cse,
-            altitude: data.alt,
-            last_update: data.dt,
-        };
+        if (!(name in telemetry)) {
+            telemetry[name] = {
+                name: name,
+            };
+        }
+        telemetry[name].altitude = data.alt;
+        telemetry[name].speed = data.spd;
+        telemetry[name].course = data.cse;
     }
 
     try {
@@ -171,41 +167,25 @@ const telemetryHandler = (topic, payload) => {
         // add track_id to telemetry
         telemetry[name] = {
             name: name,
-            lwt: 0,
-            csq: 0,
-            battery: 0,
-            battery_mv: 0,
-            battery_cs: 0,
-            speed: 0,
-            course: 0,
-            altitude: 0,
-            last_update: {
-                hh: 0,
-                mm: 0,
-                ss: 0,
-                MM: 0,
-                DD: 0,
-                YY: 0,
-            },
         };
     }
 
     // update telemetry data
     if (key === "lwt") {
         console.log("Updating lwt for ", name, " to ", value);
-        telemetry[name].lwt = parseInt(value);
+        telemetry[name].lwt = parseInt(value) !== NaN ? parseInt(value) : value;
     } else if (key === "csq") {
         console.log("Updating csq for ", name, " to ", value);
-        telemetry[name].csq = parseInt(value);
+        telemetry[name].csq = parseInt(value) !== NaN ? parseInt(value) : value;
     } else if (key === "b%") {
         console.log("Updating battery for ", name, " to ", value);
-        telemetry[name].battery = parseInt(value);
+        telemetry[name].battery = parseInt(value) !== NaN ? parseInt(value) : value;
     } else if (key === "bmV") {
         console.log("Updating battery_mv for ", name, " to ", value);
-        telemetry[name].battery_mv = parseInt(value);
+        telemetry[name].battery_mv = parseInt(value) !== NaN ? parseInt(value) : value;
     } else if (key === "bCS") {
         console.log("Updating battery_cs for ", name, " to ", value);
-        telemetry[name].battery_cs = parseInt(value);
+        telemetry[name].battery_cs = parseInt(value) !== NaN ? parseInt(value) : value;
     } else {
         // add key/value pair to telemetry
         console.log("Adding key/value pair to telemetry: ", key, value);
