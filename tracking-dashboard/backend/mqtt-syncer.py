@@ -215,7 +215,9 @@ def on_message(client, userdata, message):
                 and "lon" in message_building[id]
                 and "alt" in message_building[id]
             ):
+                print("into this loop")
                 if id in old_messages:
+                    print("into old messages")
                     if (
                         message_building[id]["lat"] == old_messages[id]["lat"]
                         and message_building[id]["lon"] == old_messages[id]["lon"]
@@ -267,6 +269,7 @@ def on_message(client, userdata, message):
                     message_building[id]["lon"] = payload
                 elif key == "alt":
                     message_building[id]["alt"] = payload
+            print("exiting safely")
             return
         elif key == "spd":
             # convert speed to mph from knots
