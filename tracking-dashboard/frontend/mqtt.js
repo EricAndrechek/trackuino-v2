@@ -301,6 +301,9 @@ client.on("connect", () => {
 });
 
 client.on("message", (topic, payload) => {
+    console.log("Message received");
+    console.log("Topic: ", topic);
+    console.log("Payload: ", payload.toString());
     if (topic.includes("POSITION")) {
         positionHandler(topic, payload);
     } else if (topic.includes("TELEMETRY")) {
