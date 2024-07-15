@@ -19,7 +19,24 @@ client.subscribe("T/#")
 old_messages = {}
 message_building = {}
 
+nonTelemKeys = [
+    "IMEI",
+    "ICCID",
+    "IMSI",
+    "VER",
+    "name",
+    "ssid",
+    "sym",
+    "lat",
+    "lon",
+    "alt",
+    "cse",
+    "spd",
+    "lwt",
+]
+
 # ----- FUNCTIONS -----
+
 
 def build_json_message(id):
     # should have (at minimum):
@@ -30,65 +47,65 @@ def build_json_message(id):
     if id not in message_building:
         print("No message_building data for id: ", id)
         return None
-    
+
     if "name" in message_building[id]:
-        message['callsign'] = message_building[id]['name']
+        message["callsign"] = message_building[id]["name"]
     else:
-        message['callsign'] = str(id)[:6]
+        message["callsign"] = str(id)[:6]
     if "ssid" in message_building[id]:
-        message['ssid'] = message_building[id]['ssid']
+        message["ssid"] = message_building[id]["ssid"]
     else:
-        message['ssid'] = 0
+        message["ssid"] = 0
     if "sym" in message_building[id]:
-        message['symbol'] = message_building[id]['sym']
+        message["symbol"] = message_building[id]["sym"]
     else:
-        message['symbol'] = "/>"
+        message["symbol"] = "/>"
     if "lat" in message_building[id]:
-        message['lat'] = message_building[id]['lat']
+        message["lat"] = message_building[id]["lat"]
     else:
-        message['lat'] = None
+        message["lat"] = None
     if "lon" in message_building[id]:
-        message['lon'] = message_building[id]['lon']
+        message["lon"] = message_building[id]["lon"]
     else:
-        message['lon'] = None
+        message["lon"] = None
     if "alt" in message_building[id]:
-        message['alt'] = message_building[id]['alt']
+        message["alt"] = message_building[id]["alt"]
     else:
-        message['alt'] = None
+        message["alt"] = None
     if "cse" in message_building[id]:
-        message['course'] = message_building[id]['cse']
+        message["course"] = message_building[id]["cse"]
     else:
-        message['course'] = None
+        message["course"] = None
     if "spd" in message_building[id]:
-        message['speed'] = message_building[id]['spd']
+        message["speed"] = message_building[id]["spd"]
     else:
-        message['speed'] = None
-    if "hh" in message_building[id] and "mm" in message_building[id] and "ss" in message_building[id] and "YY" in message_building[id] and "MM" in message_building[id] and "DD" in message_building[id]:
-        message['timestamp'] = f"{message_building[id]['YY']}-{message_building[id]['MM']}-{message_building[id]['DD']} {message_building[id]['hh']}:{message_building[id]['mm']}:{message_building[id]['ss']}"
+        message["speed"] = None
+    if "dt" in message_building[id]:
+        message["timestamp"] = message_building[id]["dt"]
     else:
-        message['timestamp'] = None
-    
+        message["timestamp"] = None
+
     # for all other keys, add them to telemetry
     telemetry = {}
     for key in message_building[id]:
-        if key not in ['name', 'ssid', 'sym', 'lat', 'lon', 'alt', 'cse', 'spd', 'hh', 'mm', 'ss', 'YY', 'MM', 'DD']:
+        if key not in nonTelemKeys:
             telemetry[key] = message_building[id][key]
-    
+
     if len(telemetry) > 0:
-        message['telemetry'] = telemetry
-    
+        message["telemetry"] = telemetry
+
     return message
-    
+
 
 # build a source packet of the type the API likes from a message
 def build_source_packet(message):
     source = {}
-    source['timestamp'] = str(datetime.now().isoformat())
-    source['callsign'] = "UMSERV"
-    source['ssid'] = 0
-    source['ip'] = "127.0.0.1"
-    source['type'] = 'json'
-    source['data'] = message
+    source["timestamp"] = str(datetime.now().isoformat())
+    source["callsign"] = "UMSERV"
+    source["ssid"] = 0
+    source["ip"] = "127.0.0.1"
+    source["type"] = "json"
+    source["data"] = message
 
     return source
 
@@ -98,7 +115,7 @@ def on_message(client, userdata, message):
     topic = message.topic
     payload = message.payload.decode()
     timestamp = str(datetime.now().isoformat())
-    
+
     # split topic
     topics = topic.split("/")
     if topics[0] == "T":
@@ -108,7 +125,7 @@ def on_message(client, userdata, message):
         if len(topics) != 3:
             print("Invalid topic: ", topic)
             return
-        
+
         id = topics[1]
         key = topics[2]
 
@@ -133,31 +150,40 @@ def on_message(client, userdata, message):
                         ssid = message_building[id]["ssid"]
                     if "sym" in message_building[id]:
                         symbol = message_building[id]["sym"]
-                    
+
                     add_item_id(id, callsign, ssid, symbol)
                 else:
-                    # add id to message_building and 
+                    # add id to message_building and
                     message_building[id] = {}
             else:
                 # add item data to message_building
                 if id not in message_building:
                     message_building[id] = {}
-                message_building[id]['name'] = item.callsign
-                message_building[id]['ssid'] = item.ssid
-                message_building[id]['sym'] = item.symbol
-        
+                message_building[id]["name"] = item.callsign
+                message_building[id]["ssid"] = item.ssid
+                message_building[id]["sym"] = item.symbol
+
+        # update timestamp
+        message_building[id]["dt"] = timestamp
+
         # if key is lwt, modify telemetry data to show changed lwt
         if key == "lwt":
             if id in message_building:
-                if 'telemetry' in message_building[id]:
-                    message_building[id]['telemetry']['lwt'] = payload
+                if "telemetry" in message_building[id]:
+                    message_building[id]["telemetry"]["lwt"] = payload
                     # send telemetry data to mqtt
                     try:
-                        topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
-                        client.publish(topic + "/lwt", json.dumps(payload), retain=True, qos=0)
+                        topic = (
+                            "TELEMETRY/"
+                            + message_building[id]["name"]
+                            + "-"
+                            + str(message_building[id]["ssid"])
+                        )
+                        client.publish(
+                            topic + "/lwt", json.dumps(payload), retain=True, qos=0
+                        )
                     except Exception as e:
                         print("Error sending lwt to mqtt: ", e)
-
 
         # if key is "ss" (seconds), add message to db
         if key == "lat" or key == "lon" or key == "alt":
@@ -170,7 +196,7 @@ def on_message(client, userdata, message):
 
             try:
                 data_obj.upload(src)
-                data_obj.info['ip'] = src['ip']
+                data_obj.info["ip"] = src["ip"]
             except Exception as e:
                 print("Error uploading data: ", e)
                 return
@@ -179,27 +205,49 @@ def on_message(client, userdata, message):
             except Exception as e:
                 print("Error parsing data: ", e)
                 return
-            
+
             # check if lat, lon, or alt changed
-            if 'lat' in message_building[id] and 'lon' in message_building[id] and 'alt' in message_building[id]:
+            if (
+                "lat" in message_building[id]
+                and "lon" in message_building[id]
+                and "alt" in message_building[id]
+            ):
                 if id in old_messages:
-                    if (message_building[id]['lat'] == old_messages[id]['lat'] and message_building[id]['lon'] == old_messages[id]['lon'] and message_building[id]['alt'] == old_messages[id]['alt']):
+                    if (
+                        message_building[id]["lat"] == old_messages[id]["lat"]
+                        and message_building[id]["lon"] == old_messages[id]["lon"]
+                        and message_building[id]["alt"] == old_messages[id]["alt"]
+                    ):
                         # send telemetry data to mqtt
-                        if 'telemetry' in src['data']:
-                            topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
-                            for key in src['data']['telemetry']:
+                        if "telemetry" in src["data"]:
+                            topic = (
+                                "TELEMETRY/"
+                                + message_building[id]["name"]
+                                + "-"
+                                + str(message_building[id]["ssid"])
+                            )
+                            for key in src["data"]["telemetry"]:
                                 # check if last value is the same
-                                if key in old_messages[id] and src['data']['telemetry'][key] == old_messages[id][key]:
+                                if (
+                                    key in old_messages[id]
+                                    and src["data"]["telemetry"][key]
+                                    == old_messages[id][key]
+                                ):
                                     continue
-                                client.publish(topic + "/" + key, json.dumps(src['data']['telemetry'][key]), retain=True, qos=0)
+                                client.publish(
+                                    topic + "/" + key,
+                                    json.dumps(src["data"]["telemetry"][key]),
+                                    retain=True,
+                                    qos=0,
+                                )
                         if key == "lat":
-                            message_building[id]['lat'] = payload
+                            message_building[id]["lat"] = payload
                         elif key == "lon":
-                            message_building[id]['lon'] = payload
+                            message_building[id]["lon"] = payload
                         elif key == "alt":
-                            message_building[id]['alt'] = payload
+                            message_building[id]["alt"] = payload
                         return
-            
+
                 try:
                     status_code = data_obj.save()
                     if status_code == 201 or status_code == 202:
@@ -208,15 +256,15 @@ def on_message(client, userdata, message):
                         print("Data already exists")
                 except Exception as e:
                     print("save error: ", e)
-            
+
                 # copy values to old_messages
                 old_messages[id] = message_building[id].copy()
                 if key == "lat":
-                    message_building[id]['lat'] = payload
+                    message_building[id]["lat"] = payload
                 elif key == "lon":
-                    message_building[id]['lon'] = payload
+                    message_building[id]["lon"] = payload
                 elif key == "alt":
-                    message_building[id]['alt'] = payload
+                    message_building[id]["alt"] = payload
             return
         elif key == "spd":
             # convert speed to mph from knots
@@ -226,7 +274,6 @@ def on_message(client, userdata, message):
             # add key and payload to message_building
             message_building[id][key] = payload
             # if telemetry data, send to mqtt
-            nonTelemKeys = ['name', 'ssid', 'sym', 'lat', 'lon', 'alt', 'cse', 'spd']
             if key not in nonTelemKeys:
                 print(key, payload)
                 # check if value is the same as last value
@@ -235,8 +282,15 @@ def on_message(client, userdata, message):
                         return
                 # send telemetry data to mqtt
                 try:
-                    topic = "TELEMETRY/" + message_building[id]['name'] + "-" + str(message_building[id]['ssid'])
-                    client.publish(topic + "/" + key, json.dumps(payload), retain=True, qos=0)
+                    topic = (
+                        "TELEMETRY/"
+                        + message_building[id]["name"]
+                        + "-"
+                        + str(message_building[id]["ssid"])
+                    )
+                    client.publish(
+                        topic + "/" + key, json.dumps(payload), retain=True, qos=0
+                    )
                 except Exception as e:
                     print("Error sending telemetry to mqtt: ", e)
                 try:

@@ -62,6 +62,7 @@ const positionHandler = (topic, payload) => {
                 speed: 0,
                 course: 90,
                 comment: "",
+                // TODO: JSON Telemetry data
                 datetime: "",
             },
             previous_coordinates: [],

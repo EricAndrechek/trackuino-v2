@@ -42,17 +42,10 @@ let telemetry = {};
 let predictions = {};
 
 const debugLogs = () => {
-    if (window.matchMedia("(orientation: portrait)").matches) {
-        // open rickroll in new tab
-        window.open("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "_blank");
-    } else if (window.matchMedia("(orientation: landscape)").matches) {
         console.log("Debug Logs");
         console.log("positions: ", positions);
         console.log("telemetry: ", telemetry);
         console.log("predictions: ", predictions);
-    } else {
-        console.log("Unknown orientation");
-    }
 };
 
 const settings = () => {
@@ -251,6 +244,7 @@ const getHistoricalGeoJSON = (name) => {
     let coordinates = [];
     if (name in positions) {
         for (let i = 0; i < positions[name].previous_coordinates.length; i++) {
+            // TODO: add telemetry JSON too
             coordinates.push([
                 positions[name].previous_coordinates[i].longitude,
                 positions[name].previous_coordinates[i].latitude,
@@ -321,6 +315,7 @@ const requestOldData = (names = null, age = 180) => {
                             course: 0,
                             comment: "",
                             datetime: "",
+                            // TODO: telemetry JSON
                         },
                         previous_coordinates: [],
                     };
@@ -359,6 +354,7 @@ const requestOldData = (names = null, age = 180) => {
                         course: data[name]["positions"][i].cse,
                         comment: data[name]["positions"][i].cmnt,
                         datetime: datetime,
+                        // TODO: telemetry JSON
                     });
                 }
             }
