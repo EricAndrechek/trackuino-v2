@@ -196,17 +196,24 @@ def on_message(client, userdata, message):
             src = build_source_packet(msg)
             data_obj = Data()
 
+            print("Uploading data")
+
             try:
                 data_obj.upload(src)
                 data_obj.info["ip"] = src["ip"]
             except Exception as e:
                 print("Error uploading data: ", e)
                 return
+
+            print("Parsing data")
+
             try:
                 data_obj.parse()
             except Exception as e:
                 print("Error parsing data: ", e)
                 return
+
+            print("Saving data")
 
             # check if lat, lon, or alt changed
             if (
@@ -267,6 +274,8 @@ def on_message(client, userdata, message):
                 elif key == "alt":
                     message_building[id]["alt"] = payload
             else:
+                print("Missing lat, lon, or alt")
+
                 if key == "lat":
                     message_building[id]["lat"] = payload
                 elif key == "lon":
