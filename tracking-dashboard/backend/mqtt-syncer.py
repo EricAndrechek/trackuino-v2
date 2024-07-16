@@ -214,6 +214,9 @@ def on_message(client, userdata, message):
                 return
 
             print("Saving data")
+            print("lat" in message_building[id])
+            print("lon" in message_building[id])
+            print("alt" in message_building[id])
 
             # check if lat, lon, or alt changed
             if (
