@@ -1,5 +1,10 @@
 # Trackuino-v2 <!-- omit in toc -->
 
+> [!WARNING]
+> This repository/project has quickly grown in scope to eclipse the original Trackuino project. As such, it **has been moved to its own repository [here](https://github.com/EricAndrechek/umich-balloons).**
+>
+> This repository will be kept purely as a reference to the original project and as a way for people to find the new project from Trackuino.
+
 An open-source high-altitude balloon tracker, based on the original [Trackuino](https://github.com/trackuino/trackuino).
 
 This repository contains the code for the [ground station](./ground-station/), the [high-altitude balloon tracker](./balloon-tracker/), [vehicle trackers](./vehicle-tracker/), and [handheld locators](./handheld-locator/).
